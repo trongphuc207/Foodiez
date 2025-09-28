@@ -101,6 +101,25 @@
 .auth-btn:active{ transform:scale(.98); }
 .auth-btn.is-active{ box-shadow:0 4px 12px rgba(67,160,71,.25); }
 
+/* Forgot password description */
+.auth-forgot-description{
+  text-align:center; margin-bottom:16px; color:#666;
+  font-size:14px; line-height:1.4;
+}
+
+/* Back button */
+.auth-back{
+  margin:12px 0;
+  text-align:center;
+}
+
+.auth-back-btn{
+  background:transparent; border:none; color:#43a047;
+  cursor:pointer; font-size:14px; font-weight:600;
+  transition:color .2s;
+}
+.auth-back-btn:hover{ color:#3a9440; }
+
 /* Submit cuối */
 .auth-submit{
   width:100%; margin-top:4px;
