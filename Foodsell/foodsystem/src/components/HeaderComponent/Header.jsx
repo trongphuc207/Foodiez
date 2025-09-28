@@ -1,9 +1,19 @@
 import { useState } from "react"
+import ButtonInputSearch from "../ButtonInputSearch/ButtonInputSearch"
+import { useNavigate } from 'react-router-dom'
 import "./Header.css"
 
 const Header = ({ toggleSidebar }) => {
   const [showUserDropdown, setShowUserDropdown] = useState(false)
   const [showNavbar, setShowNavbar] = useState(false)
+
+  const navigate = useNavigate()
+
+  const handleSearch = (keyword) => {
+    if (!keyword) return
+    const params = new URLSearchParams({ search: keyword })
+    navigate(`/products?${params.toString()}`)
+  }
 
   return (
     <header className="header">
@@ -33,9 +43,13 @@ const Header = ({ toggleSidebar }) => {
 
 
         <div className="header-center">
-          <div className="search-container input-group">
-            <input type="text" placeholder="Tìm kiếm món ăn..." className="search-input form-control" />
-            <button className="search-btn btn btn-primary">🔍</button>
+          <div className="search-container">
+            <ButtonInputSearch 
+              placeholder="Tìm kiếm món ăn, nhà hàng..."
+              textButton="Tìm kiếm"
+              size="large"
+              onSearch={handleSearch}
+            />
           </div>
         </div>
 
@@ -61,8 +75,14 @@ const Header = ({ toggleSidebar }) => {
                 <a href="#profile" className="dropdown-item">
                   👤 Thông tin cá nhân
                 </a>
+                <a href="#orders" className="dropdown-item">
+                  📋 Đơn hàng của tôi
+                </a>
                 <a href="#login" className="dropdown-item">
                   🔑 Đăng nhập
+                </a>
+                <a href="#signup" className="dropdown-item">
+                  📝 Đăng ký
                 </a>
                 <a href="#logout" className="dropdown-item">
                   🚪 Đăng xuất
