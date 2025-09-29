@@ -32,8 +32,8 @@
 .header-left {
   display: flex;
   align-items: center;
-  margin-left: -4rem; /* Đưa hamburger button hoàn toàn sát lề trái */
-  padding-left: 0.5rem; /* Thêm padding nhỏ để không bị cắt */
+  margin-left: 0; /* Bỏ margin âm để tránh lấn vào logo */
+  padding-left: 0; /* Căn trái gọn gàng */
 }
 
 .hamburger-btn {
@@ -65,11 +65,17 @@
   align-items: center;
   gap: 0.5rem;
   margin-left: 1rem; /* Khoảng cách từ hamburger button */
+  cursor: pointer; /* Trỏ chuột dạng bấm được */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none; /* Không cho chọn text để tránh caret */
 }
 
 /* Navbar dropdown styles */
 .navbar-dropdown {
   position: relative;
+  margin-right: 12px; /* Tạo khoảng cách với logo để không bị lấn */
 }
 
 .navbar-menu {
@@ -118,6 +124,10 @@
   color: var(--color-foreground);
   margin: 0;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none; /* Không cho chọn text để tránh caret */
 }
 
 /* Thêm styles cho thanh tìm kiếm ở giữa */

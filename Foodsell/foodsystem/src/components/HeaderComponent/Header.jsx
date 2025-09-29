@@ -65,7 +65,18 @@ const Header = ({ toggleSidebar }) => {
           </div>
         </div>
 
-        <div className="logo">
+        <div
+          className="logo"
+          onClick={() => navigate('/')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              navigate('/');
+            }
+          }}
+        >
           <span className="logo-icon">🍽️</span>
           <h1 className="logo-text">FoodieExpress</h1>
         </div>
