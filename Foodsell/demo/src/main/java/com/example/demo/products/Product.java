@@ -2,6 +2,7 @@ package com.example.demo.products;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "products")
@@ -22,4 +23,23 @@ public class Product {
     private String imageUrl;
 
     private String status;
+
+    // NEW
+    @Column(name = "shop_id")
+    private int shopId;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    // Auto set khi insert/update
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }
