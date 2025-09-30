@@ -78,15 +78,15 @@ const Footer = () => {
           <div className="footer-section">
             <h4 className="section-title">Liên hệ</h4>
             <div className="contact-info">
-              <p className="contact-item">📞 Hotline: 1900-1234</p>
-              <p className="contact-item">✉️ Email: info@foodieexpress.vn</p>
-              <p className="contact-item">📍 Địa chỉ: 123 Đường ABC, Quận 1, TP.HCM</p>
+              <p className="contact-item">📞 Hotline: +84778956030</p>
+              <p className="contact-item">✉️ Email: trongphuc20704@gmail.com</p>
+              <p className="contact-item">📍 Địa chỉ: FPT University</p>
             </div>
           </div>
         </div>
 
         <div className="footer-bottom">
-          <p className="copyright">© 2024 FoodieExpress. Tất cả quyền được bảo lưu.</p>
+          <p className="copyright">© 2025 FoodieExpress. Tất cả quyền được bảo lưu.</p>
           <div className="footer-bottom-links">
             <a href="#" className="bottom-link">
               Điều khoản sử dụng
