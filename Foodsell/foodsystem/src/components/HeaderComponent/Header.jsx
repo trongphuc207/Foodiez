@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ButtonInputSearch from "../ButtonInputSearch/ButtonInputSearch";
 import LoginSignUp from "../LoginSignUpComponent/LoginSignUp";
+import { isAuthenticated, removeAuthToken } from "../../api/auth";
 import "./Header.css";
 
 const Header = ({ toggleSidebar }) => {
@@ -11,6 +12,7 @@ const Header = ({ toggleSidebar }) => {
   // NEW: state mở modal và mode (login/signup)
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("login");
+  const [userLoggedIn, setUserLoggedIn] = useState(isAuthenticated());
 
   // Đóng modal khi bấm ESC
   useEffect(() => {
@@ -32,6 +34,18 @@ const Header = ({ toggleSidebar }) => {
     const params = new URLSearchParams({ search: keyword });
     navigate(`/products?${params.toString()}`);
   };
+
+  const handleLogout = () => {
+    removeAuthToken();
+    setUserLoggedIn(false);
+    setShowUserDropdown(false);
+    alert('Đã đăng xuất!');
+  };
+
+  // Cập nhật trạng thái đăng nhập khi component mount
+  useEffect(() => {
+    setUserLoggedIn(isAuthenticated());
+  }, []);
 
   return (
     <header className="header">
@@ -112,24 +126,34 @@ const Header = ({ toggleSidebar }) => {
             </button>
             {showUserDropdown && (
               <div className="user-dropdown-menu">
-                <button
-                  className="dropdown-item"
-                  onClick={() => openAuth("login")}
-                >
-                  🔑 Đăng nhập
-                </button>
-                <button
-                  className="dropdown-item"
-                  onClick={() => openAuth("signup")}
-                >
-                  ✍️ Đăng ký
-                </button>
-                <a href="#profile" className="dropdown-item">
-                  👤 Thông tin cá nhân
-                </a>
-                <a href="#logout" className="dropdown-item">
-                  🚪 Đăng xuất
-                </a>
+                {!userLoggedIn ? (
+                  <>
+                    <button
+                      className="dropdown-item"
+                      onClick={() => openAuth("login")}
+                    >
+                      🔑 Đăng nhập
+                    </button>
+                    <button
+                      className="dropdown-item"
+                      onClick={() => openAuth("signup")}
+                    >
+                      ✍️ Đăng ký
+                    </button>
+                  </>
+                ) : (
+                  <>
+        <a href="/profile" className="dropdown-item">
+          👤 Thông tin cá nhân
+        </a>
+                    <button
+                      className="dropdown-item"
+                      onClick={handleLogout}
+                    >
+                      🚪 Đăng xuất
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
