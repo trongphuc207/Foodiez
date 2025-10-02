@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import './LoginSignUp.css';
+import { authAPI, setAuthToken } from '../../api/auth';
+import GoogleAuth from '../GoogleAuth/GoogleAuth';
 
 import user_icon from '../Assets/person.png';
 import email_icon from '../Assets/email.png';
@@ -20,6 +22,7 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
   });
   const [errors, setErrors] = useState({});
   const [forgotErrors, setForgotErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const onChange = (e) => {
     const { name, value } = e.target;
@@ -37,49 +40,106 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
 
   const validate = () => {
     const err = {};
-    if (mode === 'signup' && !form.fullName.trim()) err.fullName = 'Full name is required';
-    if (mode === 'signup' && !form.username.trim()) err.username = 'Username is required';
-    if (!form.email.trim()) err.email = 'Email is required';
-    if (!form.password || form.password.length < 6) err.password = 'Min 6 characters';
-    if (mode === 'signup' && !form.birthday) err.birthday = 'Birthday is required';
-    if (mode === 'signup' && !form.address.trim()) err.address = 'Address is required';
+    
+    // Email validation
+    if (!form.email.trim()) {
+      err.email = 'Email is required';
+    } else if (!isValidEmail(form.email)) {
+      err.email = 'Email format is invalid';
+    }
+    
+    // Password validation
+    if (!form.password) {
+      err.password = 'Password is required';
+    } else if (form.password.length < 6) {
+      err.password = 'Password must be at least 6 characters';
+    } else if (form.password.length > 50) {
+      err.password = 'Password must be less than 50 characters';
+    }
+    
+    // Full name validation (for signup only)
+    if (mode === 'signup') {
+      if (!form.fullName.trim()) {
+        err.fullName = 'Full name is required';
+      } else if (form.fullName.trim().length < 2) {
+        err.fullName = 'Full name must be at least 2 characters';
+      } else if (form.fullName.trim().length > 100) {
+        err.fullName = 'Full name must be less than 100 characters';
+      }
+    }
+    
     return err;
+  };
+  
+  const isValidEmail = (email) => {
+    return /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email);
   };
 
   const validateForgot = () => {
     const err = {};
-    if (!forgotForm.email.trim()) err.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(forgotForm.email)) err.email = 'Email is invalid';
+    if (!forgotForm.email.trim()) {
+      err.email = 'Email is required';
+    } else if (!isValidEmail(forgotForm.email)) {
+      err.email = 'Email format is invalid';
+    }
     return err;
   };
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     const err = validate();
     setErrors(err);
     if (Object.keys(err).length) return;
 
-    if (mode === 'signup') {
-      console.log('Signup payload:', form);
-    } else {
-      console.log('Login payload:', { email: form.email, password: form.password });
+    setLoading(true);
+    try {
+      if (mode === 'signup') {
+        const response = await authAPI.register({
+          email: form.email,
+          password: form.password,
+          fullName: form.fullName
+        });
+        
+        setAuthToken(response.token);
+        alert('Đăng ký thành công!');
+        onClose && onClose();
+        window.location.reload(); // Refresh để cập nhật trạng thái đăng nhập
+      } else {
+        const response = await authAPI.login({
+          email: form.email,
+          password: form.password
+        });
+        
+        setAuthToken(response.token);
+        alert('Đăng nhập thành công!');
+        onClose && onClose();
+        window.location.reload(); // Refresh để cập nhật trạng thái đăng nhập
+      }
+    } catch (error) {
+      alert('Lỗi: ' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const onForgotSubmit = (e) => {
+  const onForgotSubmit = async (e) => {
     e.preventDefault();
     const err = validateForgot();
     setForgotErrors(err);
     if (Object.keys(err).length) return;
 
-    console.log('Forgot password payload:', forgotForm);
-    alert('Password reset link has been sent to your email!');
-    setMode('login');
+    setLoading(true);
+    try {
+      await authAPI.forgotPassword(forgotForm.email);
+      alert('Link đặt lại mật khẩu đã được gửi đến email của bạn!');
+      setMode('login');
+    } catch (error) {
+      alert('Lỗi: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleGoogleLogin = () => {
-    alert('Mock Google login: chưa tích hợp API.');
-  };
 
   return (
     <div className="auth-card">
@@ -96,21 +156,25 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
         <div className="auth-underline"></div>
       </div>
 
-      {/* Social login - only show for login and signup */}
+      {/* Google OAuth - only show for login and signup */}
       {mode !== 'forgot' && (
         <div className="auth-social">
-          <button type="button" className="auth-google-btn" onClick={handleGoogleLogin}>
-            <svg className="auth-g-icon" viewBox="0 0 48 48" aria-hidden="true">
-              <path fill="#FFC107" d="M43.6 20.5h-1.9V20H24v8h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.1 6.3 28.8 4.5 24 4.5 12.7 4.5 3.5 13.7 3.5 25S12.7 45.5 24 45.5 44.5 36.3 44.5 25c0-1.5-.1-3-.4-4.5z"/>
-              <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.8 16.1 19 13 24 13c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.1 6.3 28.8 4.5 24 4.5 16 4.5 9.1 9.2 6.3 14.7z"/>
-              <path fill="#4CAF50" d="M24 45.5c5.9 0 11.1-2.3 14.9-6l-6.9-5.6c-2.1 1.5-4.8 2.4-8 2.4-5.3 0-9.7-3.4-11.3-8l-6.6 5.1C9.1 40.8 16 45.5 24 45.5z"/>
-              <path fill="#1976D2" d="M43.6 20.5H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.6l6.9 5.6c4-3.7 6.6-9.1 6.6-15.7 0-1.5-.1-3-.4-4.5z"/>
-            </svg>
-            Continue with Google
-          </button>
+          <GoogleAuth 
+            onSuccess={(data) => {
+              console.log('Google login success:', data);
+              alert('Đăng nhập Google thành công! Chào mừng ' + data.user.fullName);
+              onClose && onClose();
+              window.location.reload();
+            }}
+            onError={(error) => {
+              console.error('Google login error:', error);
+              alert('Lỗi đăng nhập Google: ' + error.message);
+            }}
+          />
           <div className="auth-or-line"><span>or</span></div>
         </div>
       )}
+
 
       {/* Form */}
       {mode === 'forgot' ? (
@@ -253,8 +317,8 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
           </div>
         )}
 
-        <button type="submit" className="auth-submit">
-          {mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send Reset Link' : 'Sign in'}
+        <button type="submit" className="auth-submit" disabled={loading}>
+          {loading ? 'Đang xử lý...' : (mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send Reset Link' : 'Sign in')}
         </button>
       </form>
       )}

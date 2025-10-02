@@ -3,6 +3,8 @@ import OrderPage from '../Page/OrderPage/OrderPage';
 import ProductPage from '../Page/productPPage/productPage';
 import NotFoundPage from '../Page/NotFoundPage/NotFoundPage';
 import InformationPage from '../Page/InformationPage/InformationPage';
+import CustomerProfile from '../components/CustomerProfileComponent/CustomerProfile';
+import ResetPasswordPage from '../Page/ResetPasswordPage/ResetPasswordPage';
 export const routes = [ 
         {
             path: '/',
@@ -28,5 +30,15 @@ export const routes = [
         {
             path: '/iformation',
             component: InformationPage
+        },
+        {
+            path: '/profile',
+            component: CustomerProfile,
+            isShowHeader: true
+        },
+        {
+            path: '/reset-password',
+            component: ResetPasswordPage,
+            isShowHeader: false
         }   
     ];
