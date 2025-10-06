@@ -1,11 +1,16 @@
 package com.example.demo.Users;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import com.example.demo.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import com.example.demo.config.JwtUtil;
+import com.example.demo.config.FileUploadService;
+
+import jakarta.validation.Valid;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -19,318 +24,155 @@ public class AuthController {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private FileUploadService fileUploadService;
 
     @PostMapping("/register")
-    public ResponseEntity<Map<String, Object>> register(@RequestBody Map<String, String> req) {
-        try {
-            System.out.println("🔍 Register request: " + req);
-            
-            // Validation
-            Map<String, String> validationErrors = validateRegisterRequest(req);
-            if (!validationErrors.isEmpty()) {
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", "Validation failed");
-                errorResponse.put("details", validationErrors);
-                return ResponseEntity.status(400).body(errorResponse);
-            }
-            
-        User user = authService.register(req.get("email"), req.get("password"), req.get("fullName"));
-            String token = jwtUtil.generateToken(user.getEmail());
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("user", user);
-            response.put("token", token);
-            
-            System.out.println("✅ Register successful for: " + user.getEmail());
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            System.err.println("❌ Register error: " + e.getMessage());
-            e.printStackTrace();
-            
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(500).body(errorResponse);
-        }
-    }
-    
-    private Map<String, String> validateRegisterRequest(Map<String, String> req) {
-        Map<String, String> errors = new HashMap<>();
+    public ResponseEntity<ApiResponse<User>> register(@Valid @RequestBody RegisterRequest request) {
+        User user = authService.register(request.getEmail(), request.getPassword(), request.getFullName());
+        String token = jwtUtil.generateToken(user.getEmail());
         
-        // Email validation
-        String email = req.get("email");
-        if (email == null || email.trim().isEmpty()) {
-            errors.put("email", "Email is required");
-        } else if (!isValidEmail(email)) {
-            errors.put("email", "Email format is invalid");
-        }
-        
-        // Password validation
-        String password = req.get("password");
-        if (password == null || password.trim().isEmpty()) {
-            errors.put("password", "Password is required");
-        } else if (password.length() < 6) {
-            errors.put("password", "Password must be at least 6 characters");
-        } else if (password.length() > 50) {
-            errors.put("password", "Password must be less than 50 characters");
-        }
-        
-        // Full name validation
-        String fullName = req.get("fullName");
-        if (fullName == null || fullName.trim().isEmpty()) {
-            errors.put("fullName", "Full name is required");
-        } else if (fullName.trim().length() < 2) {
-            errors.put("fullName", "Full name must be at least 2 characters");
-        } else if (fullName.trim().length() > 100) {
-            errors.put("fullName", "Full name must be less than 100 characters");
-        }
-        
-        return errors;
-    }
-    
-    private boolean isValidEmail(String email) {
-        return email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+        System.out.println("✅ Register successful for: " + user.getEmail());
+        return ResponseEntity.ok(ApiResponse.success(user, token, "Đăng ký thành công"));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> req) {
-        try {
-            System.out.println("🔍 Login request: " + req);
-            
-            // Validation
-            Map<String, String> validationErrors = validateLoginRequest(req);
-            if (!validationErrors.isEmpty()) {
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", "Validation failed");
-                errorResponse.put("details", validationErrors);
-                return ResponseEntity.status(400).body(errorResponse);
-            }
-            
-        User user = authService.login(req.get("email"), req.get("password"));
-            String token = jwtUtil.generateToken(user.getEmail());
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("user", user);
-            response.put("token", token);
-            
-            System.out.println("✅ Login successful for: " + user.getEmail());
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            System.err.println("❌ Login error: " + e.getMessage());
-            e.printStackTrace();
-            
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(500).body(errorResponse);
-        }
-    }
-    
-    private Map<String, String> validateLoginRequest(Map<String, String> req) {
-        Map<String, String> errors = new HashMap<>();
+    public ResponseEntity<ApiResponse<User>> login(@Valid @RequestBody LoginRequest request) {
+        User user = authService.login(request.getEmail(), request.getPassword());
+        String token = jwtUtil.generateToken(user.getEmail());
         
-        // Email validation
-        String email = req.get("email");
-        if (email == null || email.trim().isEmpty()) {
-            errors.put("email", "Email is required");
-        } else if (!isValidEmail(email)) {
-            errors.put("email", "Email format is invalid");
-        }
-        
-        // Password validation
-        String password = req.get("password");
-        if (password == null || password.trim().isEmpty()) {
-            errors.put("password", "Password is required");
-        } else if (password.length() < 1) {
-            errors.put("password", "Password cannot be empty");
-        }
-        
-        return errors;
+        System.out.println("✅ Login successful for: " + user.getEmail());
+        return ResponseEntity.ok(ApiResponse.success(user, token, "Đăng nhập thành công"));
     }
     
     @PostMapping("/forgot-password")
-    public ResponseEntity<Map<String, Object>> forgotPassword(@RequestBody Map<String, String> req) {
-        try {
-            // Validation
-            Map<String, String> validationErrors = validateForgotPasswordRequest(req);
-            if (!validationErrors.isEmpty()) {
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", "Validation failed");
-                errorResponse.put("details", validationErrors);
-                return ResponseEntity.status(400).body(errorResponse);
-            }
-            
-            String email = req.get("email");
-            authService.sendPasswordResetEmail(email);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Password reset link has been sent to your email");
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            System.err.println("❌ Forgot password error: " + e.getMessage());
-            e.printStackTrace();
-            
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(500).body(errorResponse);
-        }
-    }
-    
-    private Map<String, String> validateForgotPasswordRequest(Map<String, String> req) {
-        Map<String, String> errors = new HashMap<>();
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.sendPasswordResetEmail(request.getEmail());
         
-        // Email validation
-        String email = req.get("email");
-        if (email == null || email.trim().isEmpty()) {
-            errors.put("email", "Email is required");
-        } else if (!isValidEmail(email)) {
-            errors.put("email", "Email format is invalid");
-        }
-        
-        return errors;
+        return ResponseEntity.ok(ApiResponse.success(null, "Link đặt lại mật khẩu đã được gửi đến email của bạn"));
     }
     
     @GetMapping("/test")
-    public ResponseEntity<Map<String, Object>> test() {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<ApiResponse<Object>> test() {
         try {
             long userCount = userRepository.count();
-            response.put("status", "success");
-            response.put("message", "Database connection successful");
-            response.put("userCount", userCount);
+            return ResponseEntity.ok(ApiResponse.success(userCount, "Database connection successful"));
         } catch (Exception e) {
-            response.put("status", "error");
-            response.put("message", "Database connection failed: " + e.getMessage());
+            return ResponseEntity.ok(ApiResponse.error("Database connection failed: " + e.getMessage()));
         }
-        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/hello")
+    public ResponseEntity<ApiResponse<String>> hello() {
+        return ResponseEntity.ok(ApiResponse.success("Hello from backend!", "Backend is working"));
     }
     
     @GetMapping("/users")
-    public ResponseEntity<Map<String, Object>> getAllUsers() {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<ApiResponse<Object>> getAllUsers() {
+        var users = userRepository.findAll();
+        return ResponseEntity.ok(ApiResponse.success(users, "Users retrieved successfully"));
+    }
+    
+    @GetMapping("/test-static")
+    public ResponseEntity<ApiResponse<Object>> testStaticResources() {
         try {
-            var users = userRepository.findAll();
-            response.put("status", "success");
-            response.put("message", "Users retrieved successfully");
-            response.put("users", users);
-            response.put("count", users.size());
+            // Test if static resources are working
+            java.io.File uploadDir = new java.io.File("uploads");
+            java.io.File profileDir = new java.io.File("uploads/profile-images");
+            
+            java.util.Map<String, Object> data = new java.util.HashMap<>();
+            data.put("uploadDirExists", uploadDir.exists());
+            data.put("profileDirExists", profileDir.exists());
+            data.put("uploadDirPath", uploadDir.getAbsolutePath());
+            data.put("profileDirPath", profileDir.getAbsolutePath());
+            
+            if (profileDir.exists()) {
+                String[] files = profileDir.list();
+                data.put("profileImages", files);
+                data.put("imageCount", files != null ? files.length : 0);
+            }
+            
+            return ResponseEntity.ok(ApiResponse.success(data, "Static resources check completed"));
         } catch (Exception e) {
-            System.err.println("❌ Get users error: " + e.getMessage());
-            e.printStackTrace();
-            response.put("status", "error");
-            response.put("message", "Failed to get users: " + e.getMessage());
+            return ResponseEntity.ok(ApiResponse.error("Error checking static resources: " + e.getMessage()));
         }
-        return ResponseEntity.ok(response);
+
     }
     
     @GetMapping("/profile")
-    public ResponseEntity<Map<String, Object>> getProfile(@RequestHeader("Authorization") String token) {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            // Extract email from JWT token
-            String email = jwtUtil.getEmailFromToken(token.replace("Bearer ", ""));
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-            
-            response.put("status", "success");
-            response.put("user", user);
-        } catch (Exception e) {
-            System.err.println("❌ Get profile error: " + e.getMessage());
-            e.printStackTrace();
-            response.put("status", "error");
-            response.put("message", e.getMessage());
-            return ResponseEntity.status(401).body(response);
-        }
-        return ResponseEntity.ok(response);
+    public ResponseEntity<ApiResponse<User>> getProfile(Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(ApiResponse.success(user, "Profile retrieved successfully"));
     }
     
     @PutMapping("/profile")
-    public ResponseEntity<Map<String, Object>> updateProfile(
-            @RequestHeader("Authorization") String token,
-            @RequestBody Map<String, String> req) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<ApiResponse<User>> updateProfile(
+            Authentication authentication,
+            @Valid @RequestBody ProfileUpdateRequest request) {
+        
+        User user = (User) authentication.getPrincipal();
+        
+        // Update user fields
+        if (request.getFullName() != null) {
+            user.setFullName(request.getFullName());
+        }
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone());
+        }
+        if (request.getAddress() != null) {
+            user.setAddress(request.getAddress());
+        }
+        
+        user.setUpdatedAt(LocalDateTime.now());
+        User updatedUser = userRepository.save(user);
+        
+        return ResponseEntity.ok(ApiResponse.success(updatedUser, "Profile updated successfully"));
+    }
+    
+    @PostMapping("/upload-avatar")
+    public ResponseEntity<ApiResponse<User>> uploadAvatar(
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication) {
+        
+        User user = (User) authentication.getPrincipal();
+        
         try {
-            // Extract email from JWT token
-            String email = jwtUtil.getEmailFromToken(token.replace("Bearer ", ""));
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            // Upload file and get file path
+            String filePath = fileUploadService.uploadProfileImage(file);
             
-            // Validation
-            Map<String, String> validationErrors = validateProfileUpdate(req);
-            if (!validationErrors.isEmpty()) {
-                response.put("error", "Validation failed");
-                response.put("details", validationErrors);
-                return ResponseEntity.status(400).body(response);
-            }
+            // Create full URL for the uploaded image
+            String fullImageUrl = "http://localhost:8080/" + filePath;
             
-            // Update user fields
-            if (req.containsKey("fullName")) {
-                user.setFullName(req.get("fullName"));
-            }
-            if (req.containsKey("phone")) {
-                user.setPhone(req.get("phone"));
-            }
-            if (req.containsKey("address")) {
-                user.setAddress(req.get("address"));
-            }
-            
-            user.setUpdatedAt(java.time.LocalDateTime.now());
+            // Update user's profile image with full URL
+            user.setProfileImage(fullImageUrl);
+            user.setUpdatedAt(LocalDateTime.now());
             User updatedUser = userRepository.save(user);
             
-            response.put("status", "success");
-            response.put("message", "Profile updated successfully");
-            response.put("user", updatedUser);
-            
+            System.out.println("✅ Avatar updated for user: " + user.getEmail() + ", Full URL: " + fullImageUrl);
+            return ResponseEntity.ok(ApiResponse.success(updatedUser, "Avatar updated successfully"));
         } catch (Exception e) {
-            System.err.println("❌ Update profile error: " + e.getMessage());
+            System.err.println("❌ Avatar upload error: " + e.getMessage());
             e.printStackTrace();
-            response.put("status", "error");
-            response.put("message", e.getMessage());
-            return ResponseEntity.status(500).body(response);
+            return ResponseEntity.status(500).body(ApiResponse.error("Failed to upload avatar: " + e.getMessage()));
         }
-        return ResponseEntity.ok(response);
     }
-    
-    private Map<String, String> validateProfileUpdate(Map<String, String> req) {
-        Map<String, String> errors = new HashMap<>();
+
+    @PostMapping("/remove-avatar")
+    public ResponseEntity<ApiResponse<User>> removeAvatar(Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
         
-        // Full name validation
-        if (req.containsKey("fullName")) {
-            String fullName = req.get("fullName");
-            if (fullName == null || fullName.trim().isEmpty()) {
-                errors.put("fullName", "Full name is required");
-            } else if (fullName.trim().length() < 2) {
-                errors.put("fullName", "Full name must be at least 2 characters");
-            } else if (fullName.trim().length() > 100) {
-                errors.put("fullName", "Full name must be less than 100 characters");
-            }
-        }
+        // Remove profile image
+        user.setProfileImage(null);
+        user.setUpdatedAt(LocalDateTime.now());
+        User updatedUser = userRepository.save(user);
         
-        // Phone validation
-        if (req.containsKey("phone")) {
-            String phone = req.get("phone");
-            if (phone == null || phone.trim().isEmpty()) {
-                errors.put("phone", "Phone is required");
-            } else if (phone.trim().length() < 10) {
-                errors.put("phone", "Phone must be at least 10 characters");
-            }
-        }
-        
-        // Address validation
-        if (req.containsKey("address")) {
-            String address = req.get("address");
-            if (address == null || address.trim().isEmpty()) {
-                errors.put("address", "Address is required");
-            } else if (address.trim().length() < 10) {
-                errors.put("address", "Address must be at least 10 characters");
-            }
-        }
-        
-        return errors;
+        System.out.println("✅ Avatar removed for user: " + user.getEmail());
+        return ResponseEntity.ok(ApiResponse.success(updatedUser, "Avatar removed successfully"));
     }
-    
+
     @PostMapping("/google")
-    public ResponseEntity<Map<String, Object>> googleAuth(@RequestBody Map<String, String> req) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<ApiResponse<User>> googleAuth(@RequestBody java.util.Map<String, String> req) {
         try {
             String credential = req.get("credential");
             System.out.println("🔍 Google OAuth credential received");
@@ -381,81 +223,101 @@ public class AuthController {
                 // Generate JWT token
                 String token = jwtUtil.generateToken(user.getEmail());
                 
-                response.put("status", "success");
-                response.put("message", "Google authentication successful");
-                response.put("user", user);
-                response.put("token", token);
-                
+                return ResponseEntity.ok(ApiResponse.success(user, token, "Google authentication successful"));
             } else {
                 throw new RuntimeException("Invalid Google credential format");
             }
-            
-        } catch (Exception e) {
+        } 
+        catch (Exception e) {
             System.err.println("❌ Google auth error: " + e.getMessage());
             e.printStackTrace();
-            response.put("status", "error");
-            response.put("message", e.getMessage());
-            return ResponseEntity.status(500).body(response);
+            return ResponseEntity.status(500).body(ApiResponse.error("Google authentication failed: " + e.getMessage()));
         }
-        return ResponseEntity.ok(response);
+
     }
     
     @PostMapping("/reset-password")
-    public ResponseEntity<Map<String, Object>> resetPassword(@RequestBody Map<String, String> req) {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            String resetToken = req.get("resetToken");
-            String newPassword = req.get("newPassword");
-            
-            // Validation
-            if (resetToken == null || resetToken.trim().isEmpty()) {
-                response.put("error", "Reset token is required");
-                return ResponseEntity.status(400).body(response);
-            }
-            
-            if (newPassword == null || newPassword.trim().isEmpty()) {
-                response.put("error", "New password is required");
-                return ResponseEntity.status(400).body(response);
-            }
-            
-            if (newPassword.length() < 6) {
-                response.put("error", "Password must be at least 6 characters");
-                return ResponseEntity.status(400).body(response);
-            }
-            
-            User user = authService.resetPasswordWithToken(resetToken, newPassword);
-            
-            response.put("status", "success");
-            response.put("message", "Password reset successfully");
-            response.put("user", user);
-            
-        } catch (Exception e) {
-            System.err.println("❌ Reset password error: " + e.getMessage());
-            e.printStackTrace();
-            response.put("status", "error");
-            response.put("message", e.getMessage());
-            return ResponseEntity.status(500).body(response);
-        }
-        return ResponseEntity.ok(response);
+    public ResponseEntity<ApiResponse<User>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        User user = authService.resetPasswordWithToken(request.getResetToken(), request.getNewPassword());
+        
+        return ResponseEntity.ok(ApiResponse.success(user, "Password reset successfully"));
     }
     
     @GetMapping("/validate-reset-token")
-    public ResponseEntity<Map<String, Object>> validateResetToken(@RequestParam String token) {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            boolean isValid = authService.validateResetToken(token);
-            
-            response.put("status", "success");
-            response.put("valid", isValid);
-            response.put("message", isValid ? "Token is valid" : "Token is invalid or expired");
-            
-        } catch (Exception e) {
-            System.err.println("❌ Validate token error: " + e.getMessage());
-            e.printStackTrace();
-            response.put("status", "error");
-            response.put("message", e.getMessage());
-            return ResponseEntity.status(500).body(response);
+    public ResponseEntity<ApiResponse<Boolean>> validateResetToken(@RequestParam String token) {
+        boolean isValid = authService.validateResetToken(token);
+        
+        return ResponseEntity.ok(ApiResponse.success(isValid, 
+            isValid ? "Token is valid" : "Token is invalid or expired"));
+    }
+    
+    @PostMapping("/verify-email")
+    public ResponseEntity<ApiResponse<User>> verifyEmail(@RequestBody java.util.Map<String, String> req) {
+        String verificationToken = req.get("token");
+        
+        if (verificationToken == null || verificationToken.trim().isEmpty()) {
+            throw new IllegalArgumentException("Verification token is required");
         }
-        return ResponseEntity.ok(response);
+        
+        User user = authService.verifyEmail(verificationToken);
+        
+        return ResponseEntity.ok(ApiResponse.success(user, "Email verified successfully"));
+    }
+    
+    @GetMapping("/validate-verification-token")
+    public ResponseEntity<ApiResponse<Boolean>> validateVerificationToken(@RequestParam String token) {
+        boolean isValid = authService.validateVerificationToken(token);
+        
+        return ResponseEntity.ok(ApiResponse.success(isValid, 
+            isValid ? "Token is valid" : "Token is invalid or expired"));
+    }
+    
+    @PostMapping("/resend-verification")
+    public ResponseEntity<ApiResponse<Void>> resendVerificationEmail(@RequestBody java.util.Map<String, String> req) {
+        String email = req.get("email");
+        
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+        
+        authService.resendVerificationEmail(email);
+        
+        return ResponseEntity.ok(ApiResponse.success(null, "Verification email sent successfully"));
+    }
+    
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse<User>> changePassword(
+            Authentication authentication,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        
+        User user = (User) authentication.getPrincipal();
+        String email = user.getEmail();
+        
+        User updatedUser = authService.changePassword(email, request.getCurrentPassword(), request.getNewPassword());
+        
+        return ResponseEntity.ok(ApiResponse.success(updatedUser, "Password changed successfully"));
+    }
+    
+    @PostMapping("/upload-profile-image")
+    public ResponseEntity<ApiResponse<User>> uploadProfileImage(
+            Authentication authentication,
+            @RequestParam("image") MultipartFile imageFile) {
+        
+        User user = (User) authentication.getPrincipal();
+        String email = user.getEmail();
+        
+        User updatedUser = authService.updateProfileImage(email, imageFile);
+        
+        return ResponseEntity.ok(ApiResponse.success(updatedUser, "Profile image updated successfully"));
+    }
+    
+    @DeleteMapping("/remove-profile-image")
+    public ResponseEntity<ApiResponse<User>> removeProfileImage(Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        String email = user.getEmail();
+        
+        User updatedUser = authService.removeProfileImage(email);
+        
+        return ResponseEntity.ok(ApiResponse.success(updatedUser, "Profile image removed successfully"));
     }
 }

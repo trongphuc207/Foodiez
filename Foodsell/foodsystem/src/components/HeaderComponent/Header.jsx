@@ -2,17 +2,23 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ButtonInputSearch from "../ButtonInputSearch/ButtonInputSearch";
 import LoginSignUp from "../LoginSignUpComponent/LoginSignUp";
+import Cart from "../CartComponent/Cart";
 import { isAuthenticated, removeAuthToken } from "../../api/auth";
+import { useCart } from "../../contexts/CartContext";
 import "./Header.css";
 
 const Header = ({ toggleSidebar }) => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showNavbar, setShowNavbar] = useState(false);
+  const [showCart, setShowCart] = useState(false);
 
   // NEW: state mở modal và mode (login/signup)
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [userLoggedIn, setUserLoggedIn] = useState(isAuthenticated());
+
+  // Cart context
+  const { getTotalItems } = useCart();
 
   // Đóng modal khi bấm ESC
   useEffect(() => {
@@ -113,7 +119,12 @@ const Header = ({ toggleSidebar }) => {
 
           <button className="action-btn contact-btn">📞 Liên hệ</button>
 
-          <button className="cart-btn">🛒 Giỏ hàng (0)</button>
+          <button 
+            className="cart-btn"
+            onClick={() => setShowCart(true)}
+          >
+            🛒 Giỏ hàng ({getTotalItems()})
+          </button>
 
           <button className="order-btn">Đặt hàng ngay</button>
 
@@ -143,9 +154,15 @@ const Header = ({ toggleSidebar }) => {
                   </>
                 ) : (
                   <>
-        <a href="/profile" className="dropdown-item">
+        <button
+          className="dropdown-item"
+          onClick={() => {
+            navigate('/profile');
+            setShowUserDropdown(false);
+          }}
+        >
           👤 Thông tin cá nhân
-        </a>
+        </button>
                     <button
                       className="dropdown-item"
                       onClick={handleLogout}
@@ -171,6 +188,12 @@ const Header = ({ toggleSidebar }) => {
           </div>
         </div>
       )}
+
+      {/* === Cart Modal === */}
+      <Cart 
+        isOpen={showCart} 
+        onClose={() => setShowCart(false)} 
+      />
     </header>
   );
 };

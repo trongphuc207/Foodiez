@@ -21,15 +21,6 @@ export const routes = [
             path: '/products',
             component: ProductPage,
             isShowHeader: true
-
-        },
-        {
-            path: '*',
-            component: NotFoundPage
-        },
-        {
-            path: '/iformation',
-            component: InformationPage
         },
         {
             path: '/profile',
@@ -40,5 +31,13 @@ export const routes = [
             path: '/reset-password',
             component: ResetPasswordPage,
             isShowHeader: false
+        },
+        {
+            path: '/iformation',
+            component: InformationPage
+        },
+        {
+            path: '*',
+            component: NotFoundPage
         }   
     ];

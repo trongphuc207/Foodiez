@@ -12,6 +12,12 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    @Column(name = "shop_id")
+    private int shopId;
+
+    @Column(name = "category_id")
+    private int categoryId;
+
     private String name;
     private String description;
     private double price;
@@ -24,12 +30,26 @@ public class Product {
 
     private String status;
 
-    // NEW
-    @Column(name = "shop_id")
-    private int shopId;
-
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    // Default constructor
+    public Product() {}
+
+    // Constructor for sample data
+    public Product(int shopId, int categoryId, String name, String description, double price, boolean available, String imageUrl, String status) {
+        this.shopId = shopId;
+        this.categoryId = categoryId;
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.available = available;
+        this.imageUrl = imageUrl;
+        this.status = status;
+    }
 
     // Auto set khi insert/update
     @PrePersist

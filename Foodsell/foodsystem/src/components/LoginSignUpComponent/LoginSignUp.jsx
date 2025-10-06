@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import './LoginSignUp.css';
-import { authAPI, setAuthToken } from '../../api/auth';
+import { useAuth } from '../../hooks/useAuth'; // Custom hook for auth context
+import { useLogin, useRegister, useForgotPassword } from '../../hooks/useAuthQueries'; // React Query hooks
+import { useForm } from '../../hooks/useCommon'; // Custom form hook
 import GoogleAuth from '../GoogleAuth/GoogleAuth';
 
 import user_icon from '../Assets/person.png';
@@ -9,137 +11,118 @@ import password_icon from '../Assets/password.png';
 
 const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
   const [mode, setMode] = useState(defaultMode); // 'signup' | 'login' | 'forgot'
-  const [form, setForm] = useState({
-    fullName: '',
-    username: '',
+  const { logout } = useAuth(); // Assuming useAuth provides logout, though not directly used here for login/signup
+  
+  // React Query mutations
+  const loginMutation = useLogin();
+  const registerMutation = useRegister();
+  const forgotPasswordMutation = useForgotPassword();
+  
+  // Form handling using custom useForm hook
+  const loginForm = useForm({
     email: '',
     password: '',
-    birthday: '',
-    address: '',
-  });
-  const [forgotForm, setForgotForm] = useState({
+  }, validateLogin);
+  
+  const signupForm = useForm({
+    fullName: '',
     email: '',
-  });
-  const [errors, setErrors] = useState({});
-  const [forgotErrors, setForgotErrors] = useState({});
-  const [loading, setLoading] = useState(false);
+    password: '',
+  }, validateSignup);
+  
+  const forgotForm = useForm({
+    email: '',
+  }, validateForgot);
 
-  const onChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+  // Helper to get current form's values/errors/handlers
+  const getCurrentForm = () => {
+    if (mode === 'signup') return signupForm;
+    if (mode === 'forgot') return forgotForm;
+    return loginForm;
   };
 
-  const onForgotChange = (e) => {
-    const { name, value } = e.target;
-    setForgotForm((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
-    if (forgotErrors[name]) {
-      setForgotErrors(prev => ({ ...prev, [name]: '' }));
+  // Validation functions
+  const validateLogin = (values) => {
+    const errors = {};
+    if (!values.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!isValidEmail(values.email)) {
+      errors.email = 'Email format is invalid';
     }
+    if (!values.password) {
+      errors.password = 'Password is required';
+    }
+    return errors;
   };
 
-  const validate = () => {
-    const err = {};
-    
-    // Email validation
-    if (!form.email.trim()) {
-      err.email = 'Email is required';
-    } else if (!isValidEmail(form.email)) {
-      err.email = 'Email format is invalid';
+  const validateSignup = (values) => {
+    const errors = {};
+    if (!values.fullName.trim()) {
+      errors.fullName = 'Full name is required';
+    } else if (values.fullName.trim().length < 2) {
+      errors.fullName = 'Full name must be at least 2 characters';
+    } else if (values.fullName.trim().length > 100) {
+      errors.fullName = 'Full name must be less than 100 characters';
     }
-    
-    // Password validation
-    if (!form.password) {
-      err.password = 'Password is required';
-    } else if (form.password.length < 6) {
-      err.password = 'Password must be at least 6 characters';
-    } else if (form.password.length > 50) {
-      err.password = 'Password must be less than 50 characters';
+    if (!values.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!isValidEmail(values.email)) {
+      errors.email = 'Email format is invalid';
     }
-    
-    // Full name validation (for signup only)
-    if (mode === 'signup') {
-      if (!form.fullName.trim()) {
-        err.fullName = 'Full name is required';
-      } else if (form.fullName.trim().length < 2) {
-        err.fullName = 'Full name must be at least 2 characters';
-      } else if (form.fullName.trim().length > 100) {
-        err.fullName = 'Full name must be less than 100 characters';
-      }
+    if (!values.password) {
+      errors.password = 'Password is required';
+    } else if (values.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    } else if (values.password.length > 50) {
+      errors.password = 'Password must be less than 50 characters';
     }
-    
-    return err;
+    return errors;
+  };
+
+  const validateForgot = (values) => {
+    const errors = {};
+    if (!values.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!isValidEmail(values.email)) {
+      errors.email = 'Email format is invalid';
+    }
+    return errors;
   };
   
   const isValidEmail = (email) => {
     return /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email);
   };
 
-  const validateForgot = () => {
-    const err = {};
-    if (!forgotForm.email.trim()) {
-      err.email = 'Email is required';
-    } else if (!isValidEmail(forgotForm.email)) {
-      err.email = 'Email format is invalid';
-    }
-    return err;
-  };
-
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    const err = validate();
-    setErrors(err);
-    if (Object.keys(err).length) return;
-
-    setLoading(true);
+  // Submission handlers
+  const onSubmit = async (values) => {
     try {
       if (mode === 'signup') {
-        const response = await authAPI.register({
-          email: form.email,
-          password: form.password,
-          fullName: form.fullName
-        });
-        
-        setAuthToken(response.token);
+        await registerMutation.mutateAsync(values);
         alert('Đăng ký thành công!');
         onClose && onClose();
-        window.location.reload(); // Refresh để cập nhật trạng thái đăng nhập
+        window.location.reload();
       } else {
-        const response = await authAPI.login({
-          email: form.email,
-          password: form.password
-        });
-        
-        setAuthToken(response.token);
+        await loginMutation.mutateAsync(values);
         alert('Đăng nhập thành công!');
         onClose && onClose();
-        window.location.reload(); // Refresh để cập nhật trạng thái đăng nhập
+        window.location.reload();
       }
     } catch (error) {
       alert('Lỗi: ' + error.message);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const onForgotSubmit = async (e) => {
-    e.preventDefault();
-    const err = validateForgot();
-    setForgotErrors(err);
-    if (Object.keys(err).length) return;
-
-    setLoading(true);
+  const onForgotSubmit = async (values) => {
     try {
-      await authAPI.forgotPassword(forgotForm.email);
+      await forgotPasswordMutation.mutateAsync(values.email);
       alert('Link đặt lại mật khẩu đã được gửi đến email của bạn!');
       setMode('login');
     } catch (error) {
       alert('Lỗi: ' + error.message);
-    } finally {
-      setLoading(false);
     }
   };
 
+  const isLoading = loginMutation.isLoading || registerMutation.isLoading || forgotPasswordMutation.isLoading;
 
   return (
     <div className="auth-card">
@@ -175,109 +158,81 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
         </div>
       )}
 
-
       {/* Form */}
       {mode === 'forgot' ? (
-        <form onSubmit={onForgotSubmit} noValidate>
+        <form onSubmit={forgotForm.handleSubmit(onForgotSubmit)} noValidate>
           <div className="auth-inputs">
             <div className="auth-forgot-description">
               <p>Enter your email address and we'll send you a link to reset your password.</p>
             </div>
             
-            <div className={`auth-input ${forgotErrors.email ? 'is-error' : ''}`}>
+            <div className={`auth-input ${forgotForm.errors.email ? 'is-error' : ''}`}>
               <img src={email_icon} alt="email" />
               <input
                 type="email"
                 name="email"
                 placeholder="Email"
-                value={forgotForm.email}
-                onChange={onForgotChange}
+                value={forgotForm.values.email}
+                onChange={forgotForm.handleChange}
+                onBlur={forgotForm.handleBlur}
               />
             </div>
-            {forgotErrors.email && <div className="auth-field-error">{forgotErrors.email}</div>}
+            {forgotForm.errors.email && <div className="auth-field-error">{forgotForm.errors.email}</div>}
           </div>
 
-          <button type="submit" className="auth-submit">
-            Send Reset Link
+          <button type="submit" className="auth-submit" disabled={isLoading}>
+            {isLoading ? 'Đang gửi...' : 'Send Reset Link'}
           </button>
         </form>
       ) : (
-        <form onSubmit={onSubmit} noValidate>
+        <form onSubmit={getCurrentForm().handleSubmit(onSubmit)} noValidate>
         <div className="auth-inputs">
           {mode === 'signup' && (
             <>
-              <div className={`auth-input ${errors.fullName ? 'is-error' : ''}`}>
+              <div className={`auth-input ${signupForm.errors.fullName ? 'is-error' : ''}`}>
                 <span className="auth-icon">👤</span>
                 <input
                   type="text"
                   name="fullName"
                   placeholder="Full Name"
-                  value={form.fullName}
-                  onChange={onChange}
+                  value={signupForm.values.fullName}
+                  onChange={signupForm.handleChange}
+                  onBlur={signupForm.handleBlur}
                 />
               </div>
-              {errors.fullName && <div className="auth-field-error">{errors.fullName}</div>}
-
-              <div className={`auth-input ${errors.username ? 'is-error' : ''}`}>
-                <img src={user_icon} alt="user" />
-                <input
-                  type="text"
-                  name="username"
-                  placeholder="Username"
-                  value={form.username}
-                  onChange={onChange}
-                />
-              </div>
-              {errors.username && <div className="auth-field-error">{errors.username}</div>}
-
-              <div className={`auth-input ${errors.birthday ? 'is-error' : ''}`}>
-                <span className="auth-icon">📅</span>
-                <input
-                  type="date"
-                  name="birthday"
-                  value={form.birthday}
-                  onChange={onChange}
-                />
-              </div>
-              {errors.birthday && <div className="auth-field-error">{errors.birthday}</div>}
-
-              <div className={`auth-input ${errors.address ? 'is-error' : ''}`}>
-                <span className="auth-icon">🏠</span>
-                <input
-                  type="text"
-                  name="address"
-                  placeholder="Address"
-                  value={form.address}
-                  onChange={onChange}
-                />
-              </div>
-              {errors.address && <div className="auth-field-error">{errors.address}</div>}
+              {signupForm.errors.fullName && <div className="auth-field-error">{signupForm.errors.fullName}</div>}
             </>
           )}
 
-          <div className={`auth-input ${errors.email ? 'is-error' : ''}`}>
+          <div className={`auth-input ${getCurrentForm().errors.email ? 'is-error' : ''}`}>
             <img src={email_icon} alt="email" />
             <input
               type="email"
               name="email"
               placeholder="Email"
-              value={form.email}
-              onChange={onChange}
+              value={getCurrentForm().values.email}
+              onChange={getCurrentForm().handleChange}
+              onBlur={getCurrentForm().handleBlur}
             />
           </div>
-          {errors.email && <div className="auth-field-error">{errors.email}</div>}
+          {getCurrentForm().errors.email && <div className="auth-field-error">{getCurrentForm().errors.email}</div>}
 
-          <div className={`auth-input ${errors.password ? 'is-error' : ''}`}>
-            <img src={password_icon} alt="password" />
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={form.password}
-              onChange={onChange}
-            />
-          </div>
-          {errors.password && <div className="auth-field-error">{errors.password}</div>}
+          {mode !== 'forgot' && (
+            <>
+              <div className={`auth-input ${getCurrentForm().errors.password ? 'is-error' : ''}`}>
+                <img src={password_icon} alt="password" />
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="Password"
+                  value={getCurrentForm().values.password}
+                  onChange={getCurrentForm().handleChange}
+                  onBlur={getCurrentForm().handleBlur}
+                />
+              </div>
+              {getCurrentForm().errors.password && <div className="auth-field-error">{getCurrentForm().errors.password}</div>}
+            </>
+          )}
         </div>
 
         {mode === 'login' && (
@@ -317,8 +272,8 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
           </div>
         )}
 
-        <button type="submit" className="auth-submit" disabled={loading}>
-          {loading ? 'Đang xử lý...' : (mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send Reset Link' : 'Sign in')}
+        <button type="submit" className="auth-submit" disabled={isLoading}>
+          {isLoading ? 'Đang xử lý...' : (mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send Reset Link' : 'Sign in')}
         </button>
       </form>
       )}

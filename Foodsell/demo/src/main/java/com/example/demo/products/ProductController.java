@@ -28,4 +28,10 @@ public List<Product> searchProducts(@RequestParam String keyword) {
     public Product createProduct(@RequestBody Product product) {
         return service.createProduct(product);
     }
+    
+    // GET: Tạo dữ liệu mẫu
+    @GetMapping("/seed")
+    public String seedData() {
+        return service.seedData();
+    }
 }
