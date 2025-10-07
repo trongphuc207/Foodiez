@@ -7,6 +7,7 @@ public class ApiResponse<T> {
     private String message;
     private T data;
     private Map<String, Object> errors;
+    private String token; // Add token field
     
     // Constructor
     public ApiResponse() {}
@@ -34,11 +35,12 @@ public class ApiResponse<T> {
         return response;
     }
     
-    public static <T> ApiResponse<T> success(T data, String token, String message) {
+    public static <T> ApiResponse<T> successWithToken(T data, String token, String message) {
         ApiResponse<T> response = new ApiResponse<>();
         response.success = true;
         response.data = data;
         response.message = message;
+        response.token = token;
         return response;
     }
     
@@ -57,7 +59,7 @@ public class ApiResponse<T> {
         return response;
     }
     
-    // Getters and Setters
+    
     public boolean isSuccess() {
         return success;
     }
@@ -88,5 +90,13 @@ public class ApiResponse<T> {
     
     public void setErrors(Map<String, Object> errors) {
         this.errors = errors;
+    }
+    
+    public String getToken() {
+        return token;
+    }
+    
+    public void setToken(String token) {
+        this.token = token;
     }
 }

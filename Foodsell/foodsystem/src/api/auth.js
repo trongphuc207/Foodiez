@@ -18,10 +18,20 @@ export const authAPI = {
         const errorMessages = Object.values(errorData.details).join(', ');
         throw new Error(errorMessages);
       }
-      throw new Error(errorData.error || 'Đăng ký thất bại');
+      throw new Error(errorData.message || 'Đăng ký thất bại');
     }
     
-    return response.json();
+    const result = await response.json();
+    // Backend trả về { success: true, data: user, token: "...", message: "..." }
+    if (result.success && result.data && result.token) {
+      return {
+        success: true,
+        data: result.data,
+        token: result.token,
+        message: result.message
+      };
+    }
+    return result;
   },
 
   // Đăng nhập
@@ -41,10 +51,20 @@ export const authAPI = {
         const errorMessages = Object.values(errorData.details).join(', ');
         throw new Error(errorMessages);
       }
-      throw new Error(errorData.error || 'Đăng nhập thất bại');
+      throw new Error(errorData.message || 'Đăng nhập thất bại');
     }
     
-    return response.json();
+    const result = await response.json();
+    // Backend trả về { success: true, data: user, token: "...", message: "..." }
+    if (result.success && result.data && result.token) {
+      return {
+        success: true,
+        data: result.data,
+        token: result.token,
+        message: result.message
+      };
+    }
+    return result;
   },
 
   // Quên mật khẩu

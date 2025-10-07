@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './LoginSignUp.css';
 import { useAuth } from '../../hooks/useAuth'; // Custom hook for auth context
 import { useLogin, useRegister, useForgotPassword } from '../../hooks/useAuthQueries'; // React Query hooks
@@ -12,36 +13,14 @@ import password_icon from '../Assets/password.png';
 const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
   const [mode, setMode] = useState(defaultMode); // 'signup' | 'login' | 'forgot'
   const { logout } = useAuth(); // Assuming useAuth provides logout, though not directly used here for login/signup
+  const navigate = useNavigate();
   
-  // React Query mutations
-  const loginMutation = useLogin();
-  const registerMutation = useRegister();
-  const forgotPasswordMutation = useForgotPassword();
-  
-  // Form handling using custom useForm hook
-  const loginForm = useForm({
-    email: '',
-    password: '',
-  }, validateLogin);
-  
-  const signupForm = useForm({
-    fullName: '',
-    email: '',
-    password: '',
-  }, validateSignup);
-  
-  const forgotForm = useForm({
-    email: '',
-  }, validateForgot);
-
-  // Helper to get current form's values/errors/handlers
-  const getCurrentForm = () => {
-    if (mode === 'signup') return signupForm;
-    if (mode === 'forgot') return forgotForm;
-    return loginForm;
+  // Helper function for email validation
+  const isValidEmail = (email) => {
+    return /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email);
   };
 
-  // Validation functions
+  // Validation functions - moved before useForm calls
   const validateLogin = (values) => {
     const errors = {};
     if (!values.email.trim()) {
@@ -89,8 +68,32 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
     return errors;
   };
   
-  const isValidEmail = (email) => {
-    return /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email);
+  // React Query mutations
+  const loginMutation = useLogin();
+  const registerMutation = useRegister();
+  const forgotPasswordMutation = useForgotPassword();
+  
+  // Form handling using custom useForm hook
+  const loginForm = useForm({
+    email: '',
+    password: '',
+  }, validateLogin);
+  
+  const signupForm = useForm({
+    fullName: '',
+    email: '',
+    password: '',
+  }, validateSignup);
+  
+  const forgotForm = useForm({
+    email: '',
+  }, validateForgot);
+
+  // Helper to get current form's values/errors/handlers
+  const getCurrentForm = () => {
+    if (mode === 'signup') return signupForm;
+    if (mode === 'forgot') return forgotForm;
+    return loginForm;
   };
 
   // Submission handlers
@@ -100,12 +103,12 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
         await registerMutation.mutateAsync(values);
         alert('Đăng ký thành công!');
         onClose && onClose();
-        window.location.reload();
+        // Don't navigate, let the header update automatically
       } else {
         await loginMutation.mutateAsync(values);
         alert('Đăng nhập thành công!');
         onClose && onClose();
-        window.location.reload();
+        // Don't navigate, let the header update automatically
       }
     } catch (error) {
       alert('Lỗi: ' + error.message);
@@ -144,13 +147,13 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
         <div className="auth-social">
           <GoogleAuth 
             onSuccess={(data) => {
-              console.log('Google login success:', data);
-              alert('Đăng nhập Google thành công! Chào mừng ' + data.user.fullName);
+              console.log('🎉 Google login success:', data);
+              alert('Đăng nhập Google thành công! Chào mừng ' + data.data.fullName);
               onClose && onClose();
-              window.location.reload();
+              // Don't navigate, let the header update automatically
             }}
             onError={(error) => {
-              console.error('Google login error:', error);
+              console.error('❌ Google login error:', error);
               alert('Lỗi đăng nhập Google: ' + error.message);
             }}
           />

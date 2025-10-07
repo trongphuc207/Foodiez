@@ -34,7 +34,7 @@ public class AuthController {
         String token = jwtUtil.generateToken(user.getEmail());
         
         System.out.println("✅ Register successful for: " + user.getEmail());
-        return ResponseEntity.ok(ApiResponse.success(user, token, "Đăng ký thành công"));
+        return ResponseEntity.ok(ApiResponse.successWithToken(user, token, "Đăng ký thành công"));
     }
 
     @PostMapping("/login")
@@ -43,7 +43,7 @@ public class AuthController {
         String token = jwtUtil.generateToken(user.getEmail());
         
         System.out.println("✅ Login successful for: " + user.getEmail());
-        return ResponseEntity.ok(ApiResponse.success(user, token, "Đăng nhập thành công"));
+        return ResponseEntity.ok(ApiResponse.successWithToken(user, token, "Đăng nhập thành công"));
     }
     
     @PostMapping("/forgot-password")

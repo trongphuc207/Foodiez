@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ButtonInputSearch from "../ButtonInputSearch/ButtonInputSearch";
 import LoginSignUp from "../LoginSignUpComponent/LoginSignUp";
 import Cart from "../CartComponent/Cart";
-import { isAuthenticated, removeAuthToken } from "../../api/auth";
+import { useAuth } from "../../hooks/useAuth";
 import { useCart } from "../../contexts/CartContext";
 import "./Header.css";
 
@@ -15,7 +15,9 @@ const Header = ({ toggleSidebar }) => {
   // NEW: state mở modal và mode (login/signup)
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("login");
-  const [userLoggedIn, setUserLoggedIn] = useState(isAuthenticated());
+
+  // Use useAuth hook instead of isAuthenticated()
+  const { user, logout, isAuthenticated } = useAuth();
 
   // Cart context
   const { getTotalItems } = useCart();
@@ -42,16 +44,10 @@ const Header = ({ toggleSidebar }) => {
   };
 
   const handleLogout = () => {
-    removeAuthToken();
-    setUserLoggedIn(false);
+    logout();
     setShowUserDropdown(false);
     alert('Đã đăng xuất!');
   };
-
-  // Cập nhật trạng thái đăng nhập khi component mount
-  useEffect(() => {
-    setUserLoggedIn(isAuthenticated());
-  }, []);
 
   return (
     <header className="header">
@@ -137,7 +133,7 @@ const Header = ({ toggleSidebar }) => {
             </button>
             {showUserDropdown && (
               <div className="user-dropdown-menu">
-                {!userLoggedIn ? (
+                {!isAuthenticated ? (
                   <>
                     <button
                       className="dropdown-item"
@@ -154,15 +150,19 @@ const Header = ({ toggleSidebar }) => {
                   </>
                 ) : (
                   <>
-        <button
-          className="dropdown-item"
-          onClick={() => {
-            navigate('/profile');
-            setShowUserDropdown(false);
-          }}
-        >
-          👤 Thông tin cá nhân
-        </button>
+                    <div className="user-info">
+                      <span className="user-name">{user?.fullName}</span>
+                      <span className="user-role">{user?.role}</span>
+                    </div>
+                    <button
+                      className="dropdown-item"
+                      onClick={() => {
+                        navigate('/profile');
+                        setShowUserDropdown(false);
+                      }}
+                    >
+                      👤 Thông tin cá nhân
+                    </button>
                     <button
                       className="dropdown-item"
                       onClick={handleLogout}

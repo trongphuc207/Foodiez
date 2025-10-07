@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authAPI } from '../api/auth';
+import { authAPI, setAuthToken, getAuthToken } from '../api/auth';
 
 // Query keys
 export const authKeys = {
@@ -13,7 +13,7 @@ export const useProfile = () => {
   return useQuery({
     queryKey: authKeys.profile(),
     queryFn: authAPI.getProfile,
-    enabled: !!authAPI.getAuthToken(),
+    enabled: !!getAuthToken(),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
@@ -33,8 +33,14 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: authAPI.login,
     onSuccess: (data) => {
-      // Invalidate and refetch profile
+      // Set token and user data
+      setAuthToken(data.token);
+      // Invalidate and refetch profile to update UI immediately
       queryClient.invalidateQueries({ queryKey: authKeys.profile() });
+      // Force refetch profile data
+      queryClient.refetchQueries({ queryKey: authKeys.profile() });
+      // Dispatch custom event to notify components
+      window.dispatchEvent(new CustomEvent('authSuccess', { detail: data }));
     },
   });
 };
@@ -45,8 +51,14 @@ export const useRegister = () => {
   return useMutation({
     mutationFn: authAPI.register,
     onSuccess: (data) => {
-      // Invalidate and refetch profile
+      // Set token and user data
+      setAuthToken(data.token);
+      // Invalidate and refetch profile to update UI immediately
       queryClient.invalidateQueries({ queryKey: authKeys.profile() });
+      // Force refetch profile data
+      queryClient.refetchQueries({ queryKey: authKeys.profile() });
+      // Dispatch custom event to notify components
+      window.dispatchEvent(new CustomEvent('authSuccess', { detail: data }));
     },
   });
 };

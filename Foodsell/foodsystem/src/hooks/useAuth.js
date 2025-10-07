@@ -1,29 +1,47 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { authAPI, getAuthToken, setAuthToken, removeAuthToken } from '../api/auth';
 
 export const useAuth = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadProfile = useCallback(async () => {
     const token = getAuthToken();
+    console.log('🔍 useAuth: Checking token:', !!token);
+    
     if (token) {
-      authAPI.getProfile()
-        .then(response => {
-          // Backend trả về { success: true, data: user, message: "..." }
-          setUser(response.data);
-        })
-        .catch((error) => {
-          console.error('Error loading profile:', error);
-          removeAuthToken();
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+      console.log('🔍 useAuth: Token found, loading profile...');
+      try {
+        const response = await authAPI.getProfile();
+        console.log('✅ useAuth: Profile loaded successfully:', response);
+        // Backend trả về { success: true, data: user, message: "..." }
+        setUser(response.data);
+      } catch (error) {
+        console.error('❌ useAuth: Error loading profile:', error);
+        removeAuthToken();
+        setUser(null);
+      }
     } else {
-      setLoading(false);
+      console.log('🔍 useAuth: No token found');
+      setUser(null);
     }
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
+
+  // Listen for auth success events
+  useEffect(() => {
+    const handleAuthSuccess = () => {
+      console.log('🔔 useAuth: Received authSuccess event, refreshing profile...');
+      loadProfile();
+    };
+
+    window.addEventListener('authSuccess', handleAuthSuccess);
+    return () => window.removeEventListener('authSuccess', handleAuthSuccess);
+  }, [loadProfile]);
 
   const login = async (credentials) => {
     try {
@@ -111,6 +129,7 @@ export const useAuth = () => {
     removeAvatar,
     forgotPassword,
     resetPassword,
-    isAuthenticated: !!user 
+    isAuthenticated: !!user,
+    refreshProfile: loadProfile // Add function to refresh profile
   };
 };

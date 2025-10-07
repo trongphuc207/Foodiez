@@ -6,11 +6,11 @@ import { setAuthToken } from '../../api/auth';
 const GoogleAuth = ({ onSuccess, onError }) => {
   const handleSuccess = async (credentialResponse) => {
     try {
-      console.log('Google login successful');
+      console.log('🔍 Google login successful, credential received');
       
       // Decode the JWT token to get user info
       const decoded = jwtDecode(credentialResponse.credential);
-      console.log('Decoded user info:', decoded);
+      console.log('👤 Decoded user info:', decoded);
       
       // Send the credential to your backend
       const response = await fetch('http://localhost:8080/api/auth/google', {
@@ -23,22 +23,29 @@ const GoogleAuth = ({ onSuccess, onError }) => {
         }),
       });
       
+      console.log('📡 Backend response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        console.log('Google auth response:', data);
+        console.log('✅ Google auth response:', data);
         
-        if (data.status === 'success') {
+        if (data.success) {
+          console.log('🎉 Google authentication successful!');
           setAuthToken(data.token);
+          // Dispatch custom event to notify components
+          window.dispatchEvent(new CustomEvent('authSuccess', { detail: data }));
           onSuccess && onSuccess(data);
         } else {
+          console.error('❌ Google auth failed:', data.message);
           throw new Error(data.message || 'Google authentication failed');
         }
       } else {
         const errorData = await response.json();
+        console.error('❌ Backend error:', errorData);
         throw new Error(errorData.message || 'Google authentication failed');
       }
     } catch (error) {
-      console.error('Google login error:', error);
+      console.error('❌ Google login error:', error);
       onError && onError(error);
     }
   };
