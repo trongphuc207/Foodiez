@@ -47,7 +47,7 @@ export const useAuth = () => {
     try {
       const response = await authAPI.login(credentials);
       setAuthToken(response.token);
-      setUser(response.user);
+      setUser(response.data); // Sửa từ response.user thành response.data
       return response;
     } catch (error) {
       throw error;
@@ -58,7 +58,7 @@ export const useAuth = () => {
     try {
       const response = await authAPI.register(userData);
       setAuthToken(response.token);
-      setUser(response.user);
+      setUser(response.data); // Sửa từ response.user thành response.data
       return response;
     } catch (error) {
       throw error;

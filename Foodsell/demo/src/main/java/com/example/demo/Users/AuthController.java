@@ -223,7 +223,7 @@ public class AuthController {
                 // Generate JWT token
                 String token = jwtUtil.generateToken(user.getEmail());
                 
-                return ResponseEntity.ok(ApiResponse.success(user, token, "Google authentication successful"));
+                return ResponseEntity.ok(ApiResponse.successWithToken(user, token, "Google authentication successful"));
             } else {
                 throw new RuntimeException("Invalid Google credential format");
             }

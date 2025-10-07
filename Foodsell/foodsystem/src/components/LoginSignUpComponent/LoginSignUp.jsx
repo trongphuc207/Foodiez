@@ -1,19 +1,18 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import './LoginSignUp.css';
+// eslint-disable-next-line no-unused-vars
 import { useAuth } from '../../hooks/useAuth'; // Custom hook for auth context
 import { useLogin, useRegister, useForgotPassword } from '../../hooks/useAuthQueries'; // React Query hooks
 import { useForm } from '../../hooks/useCommon'; // Custom form hook
 import GoogleAuth from '../GoogleAuth/GoogleAuth';
 
-import user_icon from '../Assets/person.png';
 import email_icon from '../Assets/email.png';
 import password_icon from '../Assets/password.png';
 
 const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
   const [mode, setMode] = useState(defaultMode); // 'signup' | 'login' | 'forgot'
-  const { logout } = useAuth(); // Assuming useAuth provides logout, though not directly used here for login/signup
-  const navigate = useNavigate();
+  // eslint-disable-next-line no-unused-vars
+  const { logout } = useAuth(); // For potential logout functionality
   
   // Helper function for email validation
   const isValidEmail = (email) => {
@@ -100,13 +99,17 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
   const onSubmit = async (values) => {
     try {
       if (mode === 'signup') {
-        await registerMutation.mutateAsync(values);
+        const result = await registerMutation.mutateAsync(values);
         alert('Đăng ký thành công!');
+        // Dispatch event để notify useAuth hook
+        window.dispatchEvent(new CustomEvent('authSuccess', { detail: result }));
         onClose && onClose();
         // Don't navigate, let the header update automatically
       } else {
-        await loginMutation.mutateAsync(values);
+        const result = await loginMutation.mutateAsync(values);
         alert('Đăng nhập thành công!');
+        // Dispatch event để notify useAuth hook
+        window.dispatchEvent(new CustomEvent('authSuccess', { detail: result }));
         onClose && onClose();
         // Don't navigate, let the header update automatically
       }
@@ -142,13 +145,15 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
         <div className="auth-underline"></div>
       </div>
 
-      {/* Google OAuth - only show for login and signup */}
+      {/* Google OAuth */}
       {mode !== 'forgot' && (
         <div className="auth-social">
           <GoogleAuth 
             onSuccess={(data) => {
               console.log('🎉 Google login success:', data);
               alert('Đăng nhập Google thành công! Chào mừng ' + data.data.fullName);
+              // Dispatch event để notify useAuth hook
+              window.dispatchEvent(new CustomEvent('authSuccess', { detail: data }));
               onClose && onClose();
               // Don't navigate, let the header update automatically
             }}
