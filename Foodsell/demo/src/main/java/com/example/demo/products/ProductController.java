@@ -34,4 +34,10 @@ public List<Product> searchProducts(@RequestParam String keyword) {
     public String seedData() {
         return service.seedData();
     }
+    
+    // GET: Test endpoint
+    @GetMapping("/test")
+    public String test() {
+        return "Products API is working!";
+    }
 }

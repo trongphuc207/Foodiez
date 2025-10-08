@@ -290,6 +290,10 @@ public class AuthController {
             Authentication authentication,
             @Valid @RequestBody ChangePasswordRequest request) {
         
+        if (authentication == null || authentication.getPrincipal() == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Authentication required"));
+        }
+        
         User user = (User) authentication.getPrincipal();
         String email = user.getEmail();
         

@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './CustomerProfile.css';
 import { isAuthenticated, authAPI } from '../../api/auth';
+import { useAuth } from '../../hooks/useAuth';
 import AvatarUpload from '../AvatarUpload/AvatarUpload';
+import ChangePasswordModal from '../ChangePasswordModal/ChangePasswordModal';
 
 const CustomerProfile = () => {
+  const { changePassword } = useAuth();
   const [activeTab, setActiveTab] = useState('info');
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
   const [showAvatarUpload, setShowAvatarUpload] = useState(false);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [applicationType, setApplicationType] = useState(null);
   const [form, setForm] = useState({
     fullName: '',
@@ -239,9 +243,20 @@ const CustomerProfile = () => {
     setIsEditing(false);
   };
 
-  const handleChangePassword = () => {
-    // TODO: Implement change password functionality
-    alert('Change password functionality will be implemented');
+  const handleChangePassword = async (currentPassword, newPassword) => {
+    // Check if user is authenticated before proceeding
+    if (!isAuthenticated()) {
+      alert('Bạn cần đăng nhập để đổi mật khẩu!');
+      return;
+    }
+    
+    try {
+      await changePassword(currentPassword, newPassword);
+      alert('Đổi mật khẩu thành công!');
+    } catch (error) {
+      alert('Lỗi: ' + error.message);
+      throw error; // Re-throw để modal có thể handle
+    }
   };
 
   const handleAvatarChange = (newAvatarPath) => {
@@ -472,7 +487,7 @@ const CustomerProfile = () => {
           </div>
           
           <div className="password-section">
-            <button className="change-password-btn" onClick={handleChangePassword}>
+            <button className="change-password-btn" onClick={() => setShowChangePasswordModal(true)}>
               Change Password
             </button>
           </div>
@@ -1124,6 +1139,13 @@ const CustomerProfile = () => {
           </div>
         </div>
       )}
+      
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={showChangePasswordModal}
+        onClose={() => setShowChangePasswordModal(false)}
+        onSubmit={handleChangePassword}
+      />
     </div>
   );
 };

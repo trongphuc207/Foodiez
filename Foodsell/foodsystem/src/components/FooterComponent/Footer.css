@@ -121,18 +121,163 @@
   color:  #f97316;
 }
 
+/* Enhanced Responsive Design */
+@media (max-width: 1200px) {
+  .footer-container {
+    padding: 0 1.5rem;
+  }
+  
+  .footer-content {
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .footer-container {
+    padding: 0 1rem;
+  }
+  
+  .footer-content {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  
+  .footer-section:first-child {
+    grid-column: 1 / -1;
+    text-align: center;
+  }
+  
+  .social-links {
+    justify-content: center;
+  }
+}
+
 @media (max-width: 768px) {
+  .footer {
+    padding: 2rem 0 1rem;
+  }
+  
   .footer-content {
     grid-template-columns: 1fr;
     gap: 1.5rem;
+    text-align: center;
+  }
+
+  .footer-section:first-child {
+    grid-column: 1;
   }
 
   .footer-bottom {
     flex-direction: column;
     text-align: center;
+    gap: 0.5rem;
   }
 
   .social-links {
-    justify-content: flex-start;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+  
+  .footer-bottom-links {
+    justify-content: center;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .footer {
+    padding: 1.5rem 0 1rem;
+  }
+  
+  .footer-container {
+    padding: 0 0.8rem;
+  }
+  
+  .footer-title {
+    font-size: 1.3rem;
+  }
+  
+  .section-title {
+    font-size: 1rem;
+  }
+  
+  .footer-description {
+    font-size: 0.9rem;
+  }
+  
+  .social-link,
+  .footer-link,
+  .contact-item {
+    font-size: 0.85rem;
+  }
+  
+  .social-links {
+    gap: 1rem;
+  }
+  
+  .footer-bottom-links {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .copyright {
+    font-size: 0.8rem;
+  }
+  
+  .bottom-link {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer {
+    padding: 1rem 0 0.5rem;
+  }
+  
+  .footer-container {
+    padding: 0 0.5rem;
+  }
+  
+  .footer-content {
+    gap: 1rem;
+  }
+  
+  .footer-title {
+    font-size: 1.2rem;
+  }
+  
+  .section-title {
+    font-size: 0.95rem;
+  }
+  
+  .footer-description {
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  
+  .social-link,
+  .footer-link,
+  .contact-item {
+    font-size: 0.8rem;
+  }
+  
+  .social-links {
+    gap: 0.8rem;
+  }
+  
+  .footer-links li {
+    margin-bottom: 0.3rem;
+  }
+  
+  .contact-info {
+    gap: 0.3rem;
+  }
+  
+  .copyright {
+    font-size: 0.75rem;
+  }
+  
+  .bottom-link {
+    font-size: 0.75rem;
   }
 }

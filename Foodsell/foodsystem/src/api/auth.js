@@ -162,6 +162,42 @@ export const authAPI = {
     return response.json();
   },
 
+  // Change password
+  changePassword: async (currentPassword, newPassword) => {
+    const token = getAuthToken();
+    
+    console.log('🔑 Change password - Token check:', token ? 'Token exists' : 'No token');
+    console.log('🔑 Token value:', token);
+    
+    if (!token) {
+      throw new Error('No authentication token found. Please login again.');
+    }
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to change password');
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Change password error:', error);
+      throw error;
+    }
+  },
+
   validateResetToken: async (token) => {
     const response = await fetch(`${API_BASE_URL}/auth/validate-reset-token?token=${token}`);
     
@@ -225,11 +261,15 @@ export const authAPI = {
 
 // Utility functions
 export const setAuthToken = (token) => {
+  console.log('🔑 Setting auth token:', token ? 'Token provided' : 'No token');
   localStorage.setItem('authToken', token);
+  console.log('🔑 Token saved to localStorage');
 };
 
 export const getAuthToken = () => {
-  return localStorage.getItem('authToken');
+  const token = localStorage.getItem('authToken');
+  console.log('🔑 Getting auth token:', token ? 'Token found' : 'No token');
+  return token;
 };
 
 export const removeAuthToken = () => {

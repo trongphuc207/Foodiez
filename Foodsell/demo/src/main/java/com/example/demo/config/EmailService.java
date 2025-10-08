@@ -15,6 +15,8 @@ public class EmailService {
     public void sendPasswordResetEmail(String to, String resetToken) {
         try {
             if (mailSender != null) {
+                System.out.println("📧 Attempting to send email to: " + to);
+                
                 SimpleMailMessage message = new SimpleMailMessage();
                 message.setTo(to);
                 message.setSubject("Reset Your Password - FoodieExpress");
@@ -36,6 +38,7 @@ public class EmailService {
                 System.out.println("✅ Password reset email sent successfully to: " + to);
             } else {
                 // Mock email sending for development
+                System.out.println("📧 [MOCK EMAIL] MailSender is null - using mock mode");
                 System.out.println("📧 [MOCK EMAIL] Password reset email would be sent to: " + to);
                 System.out.println("📧 [MOCK EMAIL] Reset token: " + resetToken);
                 System.out.println("📧 [MOCK EMAIL] Reset link: http://localhost:3000/reset-password?token=" + resetToken);
@@ -44,9 +47,12 @@ public class EmailService {
         } catch (Exception e) {
             System.err.println("❌ Failed to send email to: " + to);
             System.err.println("Error: " + e.getMessage());
-            // Don't throw exception in development mode
-            System.out.println("📧 [MOCK EMAIL] Password reset email would be sent to: " + to);
-            System.out.println("📧 [MOCK EMAIL] Reset token: " + resetToken);
+            e.printStackTrace(); // Print full stack trace for debugging
+            
+            // Fallback to mock mode
+            System.out.println("📧 [FALLBACK MOCK] Password reset email would be sent to: " + to);
+            System.out.println("📧 [FALLBACK MOCK] Reset token: " + resetToken);
+            System.out.println("📧 [FALLBACK MOCK] Reset link: http://localhost:3000/reset-password?token=" + resetToken);
         }
     }
 
