@@ -54,3 +54,4 @@ Write-Host "📝 Hướng dẫn:" -ForegroundColor Yellow
 Write-Host "1. Truy cập: http://localhost:3000/admin để upload ảnh qua giao diện" -ForegroundColor Cyan
 Write-Host "2. Hoặc sử dụng Postman với endpoint: POST /api/products/{id}/upload-image" -ForegroundColor Cyan
 Write-Host "3. Ảnh sẽ được lưu trong: demo/uploads/product-images/" -ForegroundColor Cyan
+

@@ -14,3 +14,4 @@ export const getShopName = (shopId) => {
   return SHOP_NAMES[shopId] || `Shop ${shopId}`;
 };
 
+
