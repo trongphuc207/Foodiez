@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import "./ProductDetail.css";
 import { useCart } from "../../contexts/CartContext";
+import { getShopName } from "../../constants/shopNames";
+import { getCategoryName } from "../../constants/categoryNames";
 
 const ProductDetail = ({ product, onClose }) => {
   const [quantity, setQuantity] = useState(1);
@@ -15,7 +17,7 @@ const ProductDetail = ({ product, onClose }) => {
       name: product.name,
       price: product.price,
       image: product.imageUrl ? `/images/${product.imageUrl}` : "/placeholder.svg",
-      shop: `Shop ${product.shopId}`, // Có thể lấy tên shop từ API
+      shop: getShopName(product.shopId), // Lấy tên shop thật từ API
       description: product.description,
       categoryId: product.categoryId,
       shopId: product.shopId,
@@ -65,12 +67,12 @@ const ProductDetail = ({ product, onClose }) => {
               
               <div className="detail-row">
                 <span className="label">Shop:</span>
-                <span>Shop {product.shopId}</span>
+                <span>{getShopName(product.shopId)}</span>
               </div>
               
               <div className="detail-row">
                 <span className="label">Danh mục:</span>
-                <span>Category {product.categoryId}</span>
+                <span>{getCategoryName(product.categoryId)}</span>
               </div>
               
               <div className="detail-row">

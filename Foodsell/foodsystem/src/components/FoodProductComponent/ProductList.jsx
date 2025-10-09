@@ -4,6 +4,8 @@ import axios from "axios"
 import "./ProductList.css"
 import ProductDetail from "./ProductDetail"
 import { useCart } from "../../contexts/CartContext"
+import { getShopName } from "../../constants/shopNames"
+import { getCategoryName } from "../../constants/categoryNames"
 
 const ProductList = ({ category }) => {
   const [products, setProducts] = useState([])
@@ -103,10 +105,10 @@ const ProductList = ({ category }) => {
             </div>
             <div className="product-info">
               <h3>{product.name}</h3>
-              <p className="shop-name">Shop {product.shopId}</p>
+              <p className="shop-name">{getShopName(product.shopId)}</p>
               <p className="product-description">{product.description}</p>
               <div className="product-stats">
-                <span className="category">Danh mục: {product.categoryId}</span>
+                <span className="category">Danh mục: {getCategoryName(product.categoryId)}</span>
                 <span className="status">
                   {product.status === 'active' ? '✅ Còn hàng' : 
                    product.status === 'inactive' ? '⏸️ Tạm ngừng' : 
