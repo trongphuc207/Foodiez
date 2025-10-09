@@ -5,6 +5,7 @@ import NotFoundPage from '../Page/NotFoundPage/NotFoundPage';
 import InformationPage from '../Page/InformationPage/InformationPage';
 import CustomerProfile from '../components/CustomerProfileComponent/CustomerProfile';
 import ResetPasswordPage from '../Page/ResetPasswordPage/ResetPasswordPage';
+import CheckoutPage from '../Page/CheckoutPage/CheckoutPage';
 export const routes = [ 
         {
             path: '/',
@@ -25,6 +26,11 @@ export const routes = [
         {
             path: '/profile',
             component: CustomerProfile,
+            isShowHeader: true
+        },
+        {
+            path: '/checkout',
+            component: CheckoutPage,
             isShowHeader: true
         },
         {

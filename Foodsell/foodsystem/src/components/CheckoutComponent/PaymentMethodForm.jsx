@@ -13,21 +13,9 @@ const PaymentMethodForm = ({ onSubmit, onBack, initialData = {} }) => {
       icon: '💵'
     },
     {
-      id: 'bank_transfer',
-      name: 'Chuyển khoản ngân hàng',
-      description: 'Chuyển khoản qua ngân hàng',
-      icon: '🏦'
-    },
-    {
-      id: 'momo',
-      name: 'Ví MoMo',
-      description: 'Thanh toán qua ví điện tử MoMo',
-      icon: '📱'
-    },
-    {
-      id: 'vnpay',
-      name: 'VNPay',
-      description: 'Thanh toán qua VNPay',
+      id: 'PayOS',
+      name: 'PayOS',
+      description: 'Thanh toán qua PayOS',
       icon: '💳'
     }
   ];

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 import DeliveryInformationForm from '../../components/CheckoutComponent/DeliveryInformationForm';
 import PaymentMethodForm from '../../components/CheckoutComponent/PaymentMethodForm';
@@ -6,7 +7,8 @@ import OrderConfirmation from '../../components/CheckoutComponent/OrderConfirmat
 import './CheckoutPage.css';
 
 const CheckoutPage = () => {
-  const { items: cartItems, getTotalAmount, getShippingFee, getGrandTotal } = useCart();
+  const navigate = useNavigate();
+  const { items: cartItems, getTotalAmount, getShippingFee, getGrandTotal, clearCart } = useCart();
   const [currentStep, setCurrentStep] = useState(1);
   const [deliveryInfo, setDeliveryInfo] = useState({});
   const [paymentInfo, setPaymentInfo] = useState({});
@@ -45,7 +47,17 @@ const CheckoutPage = () => {
   const handleOrderComplete = () => {
     // Xử lý hoàn tất đơn hàng
     console.log('Order completed:', { deliveryInfo, paymentInfo, cartItems });
-    alert('Đơn hàng đã được đặt thành công!');
+    
+    // Hiển thị thông báo thành công
+    alert('Đơn hàng đã được đặt thành công! Cảm ơn bạn đã mua hàng.');
+    
+    // Xóa giỏ hàng
+    clearCart();
+    
+    // Chuyển về trang chủ sau 1 giây
+    setTimeout(() => {
+      navigate('/');
+    }, 1000);
   };
 
   const renderCurrentStep = () => {
