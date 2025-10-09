@@ -1,5 +1,6 @@
 "use client"
 import React from "react"
+import { useNavigate } from "react-router-dom"
 import "./Cart.css"
 import { useCart } from "../../contexts/CartContext"
 
@@ -13,9 +14,12 @@ const Cart = ({ isOpen, onClose }) => {
     getGrandTotal 
   } = useCart();
 
+  const navigate = useNavigate();
+
   const handleCheckout = () => {
     console.log("[v0] Proceeding to checkout with items:", cartItems)
-    alert("Chuyển đến trang thanh toán...")
+    onClose(); // Close cart modal
+    navigate('/checkout'); // Navigate to checkout page
   }
 
   if (!isOpen) return null
@@ -63,15 +67,15 @@ const Cart = ({ isOpen, onClose }) => {
             <div className="cart-summary">
               <div className="summary-row">
                 <span>Tạm tính:</span>
-                <span>{getTotalAmount().toLocaleString()}đ</span>
+                <span>{getTotalAmount().toLocaleString()}VND</span>
               </div>
               <div className="summary-row">
                 <span>Phí vận chuyển:</span>
-                <span>{getShippingFee().toLocaleString()}đ</span>
+                <span>{getShippingFee().toLocaleString()}VND</span>
               </div>
               <div className="summary-row total">
                 <span>Tổng cộng:</span>
-                <span>{getGrandTotal().toLocaleString()}đ</span>
+                <span>{getGrandTotal().toLocaleString()}VND</span>
               </div>
               <button className="checkout-btn" onClick={handleCheckout}>
                 Thanh toán

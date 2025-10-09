@@ -173,13 +173,13 @@
 }
 
 .summary-row.total span:last-child {
-  color: #ff6b35;
+  color: #000000;
 }
 
 .checkout-btn {
   width: 100%;
   padding: 15px;
-  background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+  background: linear-gradient(135deg, #000000 0%, #000000 100%);
   color: white;
   border: none;
   border-radius: 8px;
