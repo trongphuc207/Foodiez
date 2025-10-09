@@ -10,3 +10,4 @@ export const CATEGORY_NAMES = {
 export const getCategoryName = (categoryId) => {
   return CATEGORY_NAMES[categoryId] || `Category ${categoryId}`;
 };
+

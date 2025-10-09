@@ -16,3 +16,4 @@ try {
 } catch {
     Write-Host "Error getting shop names: $($_.Exception.Message)"
 }
+

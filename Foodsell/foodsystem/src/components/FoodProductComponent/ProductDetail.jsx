@@ -16,7 +16,7 @@ const ProductDetail = ({ product, onClose }) => {
       id: product.id,
       name: product.name,
       price: product.price,
-      image: product.imageUrl ? `/images/${product.imageUrl}` : "/placeholder.svg",
+      image: product.imageUrl || "/placeholder.svg",
       shop: getShopName(product.shopId), // Lấy tên shop thật từ API
       description: product.description,
       categoryId: product.categoryId,
@@ -49,7 +49,7 @@ const ProductDetail = ({ product, onClose }) => {
         <div className="product-detail-content">
           <div className="product-detail-image">
             <img 
-              src={product.imageUrl ? `/images/${product.imageUrl}` : "/placeholder.svg"} 
+              src={product.imageUrl || "/placeholder.svg"} 
               alt={product.name} 
               className="detail-img" 
             />

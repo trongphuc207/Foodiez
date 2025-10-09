@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { getAllProducts, searchProducts } from "../../api/product";
+import { productAPI } from "../../api/product";
 
 export default function ProductPage() {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
     // Lấy tất cả sản phẩm khi vào trang
-    getAllProducts().then(setProducts);
+    productAPI.getAllProducts().then(setProducts);
   }, []);
 
   return (

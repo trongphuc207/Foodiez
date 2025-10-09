@@ -89,7 +89,7 @@ const ProductList = ({ category }) => {
               onClick={(e) => handleProductImageClick(product, e)}
             >
               <img
-                src={product.imageUrl ? `/images/${product.imageUrl}` : "/placeholder.svg"} 
+                src={product.imageUrl || "/placeholder.svg"} 
                 alt={product.name}
                 onError={(e) => {
                   e.target.src = "/placeholder.svg"

@@ -28,3 +28,4 @@ export const shopAPI = {
     return response.json();
   }
 };
+
