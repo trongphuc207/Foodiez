@@ -14,6 +14,7 @@ import java.util.UUID;
 public class FileUploadService {
     
     private final String uploadDir = "uploads/profile-images/";
+    private final String productImagesDir = "uploads/product-images/";
     
     public String uploadProfileImage(MultipartFile file) throws IOException {
         // Validate file
@@ -65,6 +66,60 @@ public class FileUploadService {
             }
         } catch (IOException e) {
             System.err.println("❌ Failed to delete profile image: " + imagePath);
+            System.err.println("Error: " + e.getMessage());
+        }
+    }
+    
+    public String uploadProductImage(MultipartFile file) throws IOException {
+        // Validate file
+        if (file.isEmpty()) {
+            throw new RuntimeException("File is empty");
+        }
+        
+        // Check file type
+        String contentType = file.getContentType();
+        if (contentType == null || !isValidImageType(contentType)) {
+            throw new RuntimeException("Invalid file type. Only JPG, PNG, GIF are allowed");
+        }
+        
+        // Check file size (max 10MB for product images)
+        if (file.getSize() > 10 * 1024 * 1024) {
+            throw new RuntimeException("File size too large. Maximum 10MB allowed");
+        }
+        
+        // Create upload directory if it doesn't exist
+        Path uploadPath = Paths.get(productImagesDir);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+        
+        // Generate unique filename
+        String originalFilename = file.getOriginalFilename();
+        String fileExtension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+        String uniqueFilename = UUID.randomUUID().toString() + fileExtension;
+        
+        // Save file
+        Path filePath = uploadPath.resolve(uniqueFilename);
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+        
+        System.out.println("✅ Product image uploaded: " + uniqueFilename);
+        
+        // Return relative path for storage in database
+        return productImagesDir + uniqueFilename;
+    }
+    
+    public void deleteProductImage(String imagePath) {
+        try {
+            if (imagePath != null && !imagePath.isEmpty()) {
+                Path path = Paths.get(imagePath);
+                Files.deleteIfExists(path);
+                System.out.println("✅ Product image deleted: " + imagePath);
+            }
+        } catch (IOException e) {
+            System.err.println("❌ Failed to delete product image: " + imagePath);
             System.err.println("Error: " + e.getMessage());
         }
     }

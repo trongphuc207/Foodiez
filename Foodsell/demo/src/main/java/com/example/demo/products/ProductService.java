@@ -2,6 +2,7 @@ package com.example.demo.products;
 
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ProductService {
@@ -18,6 +19,14 @@ public class ProductService {
         return repo.findByNameContainingIgnoreCase(keyword);
     }
     public Product createProduct(Product product) {
+        return repo.save(product);
+    }
+    
+    public Optional<Product> getProductById(int id) {
+        return repo.findById(id);
+    }
+    
+    public Product updateProduct(Product product) {
         return repo.save(product);
     }
     
