@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+// import { useNavigate } from 'react-router-dom' // Commented out - not used yet
 import './ShipperDashboard.css'
 import AddressDetailModal from './AddressDetailModal'
 import SidebarComponent from '../SidebarComponent/SidebarComponent'

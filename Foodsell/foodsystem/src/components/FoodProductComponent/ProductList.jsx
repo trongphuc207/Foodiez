@@ -12,7 +12,7 @@ const ProductList = ({ category }) => {
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const { addToCart: addToCartFn } = useCart()
+  const { addToCart } = useCart()
 
   // gọi API lấy sản phẩm
   useEffect(() => {
@@ -39,8 +39,9 @@ const ProductList = ({ category }) => {
   const handleAddToCart = (product, e) => {
     e.stopPropagation() // Ngăn không cho click vào product card
     
-    // Mở ProductDetail modal để chọn số lượng và add vào giỏ
-    setSelectedProduct(product)
+    // Thêm sản phẩm vào giỏ hàng
+    addToCart(product)
+    alert(`Đã thêm ${product.name} vào giỏ hàng!`)
   }
 
   const handleProductImageClick = (product, e) => {
