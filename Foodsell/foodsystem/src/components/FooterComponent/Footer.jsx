@@ -40,11 +40,11 @@ const Footer = () => {
 
           <div className="footer-section">
             <h4 className="section-title">Liên hệ</h4>
-            <div className="contact-info">
-              <p className="contact-item">📞 Hotline: +84778956030</p>
-              <p className="contact-item">✉️ Email: trongphuc20704@gmail.com</p>
-              <p className="contact-item">📍 Địa chỉ: FPT University</p>
-            </div>
+            <ul className="footer-links">
+              <li><span className="footer-link">📞 Hotline: +84778956030</span></li>
+              <li><span className="footer-link">✉️ Email: trongphuc20704@gmail.com</span></li>
+              <li><span className="footer-link">📍 Địa chỉ: FPT University</span></li>
+            </ul>
           </div>
         </div>
 

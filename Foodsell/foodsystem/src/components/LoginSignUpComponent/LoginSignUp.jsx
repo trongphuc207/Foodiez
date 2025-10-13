@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './LoginSignUp.css';
 // eslint-disable-next-line no-unused-vars
 import { useAuth } from '../../hooks/useAuth'; // Custom hook for auth context
-import { useLogin, useRegister, useForgotPassword } from '../../hooks/useAuthQueries'; // React Query hooks
+import { useLogin, useRegister, useForgotPassword, useVerifyOTP, useSendOTP } from '../../hooks/useAuthQueries'; // React Query hooks
 import { useForm } from '../../hooks/useCommon'; // Custom form hook
 import GoogleAuth from '../GoogleAuth/GoogleAuth';
 
@@ -10,7 +10,8 @@ import email_icon from '../Assets/email.png';
 import password_icon from '../Assets/password.png';
 
 const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
-  const [mode, setMode] = useState(defaultMode); // 'signup' | 'login' | 'forgot'
+  const [mode, setMode] = useState(defaultMode); // 'signup' | 'login' | 'forgot' | 'verify-otp'
+  const [registeredEmail, setRegisteredEmail] = useState(''); // Store email after registration
   // eslint-disable-next-line no-unused-vars
   const { logout } = useAuth(); // For potential logout functionality
   
@@ -66,11 +67,25 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
     }
     return errors;
   };
+
+  const validateOTP = (values) => {
+    const errors = {};
+    if (!values.otpCode.trim()) {
+      errors.otpCode = 'OTP code is required';
+    } else if (values.otpCode.trim().length !== 6) {
+      errors.otpCode = 'OTP code must be 6 digits';
+    } else if (!/^\d{6}$/.test(values.otpCode.trim())) {
+      errors.otpCode = 'OTP code must contain only numbers';
+    }
+    return errors;
+  };
   
   // React Query mutations
   const loginMutation = useLogin();
   const registerMutation = useRegister();
   const forgotPasswordMutation = useForgotPassword();
+  const verifyOTPMutation = useVerifyOTP();
+  const sendOTPMutation = useSendOTP();
   
   // Form handling using custom useForm hook
   const loginForm = useForm({
@@ -88,10 +103,15 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
     email: '',
   }, validateForgot);
 
+  const otpForm = useForm({
+    otpCode: '',
+  }, validateOTP);
+
   // Helper to get current form's values/errors/handlers
   const getCurrentForm = () => {
     if (mode === 'signup') return signupForm;
     if (mode === 'forgot') return forgotForm;
+    if (mode === 'verify-otp') return otpForm;
     return loginForm;
   };
 
@@ -99,12 +119,27 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
   const onSubmit = async (values) => {
     try {
       if (mode === 'signup') {
-        const result = await registerMutation.mutateAsync(values);
-        alert('Đăng ký thành công!');
-        // Dispatch event để notify useAuth hook
-        window.dispatchEvent(new CustomEvent('authSuccess', { detail: result }));
-        onClose && onClose();
-        // Don't navigate, let the header update automatically
+        await registerMutation.mutateAsync(values);
+        alert('Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP.');
+        // Store email and switch to OTP verification mode
+        setRegisteredEmail(values.email);
+        setMode('verify-otp');
+      } else if (mode === 'verify-otp') {
+        // Verify OTP
+        await verifyOTPMutation.mutateAsync({
+          email: registeredEmail,
+          otpCode: values.otpCode
+        });
+        alert('Xác thực OTP thành công! Tài khoản đã được kích hoạt. Vui lòng đăng nhập.');
+        
+        // Chuyển về trang đăng nhập với email đã điền sẵn
+        setMode('login');
+        loginForm.setValues({
+          email: registeredEmail,
+          password: ''
+        });
+        // Reset OTP form
+        otpForm.reset();
       } else {
         const result = await loginMutation.mutateAsync(values);
         alert('Đăng nhập thành công!');
@@ -128,7 +163,16 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
     }
   };
 
-  const isLoading = loginMutation.isLoading || registerMutation.isLoading || forgotPasswordMutation.isLoading;
+  const handleResendOTP = async () => {
+    try {
+      await sendOTPMutation.mutateAsync(registeredEmail);
+      alert('Mã OTP mới đã được gửi đến email của bạn!');
+    } catch (error) {
+      alert('Lỗi: ' + error.message);
+    }
+  };
+
+  const isLoading = loginMutation.isLoading || registerMutation.isLoading || forgotPasswordMutation.isLoading || verifyOTPMutation.isLoading || sendOTPMutation.isLoading;
 
   return (
     <div className="auth-card">
@@ -140,13 +184,13 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
       {/* Header */}
       <div className="auth-header">
         <div className="auth-title">
-          {mode === 'signup' ? 'Sign Up' : mode === 'forgot' ? 'Forgot Password' : 'Login'}
+          {mode === 'signup' ? 'Sign Up' : mode === 'forgot' ? 'Forgot Password' : mode === 'verify-otp' ? 'Verify OTP' : 'Login'}
         </div>
         <div className="auth-underline"></div>
       </div>
 
       {/* Google OAuth */}
-      {mode !== 'forgot' && (
+      {mode !== 'forgot' && mode !== 'verify-otp' && (
         <div className="auth-social">
           <GoogleAuth 
             onSuccess={(data) => {
@@ -167,7 +211,58 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
       )}
 
       {/* Form */}
-      {mode === 'forgot' ? (
+      {mode === 'verify-otp' ? (
+        <form onSubmit={otpForm.handleSubmit(onSubmit)} noValidate>
+          <div className="auth-inputs">
+            <div className="auth-otp-description">
+              <p>Nhập mã OTP đã được gửi đến email: <strong>{registeredEmail}</strong></p>
+            </div>
+            
+            <div className={`auth-input ${otpForm.errors.otpCode ? 'is-error' : ''}`}>
+              <span className="auth-icon">🔐</span>
+              <input
+                type="text"
+                name="otpCode"
+                placeholder="Nhập mã OTP (6 số)"
+                value={otpForm.values.otpCode}
+                onChange={otpForm.handleChange}
+                onBlur={otpForm.handleBlur}
+                maxLength="6"
+              />
+            </div>
+            {otpForm.errors.otpCode && <div className="auth-field-error">{otpForm.errors.otpCode}</div>}
+          </div>
+
+          <div className="auth-resend-otp">
+            <button
+              type="button"
+              className="auth-resend-btn"
+              onClick={handleResendOTP}
+              disabled={sendOTPMutation.isLoading}
+            >
+              {sendOTPMutation.isLoading ? 'Đang gửi...' : 'Gửi lại OTP'}
+            </button>
+            <button
+              type="button"
+              className="auth-back-to-login-btn"
+              onClick={() => {
+                setMode('login');
+                loginForm.setValues({
+                  email: registeredEmail,
+                  password: ''
+                });
+                otpForm.reset();
+              }}
+            >
+              Quay lại đăng nhập
+            </button>
+          </div>
+
+          <button type="submit" className="auth-submit" disabled={isLoading}>
+            {isLoading ? 'Đang xác thực...' : 'Xác thực OTP'}
+          </button>
+        </form>
+      ) : mode === 'forgot' ? (
         <form onSubmit={forgotForm.handleSubmit(onForgotSubmit)} noValidate>
           <div className="auth-inputs">
             <div className="auth-forgot-description">

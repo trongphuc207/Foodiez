@@ -3,13 +3,14 @@ import { useNavigate } from "react-router-dom";
 import ButtonInputSearch from "../ButtonInputSearch/ButtonInputSearch";
 import LoginSignUp from "../LoginSignUpComponent/LoginSignUp";
 import Cart from "../CartComponent/Cart";
+import SidebarComponent from "../SidebarComponent/SidebarComponent";
 import { useAuth } from "../../hooks/useAuth";
 import { useCart } from "../../contexts/CartContext";
 import "./Header.css";
 
 const Header = ({ toggleSidebar }) => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [showNavbar, setShowNavbar] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
   const [showCart, setShowCart] = useState(false);
 
   // NEW: state mở modal và mode (login/signup)
@@ -53,32 +54,14 @@ const Header = ({ toggleSidebar }) => {
     <header className="header">
       <div className="header-container">
         <div className="header-left">
-          <div className="navbar-dropdown">
-            <button
-              className="hamburger-btn"
-              onClick={() => setShowNavbar(!showNavbar)}
-            >
-              <span></span>
-              <span></span>
-              <span></span>
-            </button>
-            {showNavbar && (
-              <div className="navbar-menu">
-                <a href="/" className="navbar-link">
-                  🏠 Trang chủ
-                </a>
-                <a href="/products" className="navbar-link">
-                  🍕 Sản phẩm
-                </a>
-                <a href="/orders" className="navbar-link">
-                  📋 Đơn hàng
-                </a>
-                <a href="/about" className="navbar-link">
-                  ℹ️ Giới thiệu
-                </a>
-              </div>
-            )}
-          </div>
+          <button
+            className="hamburger-btn"
+            onClick={() => setShowSidebar(true)}
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
         </div>
 
         <div
@@ -193,6 +176,12 @@ const Header = ({ toggleSidebar }) => {
       <Cart 
         isOpen={showCart} 
         onClose={() => setShowCart(false)} 
+      />
+
+      {/* === Sidebar === */}
+      <SidebarComponent 
+        isOpen={showSidebar} 
+        onClose={() => setShowSidebar(false)} 
       />
     </header>
   );

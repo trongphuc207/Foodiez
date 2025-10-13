@@ -79,16 +79,6 @@
   color:  #f97316;
 }
 
-.contact-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.contact-item {
-  color: #e5e7eb;
-  font-size: 0.9rem;
-}
 
 .footer-bottom {
   border-top: 1px solid #374151;
