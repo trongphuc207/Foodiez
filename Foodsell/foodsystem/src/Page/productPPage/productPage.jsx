@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { productAPI } from "../../api/product";
+import ProductList from "../../components/FoodProductComponent/ProductList";
 
 export default function ProductPage() {
   const [products, setProducts] = useState([]);
@@ -69,50 +70,8 @@ export default function ProductPage() {
         <h2>Danh sách tất cả sản phẩm</h2>
       )}
       
-      {products.length > 0 && (
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {products.map((p) => (
-            <li key={p.id} style={{ 
-              border: '1px solid #ddd', 
-              margin: '10px 0', 
-              padding: '15px', 
-              borderRadius: '8px',
-              backgroundColor: '#f9f9f9'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                {p.imageUrl && (
-                  <img 
-                    src={p.imageUrl} 
-                    alt={p.name}
-                    style={{ 
-                      width: '80px', 
-                      height: '80px', 
-                      objectFit: 'cover',
-                      borderRadius: '8px'
-                    }}
-                  />
-                )}
-                <div>
-                  <h3 style={{ margin: '0 0 5px 0', color: '#333' }}>{p.name}</h3>
-                  <p style={{ margin: '0 0 5px 0', color: '#666' }}>{p.description}</p>
-                  <p style={{ margin: '0', fontWeight: 'bold', color: '#ff6b35', fontSize: '18px' }}>
-                    {p.price.toLocaleString('vi-VN')} VND
-                  </p>
-                  <span style={{ 
-                    padding: '4px 8px', 
-                    backgroundColor: p.available ? '#4CAF50' : '#f44336',
-                    color: 'white',
-                    borderRadius: '4px',
-                    fontSize: '12px'
-                  }}>
-                    {p.available ? 'Có sẵn' : 'Hết hàng'}
-                  </span>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* Sử dụng ProductList component để hiển thị sản phẩm với đầy đủ chức năng */}
+      {products.length > 0 && <ProductList products={products} layout="list" />}
     </div>
   );
 }

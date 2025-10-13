@@ -185,3 +185,7 @@ const ImageUpload = ({ productId, currentImageUrl, onImageUpdate }) => {
 
 export default ImageUpload;
 
+
+
+
+

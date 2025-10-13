@@ -27,10 +27,22 @@ public class ProductController {
     public List<Product> getAllProducts() {
         return service.getAllProducts();
     }
-@GetMapping("/search")
-public List<Product> searchProducts(@RequestParam String keyword) {
-    return service.searchProducts(keyword);
-}
+
+    // GET: Lấy sản phẩm theo shop ID
+    @GetMapping("/shop/{shopId}")
+    public ResponseEntity<ApiResponse<List<Product>>> getProductsByShopId(@PathVariable int shopId) {
+        try {
+            List<Product> products = service.getProductsByShopId(shopId);
+            return ResponseEntity.ok(ApiResponse.success(products, "Lấy sản phẩm theo shop thành công"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ApiResponse.error("Lỗi khi lấy sản phẩm theo shop: " + e.getMessage()));
+        }
+    }
+    // GET: Tìm kiếm sản phẩm
+    @GetMapping("/search")
+    public List<Product> searchProducts(@RequestParam String keyword) {
+        return service.searchProducts(keyword);
+    }
 
     // POST: Tạo mới sản phẩm
     @PostMapping

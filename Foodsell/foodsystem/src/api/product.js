@@ -19,6 +19,15 @@ export const productAPI = {
     return response.json();
   },
 
+  // Lấy sản phẩm theo shop ID
+  getProductsByShopId: async (shopId) => {
+    const response = await fetch(`${API_BASE_URL}/products/shop/${shopId}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch products by shop');
+    }
+    return response.json();
+  },
+
   // Tạo sản phẩm mới
   createProduct: async (productData) => {
     const response = await fetch(`${API_BASE_URL}/products`, {
