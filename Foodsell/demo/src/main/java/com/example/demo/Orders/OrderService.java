@@ -7,7 +7,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 public class OrderService {
@@ -64,6 +67,102 @@ public class OrderService {
     
     public long getOrderCount() {
         return orderRepository.count();
+    }
+    
+    // Create new order with PayOS integration
+    @Transactional
+    public Map<String, Object> createOrder(Map<String, Object> deliveryInfo, Map<String, Object> paymentInfo, 
+                                          List<Map<String, Object>> cartItems, Integer payosOrderCode, 
+                                          Integer totalAmount, String status) {
+        try {
+            System.out.println("Creating order with PayOS order code: " + payosOrderCode);
+            
+            // Create new order
+            Order order = new Order();
+            order.setBuyerId(1); // Default buyer ID - you might want to get this from authentication
+            order.setShopId(1); // Default shop ID - you might want to get this from cart items
+            order.setDeliveryAddressId(1); // Default address ID
+            order.setTotalAmount(new BigDecimal(totalAmount));
+            order.setStatus(status);
+            
+            // Set delivery information
+            if (deliveryInfo != null) {
+                order.setRecipientName((String) deliveryInfo.get("recipientName"));
+                order.setRecipientPhone((String) deliveryInfo.get("recipientPhone"));
+                order.setAddressText((String) deliveryInfo.get("addressText"));
+            }
+            
+            // Set PayOS order code in notes
+            String notes = "PayOS:" + payosOrderCode;
+            if (paymentInfo != null) {
+                notes += " | Payment Method: " + paymentInfo.get("method");
+            }
+            order.setNotes(notes);
+            
+            order.setCreatedAt(LocalDateTime.now());
+            
+            // Save order
+            Order savedOrder = orderRepository.save(order);
+            System.out.println("✅ Order created with ID: " + savedOrder.getId());
+            
+            // Create order items
+            if (cartItems != null && !cartItems.isEmpty()) {
+                for (Map<String, Object> item : cartItems) {
+                    OrderItem orderItem = new OrderItem();
+                    orderItem.setOrderId(savedOrder.getId());
+                    
+                    // Safe casting with null checks
+                    Integer productId = (Integer) item.get("productId");
+                    Integer quantity = (Integer) item.get("quantity");
+                    Object priceObj = item.get("price");
+                    
+                    if (productId == null || quantity == null || priceObj == null) {
+                        System.err.println("❌ Missing required fields in cart item: " + item);
+                        continue;
+                    }
+                    
+                    // Convert price to BigDecimal safely
+                    BigDecimal unitPrice;
+                    if (priceObj instanceof Integer) {
+                        unitPrice = new BigDecimal((Integer) priceObj);
+                    } else if (priceObj instanceof Double) {
+                        unitPrice = new BigDecimal((Double) priceObj);
+                    } else if (priceObj instanceof String) {
+                        unitPrice = new BigDecimal((String) priceObj);
+                    } else {
+                        System.err.println("❌ Invalid price type: " + priceObj.getClass());
+                        continue;
+                    }
+                    
+                    orderItem.setProductId(productId);
+                    orderItem.setQuantity(quantity);
+                    orderItem.setUnitPrice(unitPrice);
+                    
+                    orderItemRepository.save(orderItem);
+                    System.out.println("✅ Created order item: Product " + productId + ", Qty " + quantity + ", Price " + unitPrice);
+                }
+                System.out.println("✅ Created " + cartItems.size() + " order items");
+            }
+            
+            // Return success response
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", "Order created successfully");
+            result.put("orderId", savedOrder.getId());
+            result.put("payosOrderCode", payosOrderCode);
+            result.put("status", status);
+            
+            return result;
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error creating order: " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, Object> errorResult = new HashMap<>();
+            errorResult.put("success", false);
+            errorResult.put("message", "Error creating order: " + e.getMessage());
+            return errorResult;
+        }
     }
     
     @Transactional
@@ -181,5 +280,59 @@ public class OrderService {
         dto.setUnitPrice(orderItem.getUnitPrice());
         dto.setTotalPrice(orderItem.getTotalPrice());
         return dto;
+    }
+    
+    // Process payment result from PayOS webhook
+    @Transactional
+    public boolean processPaymentResult(Integer orderCode, String status, Integer amount, String transactionId, String timestamp) {
+        try {
+            System.out.println("Processing payment result:");
+            System.out.println("- Order Code: " + orderCode);
+            System.out.println("- Status: " + status);
+            System.out.println("- Amount: " + amount);
+            System.out.println("- Transaction ID: " + transactionId);
+            System.out.println("- Timestamp: " + timestamp);
+            
+            // Find order by orderCode (assuming orderCode is stored in notes or as a separate field)
+            // For now, we'll use a simple approach - you might need to add a payosOrderCode field to Order entity
+            List<Order> orders = orderRepository.findAll();
+            Optional<Order> orderOpt = orders.stream()
+                .filter(order -> order.getNotes() != null && order.getNotes().contains("PayOS:" + orderCode))
+                .findFirst();
+            
+            if (orderOpt.isPresent()) {
+                Order order = orderOpt.get();
+                
+                // Update order status based on payment status
+                if ("PAID".equals(status)) {
+                    order.setStatus("paid");
+                    System.out.println("✅ Order " + order.getId() + " marked as PAID");
+                } else if ("CANCELLED".equals(status)) {
+                    order.setStatus("cancelled");
+                    System.out.println("❌ Order " + order.getId() + " marked as CANCELLED");
+                } else if ("EXPIRED".equals(status)) {
+                    order.setStatus("expired");
+                    System.out.println("⏰ Order " + order.getId() + " marked as EXPIRED");
+                }
+                
+                // Update notes with payment information
+                String updatedNotes = order.getNotes() + 
+                    " | Payment: " + status + 
+                    " | Transaction: " + transactionId + 
+                    " | Time: " + timestamp;
+                order.setNotes(updatedNotes);
+                
+                orderRepository.save(order);
+                return true;
+            } else {
+                System.out.println("⚠️ Order not found for PayOS order code: " + orderCode);
+                return false;
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error processing payment result: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
     }
 }

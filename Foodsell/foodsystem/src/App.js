@@ -14,15 +14,23 @@ function App() {
       <div className="App">
         <CartProvider>
           <Router>
-            <Header toggleSidebar={() => {}} />
-            <main className="main-content">
-              <Routes>
-                {routes.map((route, index) => (
-                  <Route key={index} path={route.path} element={<route.component />} />
-                ))}
-              </Routes>
-            </main>
-            <Footer/> 
+            <Routes>
+              {routes.map((route, index) => (
+                <Route 
+                  key={index} 
+                  path={route.path} 
+                  element={
+                    <div className="app-layout">
+                      {route.isShowHeader !== false && <Header toggleSidebar={() => {}} />}
+                      <main className="main-content">
+                        <route.component />
+                      </main>
+                      {route.isShowHeader !== false && <Footer/>}
+                    </div>
+                  } 
+                />
+              ))}
+            </Routes>
           </Router>
         </CartProvider>
       </div>

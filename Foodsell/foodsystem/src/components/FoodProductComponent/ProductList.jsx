@@ -10,7 +10,7 @@ const ProductList = ({ category }) => {
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const { addToCart } = useCart()
+  const { addToCart: addToCartFn } = useCart()
 
   // gọi API lấy sản phẩm
   useEffect(() => {

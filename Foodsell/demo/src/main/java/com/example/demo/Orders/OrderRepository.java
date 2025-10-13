@@ -20,6 +20,9 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     // Find orders by status
     List<Order> findByStatusOrderByCreatedAtDesc(String status);
     
+    // Find orders by notes containing text
+    List<Order> findByNotesContaining(String text);
+    
     // Find orders by buyer ID and status
     List<Order> findByBuyerIdAndStatusOrderByCreatedAtDesc(Integer buyerId, String status);
     

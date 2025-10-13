@@ -6,6 +6,16 @@ import InformationPage from '../Page/InformationPage/InformationPage';
 import CustomerProfile from '../components/CustomerProfileComponent/CustomerProfile';
 import ResetPasswordPage from '../Page/ResetPasswordPage/ResetPasswordPage';
 import CheckoutPage from '../Page/CheckoutPage/CheckoutPage';
+import PaymentSuccessPage from '../Page/PaymentSuccessPage/PaymentSuccessPage';
+import PaymentCancelPage from '../Page/PaymentCancelPage/PaymentCancelPage';
+import ShipperDashboardPage from '../Page/ShipperDashboardPage/ShipperDashboardPage';
+import ShipperOrdersPage from '../Page/ShipperOrdersPage/ShipperOrdersPage';
+import ShipperEarningsPage from '../Page/ShipperEarningsPage/ShipperEarningsPage';
+import ShipperHistoryPage from '../Page/ShipperHistoryPage/ShipperHistoryPage';
+import ShipperMapPage from '../Page/ShipperMapPage/ShipperMapPage';
+import ShipperOverviewPage from '../Page/ShipperOverviewPage/ShipperOverviewPage';
+import RouteGuard from '../components/RouteGuard/RouteGuard';
+import Unauthorized from '../components/Unauthorized/Unauthorized';
 export const routes = [ 
         {
             path: '/',
@@ -39,8 +49,77 @@ export const routes = [
             isShowHeader: false
         },
         {
-            path: '/iformation',
+            path: '/payment/success',
+            component: PaymentSuccessPage,
+            isShowHeader: false
+        },
+        {
+            path: '/payment/cancel',
+            component: PaymentCancelPage,
+            isShowHeader: false
+        },
+        {
+            path: '/information',
             component: InformationPage
+        },
+        {
+            path: '/shipper/dashboard',
+            component: () => (
+                <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">
+                    <ShipperDashboardPage />
+                </RouteGuard>
+            ),
+            isShowHeader: false
+        },
+        {
+            path: '/shipper/orders',
+            component: () => (
+                <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">
+                    <ShipperOrdersPage />
+                </RouteGuard>
+            ),
+            isShowHeader: false
+        },
+        {
+            path: '/shipper/earnings',
+            component: () => (
+                <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">
+                    <ShipperEarningsPage />
+                </RouteGuard>
+            ),
+            isShowHeader: false
+        },
+        {
+            path: '/shipper/history',
+            component: () => (
+                <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">
+                    <ShipperHistoryPage />
+                </RouteGuard>
+            ),
+            isShowHeader: false
+        },
+        {
+            path: '/shipper/map',
+            component: () => (
+                <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">
+                    <ShipperMapPage />
+                </RouteGuard>
+            ),
+            isShowHeader: false
+        },
+        {
+            path: '/shipper/overview',
+            component: () => (
+                <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">
+                    <ShipperOverviewPage />
+                </RouteGuard>
+            ),
+            isShowHeader: false
+        },
+        {
+            path: '/unauthorized',
+            component: Unauthorized,
+            isShowHeader: false
         },
         {
             path: '*',

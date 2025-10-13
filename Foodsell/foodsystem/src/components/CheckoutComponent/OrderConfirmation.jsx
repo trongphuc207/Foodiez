@@ -9,7 +9,8 @@ const OrderConfirmation = ({
   shippingFee, 
   grandTotal, 
   onComplete, 
-  onBack 
+  onBack,
+  isProcessingPayment = false
 }) => {
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -122,8 +123,13 @@ const OrderConfirmation = ({
           <button type="button" className="back-btn" onClick={onBack}>
             Quay lại
           </button>
-          <button type="button" className="complete-btn" onClick={onComplete}>
-            Hoàn tất đơn hàng
+          <button 
+            type="button" 
+            className="complete-btn" 
+            onClick={onComplete}
+            disabled={isProcessingPayment}
+          >
+            {isProcessingPayment ? 'Đang xử lý...' : 'Hoàn tất đơn hàng'}
           </button>
         </div>
       </div>

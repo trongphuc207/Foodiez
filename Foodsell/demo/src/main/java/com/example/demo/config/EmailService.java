@@ -55,7 +55,39 @@ public class EmailService {
             System.out.println("📧 [FALLBACK MOCK] Reset link: http://localhost:3000/reset-password?token=" + resetToken);
         }
     }
-
+    public void sendOTPEmailSignup(String to, String otp) {
+        try {
+            if (mailSender != null) {
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setTo(to);
+                message.setSubject("Your OTP Code - FoodieExpress");
+                
+                String emailBody = "Hello,\n\n" +
+                        "Your One-Time Password (OTP) for your FoodieExpress account is:\n\n" +
+                        otp + "\n\n" +
+                        "This OTP is valid for 10 minutes.\n\n" +
+                        "If you did not request this OTP, please ignore this email.\n\n" +
+                        "Best regards,\n" +
+                        "FoodieExpress Team";
+                
+                message.setText(emailBody);
+                
+                mailSender.send(message);
+                System.out.println("✅ OTP email sent successfully to: " + to);
+            } else {
+                // Mock email sending for development
+                System.out.println("📧 [MOCK EMAIL] OTP email would be sent to: " + to);
+                System.out.println("📧 [MOCK EMAIL] OTP: " + otp);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Failed to send OTP email to: " + to);
+            System.err.println("Error: " + e.getMessage());
+            // Don't throw exception in development mode
+            System.out.println("📧 [MOCK EMAIL] OTP email would be sent to: " + to);
+            System.out.println("📧 [MOCK EMAIL] OTP: " + otp);
+        }
+    }
     public void sendVerificationEmail(String to, String verificationToken) {
         try {
             if (mailSender != null) {
