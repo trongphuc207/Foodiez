@@ -139,3 +139,4 @@ const CategoryFilter = ({ onCategorySelect, selectedCategoryId, showAll = true }
 };
 
 export default CategoryFilter;
+

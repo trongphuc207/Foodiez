@@ -73,6 +73,9 @@ const Header = ({ toggleSidebar }) => {
                 <a href="/orders" className="navbar-link">
                   📋 Đơn hàng
                 </a>
+                <a href="/shops" className="navbar-link">
+                  🏪 Cửa hàng
+                </a>
                 <a href="/about" className="navbar-link">
                   ℹ️ Giới thiệu
                 </a>

@@ -131,3 +131,4 @@ app.listen(PORT, () => {
     console.log(`🚀 Mock server running on http://localhost:${PORT}`);
     console.log(`📋 Categories API available at http://localhost:${PORT}/api/categories`);
 });
+

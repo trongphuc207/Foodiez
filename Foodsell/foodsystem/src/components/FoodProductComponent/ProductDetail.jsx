@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./ProductDetail.css";
 import { useCart } from "../../contexts/CartContext";
 import { getShopName } from "../../constants/shopNames";
@@ -7,6 +8,7 @@ import { getCategoryName } from "../../constants/categoryNames";
 const ProductDetail = ({ product, onClose }) => {
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
+  const navigate = useNavigate();
 
   if (!product) return null;
 
@@ -41,6 +43,11 @@ const ProductDetail = ({ product, onClose }) => {
     }
   };
 
+  const handleShopClick = () => {
+    navigate(`/shops/${product.shopId}`);
+    onClose(); // Close the product detail modal
+  };
+
   return (
     <div className="product-detail-overlay" onClick={onClose}>
       <div className="product-detail-card" onClick={(e) => e.stopPropagation()}>
@@ -67,7 +74,13 @@ const ProductDetail = ({ product, onClose }) => {
               
               <div className="detail-row">
                 <span className="label">Shop:</span>
-                <span>{getShopName(product.shopId)}</span>
+                <span 
+                  className="shop-link" 
+                  onClick={handleShopClick}
+                  title="Xem chi tiết shop"
+                >
+                  {getShopName(product.shopId)}
+                </span>
               </div>
               
               <div className="detail-row">

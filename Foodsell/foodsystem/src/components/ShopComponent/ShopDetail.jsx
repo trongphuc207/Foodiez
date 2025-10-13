@@ -2,17 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { shopAPI } from '../../api/shop';
 import { productAPI } from '../../api/product';
+import { useCart } from '../../contexts/CartContext';
 import './ShopDetail.css';
 
 const ShopDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { addToCart } = useCart();
   const [shop, setShop] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [productQuantities, setProductQuantities] = useState({});
 
   useEffect(() => {
     loadShopData();
@@ -65,6 +68,38 @@ const ShopDetail = () => {
     console.log('Product clicked:', productId);
   };
 
+  const handleQuantityChange = (productId, change) => {
+    setProductQuantities(prev => ({
+      ...prev,
+      [productId]: Math.max(1, (prev[productId] || 1) + change)
+    }));
+  };
+
+  const handleAddToCart = (product) => {
+    const quantity = productQuantities[product.id] || 1;
+    
+    // Create cart product object
+    const cartProduct = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.imageUrl || "/placeholder.jpg",
+      shop: shop?.name || 'Unknown Shop',
+      description: product.description,
+      categoryId: product.categoryId,
+      shopId: product.shopId,
+      status: product.status,
+      available: product.available
+    };
+
+    // Add quantity copies to cart
+    for (let i = 0; i < quantity; i++) {
+      addToCart(cartProduct);
+    }
+
+    alert(`Đã thêm ${quantity} ${product.name} vào giỏ hàng!`);
+  };
+
   const filteredProducts = products.filter(product => {
     const matchesCategory = selectedCategory === 'all' || product.categoryId.toString() === selectedCategory;
     const matchesSearch = product.name.toLowerCase().includes(searchKeyword.toLowerCase()) ||
@@ -99,30 +134,16 @@ const ShopDetail = () => {
     <div className="shop-detail-container">
       {/* Breadcrumb */}
       <div className="breadcrumb">
-        <span onClick={() => navigate('/')}>Home</span>
+        <span onClick={() => navigate('/')}>Trang chủ</span>
         <span>»</span>
-        <span onClick={() => navigate('/shops')}>Shops</span>
+        <span onClick={() => navigate('/shops')}>Cửa hàng</span>
         <span>»</span>
         <span>{shop.name}</span>
       </div>
 
-      {/* Main Content */}
-      <div className="main-content">
-        {/* Left Side - Shop Image */}
-        <div className="shop-image-section">
-          <div className="shop-image">
-            <img 
-              src="/placeholder.jpg" 
-              alt={shop.name}
-              onError={(e) => {
-                e.target.src = '/placeholder.jpg';
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Right Side - Shop Information */}
-        <div className="shop-info-section">
+      {/* Main Shop Information Card */}
+      <div className="shop-info-card">
+        <div className="shop-header">
           <h1 className="shop-name">{shop.name}</h1>
           
           <div className="shop-address">
@@ -140,7 +161,7 @@ const ShopDetail = () => {
 
           <div className="shop-hours">
             <span className="hours-icon">🕒</span>
-            <span>Mở cửa {shop.openingHours || '24/7'}</span>
+            <span>Mở cửa {shop.openingHours || '8AM-10PM'}</span>
           </div>
 
           <div className="shop-price-range">
@@ -154,7 +175,7 @@ const ShopDetail = () => {
         </div>
       </div>
 
-      {/* Bottom Section */}
+      {/* Bottom Section with Menu, Products, and QR */}
       <div className="bottom-section">
         {/* Left Column - Menu Categories */}
         <div className="menu-categories">
@@ -245,6 +266,45 @@ const ShopDetail = () => {
                           <span className="out-of-stock">✗ Hết hàng</span>
                         )}
                       </div>
+                      
+                      {/* Add to Cart Section */}
+                      {product.available && (
+                        <div className="add-to-cart-section">
+                          <div className="quantity-selector">
+                            <label className="quantity-label">Số lượng:</label>
+                            <div className="quantity-controls">
+                              <button 
+                                className="quantity-btn minus"
+                                onClick={() => handleQuantityChange(product.id, -1)}
+                              >
+                                -
+                              </button>
+                              <input 
+                                type="number" 
+                                className="quantity-input"
+                                value={productQuantities[product.id] || 1}
+                                onChange={(e) => setProductQuantities(prev => ({
+                                  ...prev,
+                                  [product.id]: Math.max(1, parseInt(e.target.value) || 1)
+                                }))}
+                                min="1"
+                              />
+                              <button 
+                                className="quantity-btn plus"
+                                onClick={() => handleQuantityChange(product.id, 1)}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                          <button 
+                            className="add-to-cart-btn"
+                            onClick={() => handleAddToCart(product)}
+                          >
+                            🛒 THÊM VÀO GIỎ HÀNG
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -253,15 +313,6 @@ const ShopDetail = () => {
           </div>
         </div>
 
-        {/* Right Column - QR Code */}
-        <div className="qr-section">
-          <div className="qr-code">
-            <div className="qr-placeholder">
-              <div className="qr-text">QR CODE</div>
-              <div className="qr-subtext">Quét để đặt hàng</div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

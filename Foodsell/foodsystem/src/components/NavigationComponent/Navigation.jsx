@@ -9,6 +9,7 @@ const Navigation = () => {
     { path: "/", label: "🏠 Trang chủ", name: "home" },
     { path: "/products", label: "🍕 Sản phẩm", name: "products" },
     { path: "/orders", label: "📋 Đơn hàng", name: "orders" },
+    { path: "/shops", label: "🏪 Cửa hàng", name: "shops" },
     { path: "/about", label: "ℹ️ Giới thiệu", name: "about" }
   ]
 
