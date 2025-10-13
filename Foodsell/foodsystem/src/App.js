@@ -26,7 +26,7 @@ function App() {
           </Router>
         </CartProvider>
       </div>
-      <ReactQueryDevtools initialIsOpen={false} />
+      {/* <ReactQueryDevtools initialIsOpen={false} /> */}
     </QueryClientProvider>
   );
 }
