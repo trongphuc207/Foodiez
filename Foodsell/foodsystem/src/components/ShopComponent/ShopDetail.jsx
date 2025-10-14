@@ -265,15 +265,17 @@ const ShopDetail = () => {
                       <p className="product-description">{product.description}</p>
                       <div className="product-price">{product.price.toLocaleString('vi-VN')} VND</div>
                       <div className="product-status">
-                        {product.available ? (
-                          <span className="in-stock">✓ Còn hàng</span>
-                        ) : (
+                        {!product.available ? (
+                          <span className="out-of-stock">✗ Không có sẵn</span>
+                        ) : product.status === 'out_of_stock' ? (
                           <span className="out-of-stock">✗ Hết hàng</span>
+                        ) : (
+                          <span className="in-stock">✓ Còn hàng</span>
                         )}
                       </div>
                       
                       {/* Add to Cart Section */}
-                      {product.available && (
+                      {product.available && product.status !== 'out_of_stock' && (
                         <div className="add-to-cart-section">
                           <div className="quantity-selector">
                             <label className="quantity-label">Số lượng:</label>

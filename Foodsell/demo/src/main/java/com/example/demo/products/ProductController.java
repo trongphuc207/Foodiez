@@ -50,6 +50,37 @@ public class ProductController {
         return service.createProduct(product);
     }
     
+    // PUT: Cập nhật sản phẩm
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<Product>> updateProduct(@PathVariable int id, @RequestBody Product product) {
+        try {
+            Optional<Product> existingProductOpt = service.getProductById(id);
+            if (existingProductOpt.isPresent()) {
+                Product existingProduct = existingProductOpt.get();
+                
+                // Cập nhật các trường
+                existingProduct.setName(product.getName());
+                existingProduct.setDescription(product.getDescription());
+                existingProduct.setPrice(product.getPrice());
+                existingProduct.setAvailable(product.isAvailable());
+                existingProduct.setStatus(product.getStatus());
+                existingProduct.setCategoryId(product.getCategoryId());
+                
+                // Giữ nguyên imageUrl nếu không được cung cấp
+                if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+                    existingProduct.setImageUrl(product.getImageUrl());
+                }
+                
+                Product updatedProduct = service.updateProduct(existingProduct);
+                return ResponseEntity.ok(ApiResponse.success(updatedProduct, "Cập nhật sản phẩm thành công"));
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ApiResponse.error("Lỗi khi cập nhật sản phẩm: " + e.getMessage()));
+        }
+    }
+    
     // GET: Tạo dữ liệu mẫu
     @GetMapping("/seed")
     public String seedData() {

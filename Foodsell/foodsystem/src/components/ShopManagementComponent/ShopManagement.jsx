@@ -22,6 +22,7 @@ const ShopManagement = () => {
     price: '',
     categoryId: '',
     image: null,
+    is_available: true,
     status: 'active'
   });
 
@@ -99,7 +100,7 @@ const ShopManagement = () => {
     onSuccess: () => {
       queryClient.invalidateQueries(['products']);
       setShowProductForm(false);
-      setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, status: 'active' });
+      setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, is_available: true, status: 'active' });
       alert('✅ Thêm món ăn thành công!');
     },
     onError: (error) => {
@@ -176,7 +177,7 @@ const ShopManagement = () => {
       queryClient.invalidateQueries(['products']);
       setShowProductForm(false);
       setEditingProduct(null);
-      setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, status: 'active' });
+      setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, is_available: true, status: 'active' });
       alert('✅ Cập nhật món ăn thành công!');
     },
     onError: (error) => {
@@ -254,7 +255,7 @@ const ShopManagement = () => {
       price: parseFloat(productForm.price),
       categoryId: parseInt(productForm.categoryId),
       shopId: shopData?.data?.id,
-      is_available: productForm.status === 'active' ? true : false,
+      is_available: productForm.is_available,
       status: productForm.status
     };
 
@@ -293,7 +294,7 @@ const ShopManagement = () => {
       queryClient.invalidateQueries(['products']);
       setShowProductForm(false);
       setEditingProduct(null);
-      setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, status: 'active' });
+      setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, is_available: true, status: 'active' });
       alert('✅ ' + (editingProduct ? 'Cập nhật' : 'Thêm') + ' món ăn thành công!');
       
     } catch (error) {
@@ -357,6 +358,7 @@ const ShopManagement = () => {
         price: (productData.price || product.price).toString(),
         categoryId: productData.categoryId || product.categoryId,
         image: null,
+        is_available: productData.is_available !== undefined ? productData.is_available : product.available,
         status: statusValue
       });
       setShowProductForm(true);
@@ -544,12 +546,22 @@ const ShopManagement = () => {
                     )}
                   </div>
                   <div className="form-group">
-                    <label>Trạng thái:</label>
+                    <label>Tình trạng sẵn có:</label>
+                    <select
+                      value={productForm.is_available}
+                      onChange={(e) => setProductForm({ ...productForm, is_available: e.target.value === 'true' })}
+                    >
+                      <option value={true}>✅ Có sẵn</option>
+                      <option value={false}>❌ Không có sẵn</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Trạng thái bán hàng:</label>
                     <select
                       value={productForm.status}
                       onChange={(e) => setProductForm({ ...productForm, status: e.target.value })}
                     >
-                      <option value="active">✅ Còn hàng</option>
+                      <option value="active">✅ Đang bán</option>
                       <option value="inactive">⏸️ Tạm ngừng bán</option>
                       <option value="out_of_stock">❌ Hết hàng</option>
                     </select>
