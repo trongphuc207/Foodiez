@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { productAPI, testServerConnection } from '../../api/product';
 import { shopAPI } from '../../api/shop';
 import categoryAPI from '../../api/category';
+import ImageUpload from '../AdminComponent/ImageUpload';
 import './ShopManagement.css';
 
 const ShopManagement = () => {
@@ -25,6 +26,10 @@ const ShopManagement = () => {
     is_available: true,
     status: 'active'
   });
+
+  // Image upload states
+  const [productImageUrl, setProductImageUrl] = useState(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const [shopForm, setShopForm] = useState({
     name: '',
@@ -281,12 +286,16 @@ const ShopManagement = () => {
       // Upload image if provided
       if (productForm.image && productResult?.data?.id) {
         console.log('📤 Uploading image for product:', productResult.data.id);
+        setIsUploadingImage(true);
         try {
-          await productAPI.uploadProductImage(productResult.data.id, productForm.image);
-          console.log('✅ Image uploaded successfully');
+          const uploadResult = await productAPI.uploadProductImage(productResult.data.id, productForm.image);
+          console.log('✅ Image uploaded successfully:', uploadResult);
+          setProductImageUrl(uploadResult.data?.imageUrl);
         } catch (imageError) {
           console.error('❌ Image upload failed:', imageError);
           alert('⚠️ Sản phẩm đã được tạo/cập nhật nhưng không thể tải ảnh lên. Vui lòng thử lại sau.');
+        } finally {
+          setIsUploadingImage(false);
         }
       }
       
@@ -295,6 +304,8 @@ const ShopManagement = () => {
       setShowProductForm(false);
       setEditingProduct(null);
       setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, is_available: true, status: 'active' });
+      setProductImageUrl(null);
+      setIsUploadingImage(false);
       alert('✅ ' + (editingProduct ? 'Cập nhật' : 'Thêm') + ' món ăn thành công!');
       
     } catch (error) {
@@ -361,6 +372,7 @@ const ShopManagement = () => {
         is_available: productData.is_available !== undefined ? productData.is_available : product.available,
         status: statusValue
       });
+      setProductImageUrl(productData.imageUrl || product.imageUrl);
       setShowProductForm(true);
     } catch (error) {
       console.error('❌ Error fetching product details:', error);
@@ -533,15 +545,34 @@ const ShopManagement = () => {
                    </div>
                   <div className="form-group">
                     <label>Ảnh món ăn:</label>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                      onChange={handleImageChange}
-                    />
-                    {productForm.image && (
-                      <div className="file-info">
-                        <p>📁 File đã chọn: {productForm.image.name}</p>
-                        <p>📏 Kích thước: {(productForm.image.size / 1024 / 1024).toFixed(2)} MB</p>
+                    {editingProduct ? (
+                      <ImageUpload
+                        productId={editingProduct.id}
+                        currentImageUrl={productImageUrl}
+                        onImageUpdate={(newImageUrl) => {
+                          setProductImageUrl(newImageUrl);
+                          // Update the product in the list
+                          queryClient.invalidateQueries(['products']);
+                        }}
+                      />
+                    ) : (
+                      <div className="image-upload-section">
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                          onChange={handleImageChange}
+                        />
+                        {productForm.image && (
+                          <div className="file-info">
+                            <p>📁 File đã chọn: {productForm.image.name}</p>
+                            <p>📏 Kích thước: {(productForm.image.size / 1024 / 1024).toFixed(2)} MB</p>
+                          </div>
+                        )}
+                        {isUploadingImage && (
+                          <div className="upload-status">
+                            <p>⏳ Đang upload ảnh...</p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

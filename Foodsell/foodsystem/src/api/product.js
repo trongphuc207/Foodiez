@@ -113,10 +113,21 @@ export const productAPI = {
 
   // Tạo sản phẩm mới
   createProduct: async (productData) => {
+    // Chuẩn hóa payload cho backend (backend dùng field 'available')
+    const payload = {
+      name: productData.name,
+      description: productData.description || '',
+      price: productData.price,
+      categoryId: productData.categoryId,
+      shopId: productData.shopId,
+      available: productData.is_available !== undefined ? productData.is_available : (productData.available ?? true),
+      status: productData.status || 'active'
+    };
+
     const response = await fetch(`${API_BASE_URL}/products`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify(productData),
+      body: JSON.stringify(payload),
     });
     if (!response.ok) {
       throw new Error('Failed to create product');
@@ -232,7 +243,8 @@ export const productAPI = {
         description: productData.description || '',
         price: productData.price,
         categoryId: productData.categoryId,
-        is_available: productData.is_available !== undefined ? productData.is_available : true,
+        // Backend expects 'available'
+        available: productData.is_available !== undefined ? productData.is_available : (productData.available ?? true),
         status: productData.status || 'active'
       };
       
