@@ -2,17 +2,21 @@ package com.example.demo.shops;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "shops")
 @Data
+@EqualsAndHashCode(exclude = {"createdAt"})
+@ToString(exclude = {"createdAt"})
 public class Shop {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "seller_id", nullable = false, unique = true)
+    @Column(name = "seller_id", nullable = false, unique = true, updatable = false)
     private int sellerId;
 
     @Column(name = "name", nullable = false)
@@ -30,7 +34,7 @@ public class Shop {
     @Column(name = "rating")
     private Double rating;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     // Default constructor

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
-import { productAPI } from '../../api/product';
+import { productAPI, testServerConnection } from '../../api/product';
 import { shopAPI } from '../../api/shop';
 import categoryAPI from '../../api/category';
 import './ShopManagement.css';
@@ -22,7 +22,6 @@ const ShopManagement = () => {
     price: '',
     categoryId: '',
     image: null,
-    is_available: true,
     status: 'active'
   });
 
@@ -30,8 +29,7 @@ const ShopManagement = () => {
     name: '',
     description: '',
     address: '',
-    phone: '',
-    email: ''
+    opening_hours: ''
   });
 
   // Fetch shop data
@@ -84,13 +82,24 @@ const ShopManagement = () => {
     }
   }, [categoriesData, categoriesError]);
 
+  // Test server connection on mount
+  useEffect(() => {
+    const testConnection = async () => {
+      const isConnected = await testServerConnection();
+      if (!isConnected) {
+        console.warn('⚠️ Server connection test failed');
+      }
+    };
+    testConnection();
+  }, []);
+
   // Mutations
   const createProductMutation = useMutation({
     mutationFn: productAPI.createProduct,
     onSuccess: () => {
       queryClient.invalidateQueries(['products']);
       setShowProductForm(false);
-      setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, is_available: true, status: 'active' });
+      setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, status: 'active' });
       alert('✅ Thêm món ăn thành công!');
     },
     onError: (error) => {
@@ -167,17 +176,19 @@ const ShopManagement = () => {
       queryClient.invalidateQueries(['products']);
       setShowProductForm(false);
       setEditingProduct(null);
-      setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, is_available: true, status: 'active' });
+      setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, status: 'active' });
       alert('✅ Cập nhật món ăn thành công!');
     },
     onError: (error) => {
       console.error('❌ Update product error:', error);
       
       // Check if it's a server connection issue
-      if (error.message.includes('Network error') || error.message.includes('Failed to fetch')) {
-        alert('❌ Không thể kết nối đến server!\n\nVui lòng kiểm tra:\n1. Server có đang chạy không?\n2. Kết nối internet\n3. Thử lại sau');
+      if (error.message.includes('Network error') || error.message.includes('Failed to fetch') || error.message.includes('Cannot connect to server')) {
+        alert('❌ Không thể kết nối đến server!\n\nVui lòng kiểm tra:\n1. Server có đang chạy không? (Port 8080)\n2. Kết nối internet\n3. Thử refresh trang\n4. Kiểm tra console để xem chi tiết lỗi');
       } else if (error.message.includes('500') || error.message.includes('Internal server error')) {
         alert('❌ Lỗi server!\n\nVui lòng thử lại sau hoặc liên hệ admin.');
+      } else if (error.message.includes('Server not responding properly')) {
+        alert('❌ Server không phản hồi đúng cách!\n\nVui lòng kiểm tra server có đang chạy không.');
       } else {
         alert('❌ Lỗi khi cập nhật món ăn: ' + error.message + '\n\nVui lòng thử lại hoặc liên hệ admin.');
       }
@@ -192,10 +203,19 @@ const ShopManagement = () => {
   });
 
   const updateShopMutation = useMutation({
-    mutationFn: ({ id, data }) => shopAPI.updateShop(id, data),
+    mutationFn: ({ id, data }) => {
+      console.log('📤 Updating shop:', id, 'with data:', data);
+      return shopAPI.updateShop(id, data);
+    },
     onSuccess: () => {
+      console.log('✅ Shop updated successfully');
       queryClient.invalidateQueries(['shop']);
       setShowShopForm(false);
+      alert('✅ Cập nhật thông tin cửa hàng thành công!');
+    },
+    onError: (error) => {
+      console.error('❌ Update shop error:', error);
+      alert('❌ Lỗi khi cập nhật thông tin cửa hàng: ' + error.message);
     }
   });
 
@@ -206,8 +226,7 @@ const ShopManagement = () => {
         name: shopData.data.name || '',
         description: shopData.data.description || '',
         address: shopData.data.address || '',
-        phone: shopData.data.phone || '',
-        email: shopData.data.email || ''
+        opening_hours: shopData.data.opening_hours || ''
       });
     }
   }, [shopData]);
@@ -235,7 +254,7 @@ const ShopManagement = () => {
       price: parseFloat(productForm.price),
       categoryId: parseInt(productForm.categoryId),
       shopId: shopData?.data?.id,
-      is_available: productForm.is_available,
+      is_available: productForm.status === 'active' ? true : false,
       status: productForm.status
     };
 
@@ -274,7 +293,7 @@ const ShopManagement = () => {
       queryClient.invalidateQueries(['products']);
       setShowProductForm(false);
       setEditingProduct(null);
-      setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, is_available: true, status: 'active' });
+      setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, status: 'active' });
       alert('✅ ' + (editingProduct ? 'Cập nhật' : 'Thêm') + ' món ăn thành công!');
       
     } catch (error) {
@@ -285,13 +304,34 @@ const ShopManagement = () => {
 
   const handleShopSubmit = async (e) => {
     e.preventDefault();
-    updateShopMutation.mutate({ id: shopData?.data?.id, data: shopForm });
+    
+    // Validation
+    if (!shopForm.name.trim()) {
+      alert('❌ Vui lòng nhập tên cửa hàng');
+      return;
+    }
+    
+    if (!shopForm.address.trim()) {
+      alert('❌ Vui lòng nhập địa chỉ');
+      return;
+    }
+    
+    // Only send fields that should be updated (exclude seller_id)
+    const updateData = {
+      name: shopForm.name.trim(),
+      description: shopForm.description.trim(),
+      address: shopForm.address.trim(),
+      opening_hours: shopForm.opening_hours.trim()
+    };
+    
+    console.log('📤 Submitting shop update:', updateData);
+    updateShopMutation.mutate({ id: shopData?.data?.id, data: updateData });
   };
 
   const handleEditProduct = async (product) => {
     console.log('🔍 Editing product:', product);
+    console.log('📦 Product status:', product.status);
     console.log('📦 Product is_available:', product.is_available);
-    console.log('📦 Product available:', product.available);
     
     try {
       // Fetch detailed product info from database
@@ -300,17 +340,15 @@ const ShopManagement = () => {
       
       const productData = detailedProduct.data || detailedProduct;
       
-      // Get is_available value
-      let isAvailable = true;
-      if (productData.is_available !== undefined && productData.is_available !== null) {
-        isAvailable = productData.is_available;
-      } else if (product.is_available !== undefined && product.is_available !== null) {
-        isAvailable = product.is_available;
-      } else {
-        console.log('⚠️ No is_available field found, using default true');
+      // Get status value (priority: API data > product data > default)
+      let statusValue = 'active';
+      if (productData.status) {
+        statusValue = productData.status;
+      } else if (product.status) {
+        statusValue = product.status;
       }
       
-      console.log('📦 Final is_available value:', isAvailable);
+      console.log('📦 Final status value:', statusValue);
       
       setEditingProduct(productData);
       setProductForm({
@@ -319,8 +357,7 @@ const ShopManagement = () => {
         price: (productData.price || product.price).toString(),
         categoryId: productData.categoryId || product.categoryId,
         image: null,
-        is_available: isAvailable,
-        status: productData.status || product.status || 'active'
+        status: statusValue
       });
       setShowProductForm(true);
     } catch (error) {
@@ -333,7 +370,6 @@ const ShopManagement = () => {
         price: product.price.toString(),
         categoryId: product.categoryId,
         image: null,
-        is_available: product.is_available !== undefined ? product.is_available : true,
         status: product.status || 'active'
       });
       setShowProductForm(true);
@@ -508,16 +544,6 @@ const ShopManagement = () => {
                     )}
                   </div>
                   <div className="form-group">
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={productForm.is_available}
-                        onChange={(e) => setProductForm({ ...productForm, is_available: e.target.checked })}
-                      />
-                      {' '}Còn hàng
-                    </label>
-                  </div>
-                  <div className="form-group">
                     <label>Trạng thái:</label>
                     <select
                       value={productForm.status}
@@ -584,8 +610,10 @@ const ShopManagement = () => {
                       <span className="category">{product.category?.name}</span>
                     </div>
                     <div className="product-status">
-                      <span className={`status ${product.is_available ? 'available' : 'unavailable'}`}>
-                        {product.is_available ? '✅ Còn hàng' : '❌ Hết hàng'}
+                      <span className={`status ${product.status === 'active' ? 'available' : 'unavailable'}`}>
+                        {product.status === 'active' ? '✅ Còn hàng' : 
+                         product.status === 'inactive' ? '⏸️ Tạm ngừng' : 
+                         product.status === 'out_of_stock' ? '❌ Hết hàng' : '❌ Không xác định'}
                       </span>
                     </div>
                   </div>
@@ -663,21 +691,12 @@ const ShopManagement = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Số điện thoại:</label>
+                    <label>Giờ mở cửa:</label>
                     <input
-                      type="tel"
-                      value={shopForm.phone}
-                      onChange={(e) => setShopForm({ ...shopForm, phone: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Email:</label>
-                    <input
-                      type="email"
-                      value={shopForm.email}
-                      onChange={(e) => setShopForm({ ...shopForm, email: e.target.value })}
-                      required
+                      type="text"
+                      value={shopForm.opening_hours}
+                      onChange={(e) => setShopForm({ ...shopForm, opening_hours: e.target.value })}
+                      placeholder="Ví dụ: 8AM-10PM"
                     />
                   </div>
                   <div className="form-actions">
@@ -709,12 +728,8 @@ const ShopManagement = () => {
                 <span className="value">{shopData.data.address}</span>
               </div>
               <div className="info-item">
-                <span className="label">Số điện thoại:</span>
-                <span className="value">{shopData.data.phone}</span>
-              </div>
-              <div className="info-item">
-                <span className="label">Email:</span>
-                <span className="value">{shopData.data.email}</span>
+                <span className="label">Giờ mở cửa:</span>
+                <span className="value">{shopData.data.opening_hours || 'Chưa cập nhật'}</span>
               </div>
               <div className="info-item">
                 <span className="label">Đánh giá trung bình:</span>

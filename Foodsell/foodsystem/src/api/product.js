@@ -1,5 +1,35 @@
 const API_BASE_URL = 'http://localhost:8080/api';
 
+// Test server connectivity
+export const testServerConnection = async () => {
+  try {
+    console.log('🔍 Testing server connection...');
+    console.log('🔗 Testing endpoint:', `${API_BASE_URL}/products`);
+    
+    const response = await fetch(`${API_BASE_URL}/products`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('📥 Server response status:', response.status);
+    console.log('📥 Server response headers:', Object.fromEntries(response.headers.entries()));
+    
+    if (response.ok) {
+      console.log('✅ Server is responding');
+      return true;
+    } else {
+      console.log('⚠️ Server responded with status:', response.status);
+      // Don't treat 404 as complete failure, server might be running but endpoint different
+      return response.status < 500; // Only treat 5xx as server errors
+    }
+  } catch (error) {
+    console.error('❌ Server connection failed:', error);
+    return false;
+  }
+};
+
 // Helper function to get auth token
 const getAuthToken = () => {
   return localStorage.getItem('authToken');
@@ -62,6 +92,22 @@ export const productAPI = {
     }
     const data = await response.json();
     console.log('📥 API: Product details:', data);
+    
+    // Debug status field
+    if (data.data) {
+      console.log('🔍 Product status fields:', {
+        status: data.data.status,
+        is_available: data.data.is_available,
+        available: data.data.available
+      });
+    } else {
+      console.log('🔍 Product status fields:', {
+        status: data.status,
+        is_available: data.is_available,
+        available: data.available
+      });
+    }
+    
     return data;
   },
 
@@ -147,18 +193,26 @@ export const productAPI = {
   // Cập nhật sản phẩm
   updateProduct: async (productId, productData) => {
     console.log('📤 API: Updating product', productId, 'with data:', productData);
+    console.log('🔗 API Base URL:', API_BASE_URL);
+    console.log('🔗 Full endpoint:', `${API_BASE_URL}/products/${productId}`);
     
-    // Check if server is running
+    // Check server connectivity first
     try {
-      const healthCheck = await fetch(`${API_BASE_URL}/health`, {
+      console.log('🔍 Testing server connectivity...');
+      const testResponse = await fetch(`${API_BASE_URL}/products`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Content-Type': 'application/json'
         }
       });
-      console.log('🏥 Server health check:', healthCheck.status);
+      console.log('🏥 Server connectivity test:', testResponse.status);
+      
+      if (!testResponse.ok) {
+        console.warn(`⚠️ Server responded with ${testResponse.status}, but continuing with update...`);
+      }
     } catch (error) {
-      console.warn('⚠️ Server health check failed:', error);
+      console.error('❌ Server connectivity failed:', error);
+      console.warn('⚠️ Continuing with update despite connectivity issues...');
     }
     
     // Validate productId
@@ -172,8 +226,8 @@ export const productAPI = {
     }
     
     try {
-      // Try PATCH first (more RESTful for partial updates)
-      const patchData = {
+      // Try PUT first (most common for updates)
+      const updateData = {
         name: productData.name,
         description: productData.description || '',
         price: productData.price,
@@ -182,74 +236,88 @@ export const productAPI = {
         status: productData.status || 'active'
       };
       
-      console.log('📤 API: Sending PATCH data:', patchData);
+      console.log('📤 API: Sending PUT data:', updateData);
+      
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
       
       const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         },
-        body: JSON.stringify(patchData),
+        body: JSON.stringify(updateData),
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       
       console.log('📥 API: Response status:', response.status);
       
       if (!response.ok) {
-        // Try PUT as fallback
-        console.log('🔄 PATCH failed, trying PUT...');
+        console.log(`🔄 PUT failed with status ${response.status}, trying POST...`);
         
-        const putResponse = await fetch(`${API_BASE_URL}/products/${productId}`, {
-          method: 'PUT',
+        // Try POST as fallback
+        const postResponse = await fetch(`${API_BASE_URL}/products/${productId}`, {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('authToken')}`
           },
-          body: JSON.stringify(patchData),
+          body: JSON.stringify(updateData),
         });
         
-        if (!putResponse.ok) {
-          // Try alternative endpoint
-          console.log('🔄 PUT failed, trying alternative endpoint...');
+        if (!postResponse.ok) {
+          console.log(`🔄 POST failed with status ${postResponse.status}, trying PATCH...`);
           
-          const altResponse = await fetch(`${API_BASE_URL}/products/update/${productId}`, {
-            method: 'POST',
+          // Try PATCH as last resort
+          const patchResponse = await fetch(`${API_BASE_URL}/products/${productId}`, {
+            method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${localStorage.getItem('authToken')}`
             },
-            body: JSON.stringify(patchData),
+            body: JSON.stringify(updateData),
           });
           
-          if (!altResponse.ok) {
+          if (!patchResponse.ok) {
             let errorMessage = 'Failed to update product';
             try {
-              const errorData = await altResponse.json();
+              const errorData = await patchResponse.json();
               console.error('❌ API: Update product error:', errorData);
               errorMessage = errorData.message || errorData.error || errorMessage;
             } catch (parseError) {
               console.error('❌ API: Could not parse error response:', parseError);
-              errorMessage = `Server error (${altResponse.status}): ${altResponse.statusText}`;
+              errorMessage = `Server error (${patchResponse.status}): ${patchResponse.statusText}`;
             }
             throw new Error(errorMessage);
           }
           
-          const result = await altResponse.json();
-          console.log('✅ API: Update product success (Alternative):', result);
+          const result = await patchResponse.json();
+          console.log('✅ API: Update product success (PATCH):', result);
           return result;
         }
         
-        const result = await putResponse.json();
-        console.log('✅ API: Update product success (PUT):', result);
+        const result = await postResponse.json();
+        console.log('✅ API: Update product success (POST):', result);
         return result;
       }
       
       const result = await response.json();
-      console.log('✅ API: Update product success (PATCH):', result);
+      console.log('✅ API: Update product success (PUT):', result);
       return result;
     } catch (error) {
       console.error('❌ API: Network or parsing error:', error);
-      throw new Error(`Network error: ${error.message}`);
+      
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout: Server không phản hồi trong 10 giây');
+      } else if (error.message.includes('Failed to fetch')) {
+        throw new Error('Network error: Không thể kết nối đến server. Vui lòng kiểm tra server có đang chạy không.');
+      } else {
+        throw new Error(`Network error: ${error.message}`);
+      }
     }
   },
 
