@@ -11,6 +11,7 @@ import ShopDetail from '../components/ShopComponent/ShopDetail';
 import ShopRegistration from '../components/ShopComponent/ShopRegistration';
 import ShopDashboard from '../components/ShopComponent/ShopDashboard';
 import CategoryManagement from '../components/CategoryComponent/CategoryManagement';
+import ShopManagement from '../components/ShopManagementComponent/ShopManagement';
 export const routes = [ 
         {
             path: '/',
@@ -66,6 +67,11 @@ export const routes = [
         {
             path: '/categories',
             component: CategoryManagement,
+            isShowHeader: true
+        },
+        {
+            path: '/shop-management',
+            component: ShopManagement,
             isShowHeader: true
         },
         {

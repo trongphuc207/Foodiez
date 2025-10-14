@@ -166,6 +166,17 @@ const Header = ({ toggleSidebar }) => {
                     >
                       👤 Thông tin cá nhân
                     </button>
+                    {user?.role === 'seller' && (
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          navigate('/shop-management');
+                          setShowUserDropdown(false);
+                        }}
+                      >
+                        🏪 Quản lý cửa hàng
+                      </button>
+                    )}
                     <button
                       className="dropdown-item"
                       onClick={handleLogout}

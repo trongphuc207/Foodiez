@@ -12,7 +12,7 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [currentLayout] = useState('list') // Cố định layout thành list
+  const [currentLayout] = useState('grid') // Sử dụng grid layout đẹp hơn
   const { addToCart } = useCart()
 
   // gọi API lấy sản phẩm hoặc sử dụng products từ props
@@ -93,74 +93,92 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
           </div>
           <div className="layout-toggle">
             <button 
-              className={`toggle-btn active`}
-              title="Hiển thị dạng danh sách"
+              className={`toggle-btn ${currentLayout === 'grid' ? 'active' : ''}`}
+              title="Hiển thị dạng lưới"
             >
-              ☰
+              ⊞
             </button>
           </div>
         </div>
       </div>
 
-      <div className="products-list">
+      <div className={currentLayout === 'grid' ? 'products-grid' : 'products-list'}>
         {filteredProducts.map((product) => (
           <div
             key={product.id}
             className={`product-card ${!product.available || product.status !== 'active' ? 'unavailable' : ''}`}
           >
-            {/* Cột 1: Ảnh sản phẩm */}
-            <div className="product-image-column">
-              <div 
-                className="product-image"
-                onClick={(e) => handleProductImageClick(product, e)}
-              >
+            {/* Ảnh sản phẩm */}
+            <div 
+              className="product-image"
+              onClick={(e) => handleProductImageClick(product, e)}
+            >
+              {product.imageUrl || product.image_url || product.image ? (
                 <img
-                  src={product.imageUrl || "/placeholder.svg"} 
+                  src={product.imageUrl || product.image_url || product.image} 
                   alt={product.name}
                   onError={(e) => {
-                    e.target.src = "/placeholder.svg"
+                    console.log('❌ Image load error for product:', product.name, 'URL:', e.target.src);
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                  onLoad={() => {
+                    console.log('✅ Image loaded successfully for product:', product.name);
                   }}
                 />
-                {(!product.available || product.status !== 'active') && (
-                  <div className="unavailable-overlay">
-                    <span>
-                      {product.status === 'out_of_stock' ? 'Hết hàng' : 'Tạm ngừng'}
-                    </span>
-                  </div>
+              ) : null}
+              
+              {/* Placeholder khi không có ảnh hoặc ảnh lỗi */}
+              <div 
+                className="product-placeholder"
+                style={{ display: product.imageUrl || product.image_url || product.image ? 'none' : 'flex' }}
+              >
+                <div className="placeholder-content">
+                  <div className="placeholder-icon">🍽️</div>
+                  <span className="placeholder-text">Không có ảnh</span>
+                </div>
+              </div>
+              {(!product.available || product.status !== 'active') && (
+                <div className="unavailable-overlay">
+                  <span>
+                    {product.status === 'out_of_stock' ? 'Hết hàng' : 'Tạm ngừng'}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Thông tin sản phẩm */}
+            <div className="product-info">
+              <div className="product-content">
+                <h3 className="product-name">{product.name}</h3>
+                <p className="shop-name">🏪 {getShopName(product.shopId)}</p>
+                <p className="product-description">{product.description}</p>
+                <div className="product-stats">
+                  <span className="category">{getCategoryName(product.categoryId)}</span>
+                  <span className={`status ${product.status}`}>
+                    {product.status === 'active' ? '✅ Còn hàng' : 
+                     product.status === 'inactive' ? '⏸️ Tạm ngừng' : 
+                     product.status === 'out_of_stock' ? '❌ Hết hàng' : product.status}
+                  </span>
+                </div>
+              </div>
+
+              {/* Giá và nút thêm vào giỏ hàng */}
+              <div className="product-actions">
+                <div className="product-price">
+                  <span className="current-price">{product.price.toLocaleString()}đ</span>
+                </div>
+                
+                {/* Nút Add to Cart với icon đẹp hơn */}
+                {product.available && product.status === 'active' && (
+                  <button 
+                    className="add-to-cart-btn"
+                    onClick={(e) => handleAddToCart(product, e)}
+                  >
+                    🛒 Thêm vào giỏ hàng
+                  </button>
                 )}
               </div>
-            </div>
-
-            {/* Cột 2: Mô tả sản phẩm */}
-            <div className="product-description-column">
-              <h3 className="product-name">{product.name}</h3>
-              <p className="shop-name">🏪 {getShopName(product.shopId)}</p>
-              <p className="product-description">{product.description}</p>
-              <div className="product-stats">
-                <span className="category">{getCategoryName(product.categoryId)}</span>
-                <span className={`status ${product.status}`}>
-                  {product.status === 'active' ? '✅ Còn hàng' : 
-                   product.status === 'inactive' ? '⏸️ Tạm ngừng' : 
-                   product.status === 'out_of_stock' ? '❌ Hết hàng' : product.status}
-                </span>
-              </div>
-            </div>
-
-            {/* Cột 3: Giá tiền và nút thêm vào giỏ hàng */}
-            <div className="product-actions-column">
-              <div className="product-price">
-                <span className="current-price">{product.price.toLocaleString()}đ</span>
-              </div>
-              
-              {/* Nút Add to Cart với icon đẹp hơn */}
-              {product.available && product.status === 'active' && (
-                <button 
-                  className="add-to-cart-btn"
-                  onClick={(e) => handleAddToCart(product, e)}
-                >
-                  🛒 Thêm vào giỏ hàng
-                </button>
-              )}
             </div>
           </div>
         ))}

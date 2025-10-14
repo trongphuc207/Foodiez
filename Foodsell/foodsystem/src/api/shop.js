@@ -1,5 +1,19 @@
 const API_BASE_URL = 'http://localhost:8080/api';
 
+// Helper function to get auth token
+const getAuthToken = () => {
+  return localStorage.getItem('authToken');
+};
+
+// Helper function to get headers with auth
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
+
 export const shopAPI = {
   // Lấy tất cả shop
   getAllShops: async () => {
@@ -74,9 +88,7 @@ export const shopAPI = {
   updateShop: async (id, shopData) => {
     const response = await fetch(`${API_BASE_URL}/shops/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(shopData),
     });
     if (!response.ok) {

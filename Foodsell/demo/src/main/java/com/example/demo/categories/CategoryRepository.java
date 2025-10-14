@@ -47,3 +47,4 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
     List<Category> searchCategories(@Param("keyword") String keyword);
 }
 
+

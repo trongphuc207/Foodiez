@@ -132,3 +132,4 @@ app.listen(PORT, () => {
     console.log(`📋 Categories API available at http://localhost:${PORT}/api/categories`);
 });
 
+
