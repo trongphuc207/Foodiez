@@ -117,3 +117,27 @@ export const useChangePassword = () => {
     mutationFn: authAPI.changePassword,
   });
 };
+
+export const useVerifyOTP = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: authAPI.verifyOTP,
+    onSuccess: (data) => {
+      // Set token and user data
+      setAuthToken(data.token);
+      // Invalidate and refetch profile to update UI immediately
+      queryClient.invalidateQueries({ queryKey: authKeys.profile() });
+      // Force refetch profile data
+      queryClient.refetchQueries({ queryKey: authKeys.profile() });
+      // Dispatch custom event to notify components
+      window.dispatchEvent(new CustomEvent('authSuccess', { detail: data }));
+    },
+  });
+};
+
+export const useSendOTP = () => {
+  return useMutation({
+    mutationFn: authAPI.sendOTP,
+  });
+};

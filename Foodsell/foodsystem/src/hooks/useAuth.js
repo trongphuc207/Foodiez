@@ -109,6 +109,15 @@ export const useAuth = () => {
     }
   };
 
+  const changePassword = async (currentPassword, newPassword) => {
+    try {
+      const response = await authAPI.changePassword(currentPassword, newPassword);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const resetPassword = async (resetToken, newPassword) => {
     try {
       const response = await authAPI.resetPassword(resetToken, newPassword);
@@ -129,6 +138,7 @@ export const useAuth = () => {
     removeAvatar,
     forgotPassword,
     resetPassword,
+    changePassword,
     isAuthenticated: !!user,
     refreshProfile: loadProfile // Add function to refresh profile
   };

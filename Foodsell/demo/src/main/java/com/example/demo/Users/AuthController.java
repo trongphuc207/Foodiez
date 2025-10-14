@@ -31,10 +31,25 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<User>> register(@Valid @RequestBody RegisterRequest request) {
         User user = authService.register(request.getEmail(), request.getPassword(), request.getFullName());
+        
+        System.out.println("✅ Register successful for: " + user.getEmail() + " - OTP sent");
+        return ResponseEntity.ok(ApiResponse.success(user, "Đăng ký thành công. Vui lòng kiểm tra email để lấy mã OTP"));
+    }
+
+    @PostMapping("/send-otp")
+    public ResponseEntity<ApiResponse<Void>> sendOTP(@Valid @RequestBody SendOTPRequest request) {
+        authService.sendOTPForSignup(request.getEmail());
+        
+        return ResponseEntity.ok(ApiResponse.success(null, "Mã OTP đã được gửi đến email của bạn"));
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<ApiResponse<User>> verifyOTP(@Valid @RequestBody OTPRequest request) {
+        User user = authService.verifyOTPAndActivateAccount(request.getEmail(), request.getOtpCode());
         String token = jwtUtil.generateToken(user.getEmail());
         
-        System.out.println("✅ Register successful for: " + user.getEmail());
-        return ResponseEntity.ok(ApiResponse.successWithToken(user, token, "Đăng ký thành công"));
+        System.out.println("✅ OTP verification successful for: " + user.getEmail());
+        return ResponseEntity.ok(ApiResponse.successWithToken(user, token, "Xác thực OTP thành công. Tài khoản đã được kích hoạt"));
     }
 
     @PostMapping("/login")
@@ -289,6 +304,10 @@ public class AuthController {
     public ResponseEntity<ApiResponse<User>> changePassword(
             Authentication authentication,
             @Valid @RequestBody ChangePasswordRequest request) {
+        
+        if (authentication == null || authentication.getPrincipal() == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Authentication required"));
+        }
         
         User user = (User) authentication.getPrincipal();
         String email = user.getEmail();

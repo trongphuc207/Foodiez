@@ -101,6 +101,12 @@
       <scope>runtime</scope>
     </dependency>
 
+    <!-- HTTP Client for PayOS -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webflux</artifactId>
+    </dependency>
+
     <!-- Test -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
