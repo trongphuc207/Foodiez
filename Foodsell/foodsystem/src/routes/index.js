@@ -6,6 +6,14 @@ import InformationPage from '../Page/InformationPage/InformationPage';
 import CustomerProfile from '../components/CustomerProfileComponent/CustomerProfile';
 import ResetPasswordPage from '../Page/ResetPasswordPage/ResetPasswordPage';
 import AdminPage from '../Page/AdminPage/AdminPage';
+
+import ShopList from '../components/ShopComponent/ShopList';
+import ShopDetail from '../components/ShopComponent/ShopDetail';
+import ShopRegistration from '../components/ShopComponent/ShopRegistration';
+import ShopDashboard from '../components/ShopComponent/ShopDashboard';
+import CategoryManagement from '../components/CategoryComponent/CategoryManagement';
+import ShopManagement from '../components/ShopManagementComponent/ShopManagement';
+=======
 import CheckoutPage from '../Page/CheckoutPage/CheckoutPage';
 import PaymentSuccessPage from '../Page/PaymentSuccessPage/PaymentSuccessPage';
 import PaymentCancelPage from '../Page/PaymentCancelPage/PaymentCancelPage';
@@ -17,6 +25,7 @@ import ShipperMapPage from '../Page/ShipperMapPage/ShipperMapPage';
 import ShipperOverviewPage from '../Page/ShipperOverviewPage/ShipperOverviewPage';
 import RouteGuard from '../components/RouteGuard/RouteGuard';
 import Unauthorized from '../components/Unauthorized/Unauthorized';
+
 export const routes = [ 
         {
             path: '/',
@@ -55,6 +64,40 @@ export const routes = [
             isShowHeader: true
         },
         {
+
+            path: '/shops',
+            component: ShopList,
+            isShowHeader: true
+        },
+        {
+            path: '/shops/:id',
+            component: ShopDetail,
+            isShowHeader: true
+        },
+        {
+            path: '/shops/register',
+            component: ShopRegistration,
+            isShowHeader: true
+        },
+        {
+            path: '/shops/dashboard',
+            component: ShopDashboard,
+            isShowHeader: true
+        },
+        {
+            path: '/categories',
+            component: CategoryManagement,
+            isShowHeader: true
+        },
+        {
+            path: '/shop-management',
+            component: ShopManagement,
+            isShowHeader: true
+        },
+        {
+            path: '/iformation',
+            component: InformationPage
+=======
             path: '/information',
             component: InformationPage,
             isShowHeader: true
@@ -127,6 +170,7 @@ export const routes = [
             path: '/unauthorized',
             component: Unauthorized,
             isShowHeader: false
+
         },
         {
             path: '*',

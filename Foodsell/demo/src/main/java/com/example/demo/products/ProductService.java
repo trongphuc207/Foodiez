@@ -18,6 +18,10 @@ public class ProductService {
     public List<Product> searchProducts(String keyword) {
         return repo.findByNameContainingIgnoreCase(keyword);
     }
+    
+    public List<Product> getProductsByShopId(int shopId) {
+        return repo.findByShopId(shopId);
+    }
     public Product createProduct(Product product) {
         return repo.save(product);
     }

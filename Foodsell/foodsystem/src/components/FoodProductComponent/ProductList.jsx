@@ -7,29 +7,38 @@ import { useCart } from "../../contexts/CartContext"
 import { getShopName } from "../../constants/shopNames"
 import { getCategoryName } from "../../constants/categoryNames"
 
-const ProductList = ({ category }) => {
+const ProductList = ({ category, products: externalProducts, layout = 'grid' }) => {
   const [products, setProducts] = useState([])
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [currentLayout] = useState('grid') // Sử dụng grid layout đẹp hơn
   const { addToCart } = useCart()
 
-  // gọi API lấy sản phẩm
+  // gọi API lấy sản phẩm hoặc sử dụng products từ props
   useEffect(() => {
-    setLoading(true)
-    axios.get("http://localhost:8080/api/products")
-      .then((res) => {
-        setProducts(res.data)
-        setError(null)
-      })
-      .catch((err) => {
-        console.error("Lỗi khi gọi API:", err)
-        setError("Không thể tải danh sách sản phẩm")
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }, [])
+    if (externalProducts) {
+      // Sử dụng products từ props (cho search results)
+      setProducts(externalProducts)
+      setLoading(false)
+      setError(null)
+    } else {
+      // Fetch từ API (cho HomePage)
+      setLoading(true)
+      axios.get("http://localhost:8080/api/products")
+        .then((res) => {
+          setProducts(res.data)
+          setError(null)
+        })
+        .catch((err) => {
+          console.error("Lỗi khi gọi API:", err)
+          setError("Không thể tải danh sách sản phẩm")
+        })
+        .finally(() => {
+          setLoading(false)
+        })
+    }
+  }, [externalProducts])
 
   // lọc theo category 
   const filteredProducts = category
@@ -55,6 +64,7 @@ const ProductList = ({ category }) => {
     return (
       <div className="product-list-container">
         <div className="loading">
+          <div className="loading-spinner"></div>
           <p>Đang tải sản phẩm...</p>
         </div>
       </div>
@@ -75,27 +85,60 @@ const ProductList = ({ category }) => {
   return (
     <div className="product-list-container">
       <div className="product-list-header">
-        <h2>{category || "Tất cả sản phẩm"}</h2>
-        <p>{filteredProducts.length} sản phẩm</p>
+        <div className="header-content">
+          <div className="header-text">
+            <h2>
+              {category ? getCategoryName(category) : "Tất cả sản phẩm"}
+            </h2>
+            <p>{filteredProducts.length} sản phẩm</p>
+          </div>
+          <div className="layout-toggle">
+            <button 
+              className={`toggle-btn ${currentLayout === 'grid' ? 'active' : ''}`}
+              title="Hiển thị dạng lưới"
+            >
+              ⊞
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div className="products-grid">
+      <div className={currentLayout === 'grid' ? 'products-grid' : 'products-list'}>
         {filteredProducts.map((product) => (
           <div
             key={product.id}
             className={`product-card ${!product.available || product.status !== 'active' ? 'unavailable' : ''}`}
           >
+            {/* Ảnh sản phẩm */}
             <div 
               className="product-image"
               onClick={(e) => handleProductImageClick(product, e)}
             >
-              <img
-                src={product.imageUrl || "/placeholder.svg"} 
-                alt={product.name}
-                onError={(e) => {
-                  e.target.src = "/placeholder.svg"
-                }}
-              />
+              {product.imageUrl || product.image_url || product.image ? (
+                <img
+                  src={product.imageUrl || product.image_url || product.image} 
+                  alt={product.name}
+                  onError={(e) => {
+                    console.log('❌ Image load error for product:', product.name, 'URL:', e.target.src);
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                  onLoad={() => {
+                    console.log('✅ Image loaded successfully for product:', product.name);
+                  }}
+                />
+              ) : null}
+              
+              {/* Placeholder khi không có ảnh hoặc ảnh lỗi */}
+              <div 
+                className="product-placeholder"
+                style={{ display: product.imageUrl || product.image_url || product.image ? 'none' : 'flex' }}
+              >
+                <div className="placeholder-content">
+                  <div className="placeholder-icon">🍽️</div>
+                  <span className="placeholder-text">Không có ảnh</span>
+                </div>
+              </div>
               {(!product.available || product.status !== 'active') && (
                 <div className="unavailable-overlay">
                   <span>
@@ -104,31 +147,39 @@ const ProductList = ({ category }) => {
                 </div>
               )}
             </div>
+
+            {/* Thông tin sản phẩm */}
             <div className="product-info">
-              <h3>{product.name}</h3>
-              <p className="shop-name">{getShopName(product.shopId)}</p>
-              <p className="product-description">{product.description}</p>
-              <div className="product-stats">
-                <span className="category">Danh mục: {getCategoryName(product.categoryId)}</span>
-                <span className="status">
-                  {product.status === 'active' ? '✅ Còn hàng' : 
-                   product.status === 'inactive' ? '⏸️ Tạm ngừng' : 
-                   product.status === 'out_of_stock' ? '❌ Hết hàng' : product.status}
-                </span>
+              <div className="product-content">
+                <h3 className="product-name">{product.name}</h3>
+                <p className="shop-name">🏪 {getShopName(product.shopId)}</p>
+                <p className="product-description">{product.description}</p>
+                <div className="product-stats">
+                  <span className="category">{getCategoryName(product.categoryId)}</span>
+                  <span className={`status ${product.status}`}>
+                    {product.status === 'active' ? '✅ Còn hàng' : 
+                     product.status === 'inactive' ? '⏸️ Tạm ngừng' : 
+                     product.status === 'out_of_stock' ? '❌ Hết hàng' : product.status}
+                  </span>
+                </div>
               </div>
-              <div className="product-price">
-                <span className="current-price">{product.price.toLocaleString()}đ</span>
+
+              {/* Giá và nút thêm vào giỏ hàng */}
+              <div className="product-actions">
+                <div className="product-price">
+                  <span className="current-price">{product.price.toLocaleString()}đ</span>
+                </div>
+                
+                {/* Nút Add to Cart với icon đẹp hơn */}
+                {product.available && product.status === 'active' && (
+                  <button 
+                    className="add-to-cart-btn"
+                    onClick={(e) => handleAddToCart(product, e)}
+                  >
+                    🛒 Thêm vào giỏ hàng
+                  </button>
+                )}
               </div>
-              
-              {/* Nút Add to Cart màu đỏ */}
-              {product.available && product.status === 'active' && (
-                <button 
-                  className="add-to-cart-btn"
-                  onClick={(e) => handleAddToCart(product, e)}
-                >
-                  🛒 Thêm vào giỏ
-                </button>
-              )}
             </div>
           </div>
         ))}

@@ -8,6 +8,7 @@
   padding:24px;
   position:relative;
   box-sizing:border-box;
+  overflow:hidden; /* fix scrollbar issue */
 }
 
 /* nút đóng */
@@ -116,6 +117,8 @@
   border:1px solid #cde6d2; border-radius:10px;
   background:#fafafa;
   transition:border .2s, background .2s, box-shadow .2s;
+  position:relative;
+  overflow:visible;
 }
 .auth-input:hover{ background:#fff; border-color:#43a047; box-shadow:0 2px 10px rgba(67,160,71,.12); }
 .auth-input img{ width:20px; height:20px; margin-right:12px; opacity:.7; }
@@ -128,8 +131,10 @@
   background:transparent !important;
   box-shadow:none !important;
   font-size:15px; color:#222;
-  padding:0; /* xoá padding bootstrap */
-  height:unset;
+  padding:12px 0 !important; /* đảm bảo có padding */
+  height:auto !important;
+  display:block !important;
+  visibility:visible !important;
 }
 .auth-input input:focus{ outline:none !important; box-shadow:none !important; }
 

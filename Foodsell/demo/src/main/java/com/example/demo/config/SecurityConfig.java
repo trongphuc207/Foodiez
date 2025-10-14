@@ -28,6 +28,17 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
+
+                .requestMatchers("/api/auth/**").permitAll() // Allow all auth endpoints
+                .requestMatchers("/api/products/**").permitAll() // Allow all products endpoints
+                .requestMatchers("/api/categories/**").permitAll() // Allow all categories endpoints
+                .requestMatchers("/api/shops/**").permitAll() // Allow all shops endpoints
+                .requestMatchers("/uploads/**").permitAll()
+                .requestMatchers("/login/oauth2/code/**").permitAll()
+                // Protected endpoints
+                .requestMatchers("/api/**").authenticated()
+                .anyRequest().permitAll()
+=======
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/products/**").permitAll()
                 .requestMatchers("/api/orders/test").permitAll()
@@ -52,6 +63,7 @@ public class SecurityConfig {
                 
                 // All other requests need authentication
                 .anyRequest().authenticated()
+
             )
             .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
