@@ -1,22 +1,37 @@
 import { useEffect, useState } from "react";
 
 import { useLocation } from "react-router-dom";
-import { productAPI } from "../../api/product";
+import { getAllProducts, searchProducts } from "../../api/product";
 import ProductList from "../../components/FoodProductComponent/ProductList";
-=======
-import { getAllProducts } from "../../api/product";
 
 
 export default function ProductPage() {
   const [products, setProducts] = useState([]);
+  const location = useLocation();
+  const searchKeyword = new URLSearchParams(location.search).get('search');
 
   useEffect(() => {
-    // Lấy tất cả sản phẩm khi vào trang
-    getAllProducts().then(setProducts);
-  }, []);
+    const loadProducts = async () => {
+      try {
+        if (searchKeyword) {
+          // Tìm kiếm sản phẩm theo keyword
+          const searchResults = await searchProducts(searchKeyword);
+          setProducts(searchResults);
+        } else {
+          // Lấy tất cả sản phẩm
+          const allProducts = await getAllProducts();
+          setProducts(allProducts);
+        }
+      } catch (error) {
+        console.error('Error loading products:', error);
+        setProducts([]);
+      }
+    };
+
+    loadProducts();
+  }, [searchKeyword]);
 
   return (
-
     <div style={{ padding: '20px' }}>
       {searchKeyword ? (
         <div>
@@ -36,17 +51,6 @@ export default function ProductPage() {
       
       {/* Sử dụng ProductList component để hiển thị sản phẩm với đầy đủ chức năng */}
       {products.length > 0 && <ProductList products={products} layout="list" />}
-=======
-    <div>
-      <h2>Danh sách sản phẩm</h2>
-      <ul>
-        {products.map((p) => (
-          <li key={p.id}>
-            <b>{p.name}</b> - {p.price} VND
-          </li>
-        ))}
-      </ul>
-
     </div>
   );
 }

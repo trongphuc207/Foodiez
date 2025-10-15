@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ButtonInputSearch from "../ButtonInputSearch/ButtonInputSearch";
+import SimpleSearch from "../ButtonInputSearch/SimpleSearch";
 import LoginSignUp from "../LoginSignUpComponent/LoginSignUp";
 import Cart from "../CartComponent/Cart";
 import SidebarComponent from "../SidebarComponent/SidebarComponent";
@@ -12,6 +13,7 @@ const Header = ({ toggleSidebar }) => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showCart, setShowCart] = useState(false);
+  const [showNavbar, setShowNavbar] = useState(false);
 
   // NEW: state mở modal và mode (login/signup)
   const [showAuth, setShowAuth] = useState(false);
@@ -84,7 +86,7 @@ const Header = ({ toggleSidebar }) => {
               </div>
             )}
           </div>
-=======
+          
           <button
             className="hamburger-btn"
             onClick={() => setShowSidebar(true)}
@@ -114,10 +116,8 @@ const Header = ({ toggleSidebar }) => {
 
         <div className="header-center">
           <div className="search-container">
-            <ButtonInputSearch
+            <SimpleSearch
               placeholder="Tìm kiếm món ăn, nhà hàng..."
-              textButton="Tìm kiếm"
-              size="large"
               onSearch={handleSearch}
             />
           </div>

@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
 import { FiSearch, FiX } from 'react-icons/fi';
-import './ButtonInputSearch.css';
+import './SimpleSearch.css';
 
-const ButtonInputSearch = ({ size, placeholder, textButton, onSearch }) => {
+const SimpleSearch = ({ 
+  placeholder = "Tìm kiếm món ăn, nhà hàng...", 
+  onSearch 
+}) => {
   const [keyword, setKeyword] = useState("");
   const [isFocused, setIsFocused] = useState(false);
 
   const handleSearch = () => {
-    if (onSearch) onSearch(keyword.trim());
+    if (onSearch && keyword.trim()) {
+      onSearch(keyword.trim());
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -16,12 +21,15 @@ const ButtonInputSearch = ({ size, placeholder, textButton, onSearch }) => {
     }
   };
 
+  const clearSearch = () => {
+    setKeyword("");
+  };
+
   return (
-    <div className={`modern-search-wrapper ${size || 'large'}`}>
-      <div className={`modern-search-container ${isFocused ? 'focused' : ''}`}>
-        <div className="search-icon-wrapper">
-          <FiSearch className="search-icon" />
-        </div>
+    <div className="simple-search-wrapper">
+      <div className={`simple-search-container ${isFocused ? 'focused' : ''}`}>
+        <FiSearch className="search-icon" />
+        
         <input
           type="text"
           value={keyword}
@@ -29,28 +37,31 @@ const ButtonInputSearch = ({ size, placeholder, textButton, onSearch }) => {
           onKeyPress={handleKeyPress}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder={placeholder || "Tìm kiếm món ăn, nhà hàng..."}
-          className="modern-search-input"
+          placeholder={placeholder}
+          className="search-input"
         />
+        
         {keyword && (
           <button 
             className="clear-button"
-            onClick={() => setKeyword("")}
+            onClick={clearSearch}
+            type="button"
           >
             <FiX />
           </button>
         )}
       </div>
+      
       <button 
-        className={`modern-search-button ${!keyword.trim() ? 'disabled' : ''}`}
+        className={`search-button ${!keyword.trim() ? 'disabled' : ''}`}
         onClick={handleSearch}
         disabled={!keyword.trim()}
+        type="button"
       >
-        <FiSearch className="button-icon" />
-        <span className="button-text">{textButton || "Tìm kiếm"}</span>
+        Tìm kiếm
       </button>
     </div>
   );
 };
 
-export default ButtonInputSearch;
+export default SimpleSearch;

@@ -13,7 +13,6 @@ import ShopRegistration from '../components/ShopComponent/ShopRegistration';
 import ShopDashboard from '../components/ShopComponent/ShopDashboard';
 import CategoryManagement from '../components/CategoryComponent/CategoryManagement';
 import ShopManagement from '../components/ShopManagementComponent/ShopManagement';
-=======
 import CheckoutPage from '../Page/CheckoutPage/CheckoutPage';
 import PaymentSuccessPage from '../Page/PaymentSuccessPage/PaymentSuccessPage';
 import PaymentCancelPage from '../Page/PaymentCancelPage/PaymentCancelPage';
@@ -95,9 +94,6 @@ export const routes = [
             isShowHeader: true
         },
         {
-            path: '/iformation',
-            component: InformationPage
-=======
             path: '/information',
             component: InformationPage,
             isShowHeader: true

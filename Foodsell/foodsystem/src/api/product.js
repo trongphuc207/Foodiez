@@ -29,8 +29,6 @@ export const testServerConnection = async () => {
     return false;
   }
 };
-=======
-
 
 // Helper function to get auth token
 const getAuthToken = () => {
@@ -44,7 +42,7 @@ const getAuthHeaders = () => {
     'Content-Type': 'application/json',
     ...(token && { 'Authorization': `Bearer ${token}` })
   };
-=======
+};
 // Export individual functions for backward compatibility
 export const getAllProducts = async () => {
   const response = await fetch(`${API_BASE_URL}/products`);
