@@ -25,12 +25,26 @@ const Header = ({ toggleSidebar }) => {
   // Cart context
   const { getTotalItems } = useCart();
 
-  // Đóng modal khi bấm ESC
+  // Đóng modal khi bấm ESC và quản lý scrollbar
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && setShowAuth(false);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // Quản lý scrollbar khi modal mở/đóng
+  useEffect(() => {
+    if (showAuth) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    
+    // Cleanup khi component unmount
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [showAuth]);
 
   const openAuth = (mode = "login") => {
     setAuthMode(mode);
@@ -56,37 +70,7 @@ const Header = ({ toggleSidebar }) => {
     <header className="header">
       <div className="header-container">
         <div className="header-left">
-
-          <div className="navbar-dropdown">
-            <button
-              className="hamburger-btn"
-              onClick={() => setShowNavbar(!showNavbar)}
-            >
-              <span></span>
-              <span></span>
-              <span></span>
-            </button>
-            {showNavbar && (
-              <div className="navbar-menu">
-                <a href="/" className="navbar-link">
-                  🏠 Trang chủ
-                </a>
-                <a href="/products" className="navbar-link">
-                  🍕 Sản phẩm
-                </a>
-                <a href="/orders" className="navbar-link">
-                  📋 Đơn hàng
-                </a>
-                <a href="/shops" className="navbar-link">
-                  🏪 Cửa hàng
-                </a>
-                <a href="/about" className="navbar-link">
-                  ℹ️ Giới thiệu
-                </a>
-              </div>
-            )}
-          </div>
-          
+          {/* Hamburger menu bên trái */}
           <button
             className="hamburger-btn"
             onClick={() => setShowSidebar(true)}
@@ -95,7 +79,6 @@ const Header = ({ toggleSidebar }) => {
             <span></span>
             <span></span>
           </button>
-
         </div>
 
         <div

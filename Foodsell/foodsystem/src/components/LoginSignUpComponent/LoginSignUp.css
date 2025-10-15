@@ -1,6 +1,7 @@
 /* Card chứa auth */
 .auth-card{
-  width:min(92vw, 760px);
+  width:min(90vw, 500px);
+  max-width: 500px;
   margin:24px auto;
   background:#fff;
   border-radius:14px;
@@ -8,7 +9,8 @@
   padding:24px;
   position:relative;
   box-sizing:border-box;
-  overflow:hidden; /* fix scrollbar issue */
+  overflow:hidden; /* Ẩn scrollbar */
+  min-width: 300px; /* Đảm bảo chiều rộng tối thiểu */
 }
 
 /* nút đóng */
@@ -112,13 +114,18 @@
 
 /* Một hàng input */
 .auth-input{
-  display:flex; align-items:center; height:48px;
+  display:flex; 
+  align-items:center; 
+  height:48px;
   padding:0 14px;
-  border:1px solid #cde6d2; border-radius:10px;
+  border:1px solid #cde6d2; 
+  border-radius:10px;
   background:#fafafa;
   transition:border .2s, background .2s, box-shadow .2s;
   position:relative;
   overflow:visible;
+  min-width: 0; /* Cho phép flex item co lại */
+  width: 100%; /* Đảm bảo chiều rộng đầy đủ */
 }
 .auth-input:hover{ background:#fff; border-color:#43a047; box-shadow:0 2px 10px rgba(67,160,71,.12); }
 .auth-input img{ width:20px; height:20px; margin-right:12px; opacity:.7; }
@@ -126,15 +133,21 @@
 
 /* Reset ảnh hưởng của Bootstrap/form-control lên input bên trong */
 .auth-input input{
-  flex:1 1 auto; min-width:0; width:100%;
-  border:0 !important; outline:none !important;
+  flex:1 1 auto; 
+  min-width:0; 
+  width:100%;
+  border:0 !important; 
+  outline:none !important;
   background:transparent !important;
   box-shadow:none !important;
-  font-size:15px; color:#222;
-  padding:12px 0 !important; /* đảm bảo có padding */
+  font-size:15px; 
+  color:#222;
+  padding:12px 8px !important; /* Thêm padding ngang */
   height:auto !important;
   display:block !important;
   visibility:visible !important;
+  white-space: nowrap; /* Ngăn text wrap */
+  overflow: visible; /* Cho phép text hiển thị đầy đủ */
 }
 .auth-input input:focus{ outline:none !important; box-shadow:none !important; }
 
@@ -189,3 +202,70 @@
   transition:opacity .2s;
 }
 .auth-submit:hover{ opacity:.92; }
+
+/* Ẩn scrollbar cho toàn bộ modal - cách mạnh hơn */
+.auth-card::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.auth-card::-webkit-scrollbar-track {
+  display: none !important;
+}
+
+.auth-card::-webkit-scrollbar-thumb {
+  display: none !important;
+}
+
+.auth-card {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+  overflow: hidden !important;
+}
+
+/* Responsive fixes */
+@media (max-width: 768px) {
+  .auth-card {
+    width: 95vw;
+    max-width: 400px;
+    margin: 12px auto;
+    padding: 20px;
+    min-width: 280px; /* Đảm bảo chiều rộng tối thiểu */
+  }
+  
+  .auth-input {
+    min-width: 0;
+    width: 100%;
+  }
+  
+  .auth-input input {
+    min-width: 0;
+    width: 100%;
+    padding: 12px 4px !important;
+  }
+  
+  .auth-title {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    width: 98vw;
+    max-width: 350px;
+    margin: 8px auto;
+    padding: 16px;
+    min-width: 260px; /* Đảm bảo chiều rộng tối thiểu */
+  }
+  
+  .auth-input {
+    height: 44px;
+    padding: 0 12px;
+  }
+  
+  .auth-input input {
+    font-size: 14px;
+    padding: 10px 4px !important;
+  }
+}

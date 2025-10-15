@@ -28,8 +28,6 @@ const SimpleSearch = ({
   return (
     <div className="simple-search-wrapper">
       <div className={`simple-search-container ${isFocused ? 'focused' : ''}`}>
-        <FiSearch className="search-icon" />
-        
         <input
           type="text"
           value={keyword}
