@@ -99,6 +99,13 @@ const Header = ({ toggleSidebar }) => {
           <button className="action-btn contact-btn">📞 Liên hệ</button>
 
           <button 
+            className="action-btn voucher-btn"
+            onClick={() => navigate('/vouchers')}
+          >
+            🎫 Voucher
+          </button>
+
+          <button 
             className="cart-btn"
             onClick={() => setShowCart(true)}
           >

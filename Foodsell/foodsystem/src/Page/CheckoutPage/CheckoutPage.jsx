@@ -4,6 +4,7 @@ import { useCart } from '../../contexts/CartContext';
 import DeliveryInformationForm from '../../components/CheckoutComponent/DeliveryInformationForm';
 import PaymentMethodForm from '../../components/CheckoutComponent/PaymentMethodForm';
 import OrderConfirmation from '../../components/CheckoutComponent/OrderConfirmation';
+import VoucherSelector from '../../components/VoucherComponent/VoucherSelector';
 import { createPaymentLink, createPaymentData } from '../../api/payment';
 import './CheckoutPage.css';
 
@@ -14,6 +15,8 @@ const CheckoutPage = () => {
   const [deliveryInfo, setDeliveryInfo] = useState({});
   const [paymentInfo, setPaymentInfo] = useState({});
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [appliedVoucher, setAppliedVoucher] = useState(null);
+  const [voucherDiscount, setVoucherDiscount] = useState(0);
 
   const steps = [
     {
@@ -46,6 +49,24 @@ const CheckoutPage = () => {
     setCurrentStep(3);
   };
 
+  // Xử lý áp dụng voucher
+  const handleVoucherApplied = (voucherInfo) => {
+    setAppliedVoucher(voucherInfo);
+    setVoucherDiscount(voucherInfo.discountAmount);
+  };
+
+  // Xử lý xóa voucher
+  const handleRemoveVoucher = () => {
+    setAppliedVoucher(null);
+    setVoucherDiscount(0);
+  };
+
+  // Tính tổng tiền sau khi áp dụng voucher
+  const getFinalTotal = () => {
+    const grandTotal = getGrandTotal();
+    return Math.max(0, grandTotal - voucherDiscount);
+  };
+
   const handleOrderComplete = async () => {
     setIsProcessingPayment(true);
     try {
@@ -62,7 +83,7 @@ const CheckoutPage = () => {
         const paymentData = createPaymentData(
           deliveryInfo,
           cartItems,
-          getGrandTotal()
+          getFinalTotal() // Sử dụng tổng tiền sau khi áp dụng voucher
         );
 
         console.log('Payment data created:', paymentData);
@@ -97,7 +118,10 @@ const CheckoutPage = () => {
               paymentInfo,
               cartItems: mappedCartItems,
               payosOrderCode: paymentData.orderCode,
-              totalAmount: getGrandTotal(),
+              totalAmount: getFinalTotal(), // Sử dụng tổng tiền sau khi áp dụng voucher
+              originalAmount: getGrandTotal(), // Lưu tổng tiền gốc
+              voucherDiscount: voucherDiscount,
+              appliedVoucher: appliedVoucher,
               status: 'pending_payment'
             };
             
@@ -178,11 +202,20 @@ const CheckoutPage = () => {
         );
       case 2:
         return (
-          <PaymentMethodForm 
-            onSubmit={handlePaymentSubmit}
-            onBack={() => setCurrentStep(1)}
-            initialData={paymentInfo}
-          />
+          <div>
+            <VoucherSelector
+              userId={1} // TODO: Lấy từ authentication context
+              orderAmount={getGrandTotal()}
+              onVoucherApplied={handleVoucherApplied}
+              appliedVoucher={appliedVoucher}
+              onRemoveVoucher={handleRemoveVoucher}
+            />
+            <PaymentMethodForm 
+              onSubmit={handlePaymentSubmit}
+              onBack={() => setCurrentStep(1)}
+              initialData={paymentInfo}
+            />
+          </div>
         );
       case 3:
         return (
@@ -193,6 +226,9 @@ const CheckoutPage = () => {
             totalAmount={getTotalAmount()}
             shippingFee={getShippingFee()}
             grandTotal={getGrandTotal()}
+            voucherDiscount={voucherDiscount}
+            appliedVoucher={appliedVoucher}
+            finalTotal={getFinalTotal()}
             onComplete={handleOrderComplete}
             onBack={() => setCurrentStep(2)}
             isProcessingPayment={isProcessingPayment}

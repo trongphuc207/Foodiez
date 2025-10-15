@@ -8,6 +8,9 @@ const OrderConfirmation = ({
   totalAmount, 
   shippingFee, 
   grandTotal, 
+  voucherDiscount = 0,
+  appliedVoucher = null,
+  finalTotal = grandTotal,
   onComplete, 
   onBack,
   isProcessingPayment = false
@@ -111,9 +114,18 @@ const OrderConfirmation = ({
               <span>Phí vận chuyển:</span>
               <span>{formatPrice(shippingFee)}</span>
             </div>
+            {appliedVoucher && voucherDiscount > 0 && (
+              <div className="summary-row voucher-discount">
+                <span>
+                  <span className="voucher-icon">🎫</span>
+                  Giảm giá ({appliedVoucher.code}):
+                </span>
+                <span>-{formatPrice(voucherDiscount)}</span>
+              </div>
+            )}
             <div className="summary-row total">
               <span>Tổng cộng:</span>
-              <span>{formatPrice(grandTotal)}</span>
+              <span>{formatPrice(finalTotal)}</span>
             </div>
           </div>
         </div>

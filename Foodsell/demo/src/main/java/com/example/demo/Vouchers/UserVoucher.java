@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalDateTime;
 
 @Entity
@@ -21,6 +22,12 @@ public class UserVoucher {
 
     @Column(name = "voucher_id", nullable = false)
     private Integer voucherId;
+
+    // Relationship với Voucher
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "voucher_id", insertable = false, updatable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private Voucher voucher;
 
     @Column(name = "is_used", nullable = false)
     private Boolean isUsed = false;

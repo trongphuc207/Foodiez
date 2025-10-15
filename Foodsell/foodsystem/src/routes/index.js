@@ -15,6 +15,7 @@ import ShipperEarningsPage from '../Page/ShipperEarningsPage/ShipperEarningsPage
 import ShipperHistoryPage from '../Page/ShipperHistoryPage/ShipperHistoryPage';
 import ShipperMapPage from '../Page/ShipperMapPage/ShipperMapPage';
 import ShipperOverviewPage from '../Page/ShipperOverviewPage/ShipperOverviewPage';
+import VoucherPage from '../Page/VoucherPage/VoucherPage';
 import RouteGuard from '../components/RouteGuard/RouteGuard';
 import Unauthorized from '../components/Unauthorized/Unauthorized';
 export const routes = [ 
@@ -57,6 +58,11 @@ export const routes = [
         {
             path: '/information',
             component: InformationPage,
+            isShowHeader: true
+        },
+        {
+            path: '/vouchers',
+            component: VoucherPage,
             isShowHeader: true
         },
         {

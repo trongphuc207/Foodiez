@@ -16,10 +16,12 @@ import java.util.Optional;
 public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final OrderHistoryRepository orderHistoryRepository;
 
-    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository) {
+    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository, OrderHistoryRepository orderHistoryRepository) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
+        this.orderHistoryRepository = orderHistoryRepository;
     }
 
     public List<OrderDTO> getAllOrders() {
@@ -104,6 +106,10 @@ public class OrderService {
             // Save order
             Order savedOrder = orderRepository.save(order);
             System.out.println("✅ Order created with ID: " + savedOrder.getId());
+            
+            // Tạo order history cho việc tạo đơn hàng
+            createOrderHistory(savedOrder.getId(), null, status, "order_created", 
+                "Order was created with PayOS order code: " + payosOrderCode, "system");
             
             // Create order items
             if (cartItems != null && !cartItems.isEmpty()) {
@@ -302,17 +308,40 @@ public class OrderService {
             
             if (orderOpt.isPresent()) {
                 Order order = orderOpt.get();
+                String oldStatus = order.getStatus();
                 
                 // Update order status based on payment status
                 if ("PAID".equals(status)) {
-                    order.setStatus("paid");
-                    System.out.println("✅ Order " + order.getId() + " marked as PAID");
+                    // Cập nhật từ pending_payment thành paid
+                    if ("pending_payment".equals(order.getStatus())) {
+                        order.setStatus("paid");
+                        System.out.println("✅ Order " + order.getId() + " updated from pending_payment to PAID");
+                        
+                        // Tạo order history
+                        createOrderHistory(order.getId(), oldStatus, "paid", "payment_success", 
+                            "Payment completed successfully via PayOS. Transaction ID: " + transactionId, "system");
+                    } else {
+                        order.setStatus("paid");
+                        System.out.println("✅ Order " + order.getId() + " marked as PAID");
+                        
+                        // Tạo order history
+                        createOrderHistory(order.getId(), oldStatus, "paid", "payment_success", 
+                            "Payment completed successfully via PayOS. Transaction ID: " + transactionId, "system");
+                    }
                 } else if ("CANCELLED".equals(status)) {
                     order.setStatus("cancelled");
                     System.out.println("❌ Order " + order.getId() + " marked as CANCELLED");
+                    
+                    // Tạo order history
+                    createOrderHistory(order.getId(), oldStatus, "cancelled", "payment_cancelled", 
+                        "Payment was cancelled. Transaction ID: " + transactionId, "system");
                 } else if ("EXPIRED".equals(status)) {
                     order.setStatus("expired");
                     System.out.println("⏰ Order " + order.getId() + " marked as EXPIRED");
+                    
+                    // Tạo order history
+                    createOrderHistory(order.getId(), oldStatus, "expired", "payment_expired", 
+                        "Payment link expired. Transaction ID: " + transactionId, "system");
                 }
                 
                 // Update notes with payment information
@@ -334,5 +363,24 @@ public class OrderService {
             e.printStackTrace();
             return false;
         }
+    }
+    
+    // Tạo order history
+    @Transactional
+    public void createOrderHistory(Integer orderId, String statusFrom, String statusTo, 
+                                 String action, String description, String createdBy) {
+        try {
+            OrderHistory history = new OrderHistory(orderId, statusFrom, statusTo, action, description, createdBy);
+            orderHistoryRepository.save(history);
+            System.out.println("📝 Order history created: Order " + orderId + " " + statusFrom + " → " + statusTo);
+        } catch (Exception e) {
+            System.err.println("❌ Error creating order history: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    // Lấy lịch sử đơn hàng
+    public List<OrderHistory> getOrderHistory(Integer orderId) {
+        return orderHistoryRepository.findByOrderIdOrderByCreatedAtDesc(orderId);
     }
 }

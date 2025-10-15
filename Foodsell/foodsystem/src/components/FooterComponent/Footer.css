@@ -1,6 +1,6 @@
 .footer {
   background: #000000;
-  color: #0f172a;
+  color: #ffffff;
   padding: 3rem 0 1rem;
 }
 
@@ -33,7 +33,7 @@
   font-size: 1.1rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color:  #f1f5f9;
+  color: #ffffff !important;
 }
 
 .footer-description {

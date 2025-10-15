@@ -2,6 +2,7 @@ package com.example.demo;
 
 import com.example.demo.dto.OrderDTO;
 import com.example.demo.Orders.OrderService;
+import com.example.demo.Orders.OrderHistory;
 import com.example.demo.config.RoleChecker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,11 +33,11 @@ public class OrderController {
         return orderService.getAllOrders();
     }
     
-    // GET: Lấy đơn hàng theo ID (authenticated users)
-    @GetMapping("/{id}")
+    // GET: Lấy lịch sử đơn hàng theo order ID
+    @GetMapping("/{id}/history")
     @PreAuthorize("isAuthenticated()")
-    public OrderDTO getOrderById(@PathVariable Integer id) {
-        return orderService.getOrderById(id);
+    public List<OrderHistory> getOrderHistory(@PathVariable Integer id) {
+        return orderService.getOrderHistory(id);
     }
     
     // GET: Test endpoint

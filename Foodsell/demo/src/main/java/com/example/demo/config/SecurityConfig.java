@@ -34,6 +34,12 @@ public class SecurityConfig {
                 .requestMatchers("/api/payos/**").permitAll()
                 .requestMatchers("/test/**").permitAll()
                 
+                // Voucher endpoints (public for now, can be restricted later)
+                .requestMatchers("/api/vouchers/**").permitAll()
+                
+                // Static resources (uploads)
+                .requestMatchers("/uploads/**").permitAll()
+                
                 // Customer endpoints (accessible by all authenticated users)
                 .requestMatchers("/api/customer/**").authenticated()
                 .requestMatchers("/api/orders/buyer/**").authenticated()
