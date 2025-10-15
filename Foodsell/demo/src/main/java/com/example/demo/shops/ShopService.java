@@ -2,6 +2,7 @@ package com.example.demo.shops;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,8 +48,42 @@ public class ShopService {
     }
     
     // Cập nhật shop
+    @Transactional
     public Shop updateShop(Shop shop) {
-        return shopRepository.save(shop);
+        try {
+            // Lấy shop hiện tại từ database
+            Shop existingShop = shopRepository.findById(shop.getId())
+                .orElseThrow(() -> new RuntimeException("Shop not found with id: " + shop.getId()));
+            
+            // Chỉ update những field được phép (không update seller_id, created_at)
+            if (shop.getName() != null && !shop.getName().trim().isEmpty()) {
+                existingShop.setName(shop.getName().trim());
+            }
+            if (shop.getDescription() != null) {
+                existingShop.setDescription(shop.getDescription().trim());
+            }
+            if (shop.getAddress() != null && !shop.getAddress().trim().isEmpty()) {
+                existingShop.setAddress(shop.getAddress().trim());
+            }
+            if (shop.getOpeningHours() != null) {
+                existingShop.setOpeningHours(shop.getOpeningHours().trim());
+            }
+            if (shop.getRating() != null) {
+                existingShop.setRating(shop.getRating());
+            }
+            
+            // Log để debug
+            System.out.println("Updating shop with ID: " + existingShop.getId());
+            System.out.println("Seller ID (should not change): " + existingShop.getSellerId());
+            System.out.println("Name: " + existingShop.getName());
+            System.out.println("Address: " + existingShop.getAddress());
+            
+            return shopRepository.save(existingShop);
+        } catch (Exception e) {
+            System.err.println("Error updating shop: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to update shop: " + e.getMessage());
+        }
     }
     
     // Cập nhật rating cho shop

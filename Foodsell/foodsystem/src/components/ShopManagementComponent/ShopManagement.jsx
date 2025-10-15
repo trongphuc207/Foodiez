@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
-import { productAPI } from '../../api/product';
+import { productAPI, testServerConnection } from '../../api/product';
 import { shopAPI } from '../../api/shop';
 import categoryAPI from '../../api/category';
+import ImageUpload from '../AdminComponent/ImageUpload';
 import './ShopManagement.css';
 
 const ShopManagement = () => {
@@ -26,12 +27,15 @@ const ShopManagement = () => {
     status: 'active'
   });
 
+  // Image upload states
+  const [productImageUrl, setProductImageUrl] = useState(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
   const [shopForm, setShopForm] = useState({
     name: '',
     description: '',
     address: '',
-    phone: '',
-    email: ''
+    opening_hours: ''
   });
 
   // Fetch shop data
@@ -83,6 +87,17 @@ const ShopManagement = () => {
       console.error('❌ Categories error:', categoriesError);
     }
   }, [categoriesData, categoriesError]);
+
+  // Test server connection on mount
+  useEffect(() => {
+    const testConnection = async () => {
+      const isConnected = await testServerConnection();
+      if (!isConnected) {
+        console.warn('⚠️ Server connection test failed');
+      }
+    };
+    testConnection();
+  }, []);
 
   // Mutations
   const createProductMutation = useMutation({
@@ -174,10 +189,12 @@ const ShopManagement = () => {
       console.error('❌ Update product error:', error);
       
       // Check if it's a server connection issue
-      if (error.message.includes('Network error') || error.message.includes('Failed to fetch')) {
-        alert('❌ Không thể kết nối đến server!\n\nVui lòng kiểm tra:\n1. Server có đang chạy không?\n2. Kết nối internet\n3. Thử lại sau');
+      if (error.message.includes('Network error') || error.message.includes('Failed to fetch') || error.message.includes('Cannot connect to server')) {
+        alert('❌ Không thể kết nối đến server!\n\nVui lòng kiểm tra:\n1. Server có đang chạy không? (Port 8080)\n2. Kết nối internet\n3. Thử refresh trang\n4. Kiểm tra console để xem chi tiết lỗi');
       } else if (error.message.includes('500') || error.message.includes('Internal server error')) {
         alert('❌ Lỗi server!\n\nVui lòng thử lại sau hoặc liên hệ admin.');
+      } else if (error.message.includes('Server not responding properly')) {
+        alert('❌ Server không phản hồi đúng cách!\n\nVui lòng kiểm tra server có đang chạy không.');
       } else {
         alert('❌ Lỗi khi cập nhật món ăn: ' + error.message + '\n\nVui lòng thử lại hoặc liên hệ admin.');
       }
@@ -192,10 +209,19 @@ const ShopManagement = () => {
   });
 
   const updateShopMutation = useMutation({
-    mutationFn: ({ id, data }) => shopAPI.updateShop(id, data),
+    mutationFn: ({ id, data }) => {
+      console.log('📤 Updating shop:', id, 'with data:', data);
+      return shopAPI.updateShop(id, data);
+    },
     onSuccess: () => {
+      console.log('✅ Shop updated successfully');
       queryClient.invalidateQueries(['shop']);
       setShowShopForm(false);
+      alert('✅ Cập nhật thông tin cửa hàng thành công!');
+    },
+    onError: (error) => {
+      console.error('❌ Update shop error:', error);
+      alert('❌ Lỗi khi cập nhật thông tin cửa hàng: ' + error.message);
     }
   });
 
@@ -206,8 +232,7 @@ const ShopManagement = () => {
         name: shopData.data.name || '',
         description: shopData.data.description || '',
         address: shopData.data.address || '',
-        phone: shopData.data.phone || '',
-        email: shopData.data.email || ''
+        opening_hours: shopData.data.opening_hours || ''
       });
     }
   }, [shopData]);
@@ -261,12 +286,16 @@ const ShopManagement = () => {
       // Upload image if provided
       if (productForm.image && productResult?.data?.id) {
         console.log('📤 Uploading image for product:', productResult.data.id);
+        setIsUploadingImage(true);
         try {
-          await productAPI.uploadProductImage(productResult.data.id, productForm.image);
-          console.log('✅ Image uploaded successfully');
+          const uploadResult = await productAPI.uploadProductImage(productResult.data.id, productForm.image);
+          console.log('✅ Image uploaded successfully:', uploadResult);
+          setProductImageUrl(uploadResult.data?.imageUrl);
         } catch (imageError) {
           console.error('❌ Image upload failed:', imageError);
           alert('⚠️ Sản phẩm đã được tạo/cập nhật nhưng không thể tải ảnh lên. Vui lòng thử lại sau.');
+        } finally {
+          setIsUploadingImage(false);
         }
       }
       
@@ -275,6 +304,8 @@ const ShopManagement = () => {
       setShowProductForm(false);
       setEditingProduct(null);
       setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, is_available: true, status: 'active' });
+      setProductImageUrl(null);
+      setIsUploadingImage(false);
       alert('✅ ' + (editingProduct ? 'Cập nhật' : 'Thêm') + ' món ăn thành công!');
       
     } catch (error) {
@@ -285,13 +316,34 @@ const ShopManagement = () => {
 
   const handleShopSubmit = async (e) => {
     e.preventDefault();
-    updateShopMutation.mutate({ id: shopData?.data?.id, data: shopForm });
+    
+    // Validation
+    if (!shopForm.name.trim()) {
+      alert('❌ Vui lòng nhập tên cửa hàng');
+      return;
+    }
+    
+    if (!shopForm.address.trim()) {
+      alert('❌ Vui lòng nhập địa chỉ');
+      return;
+    }
+    
+    // Only send fields that should be updated (exclude seller_id)
+    const updateData = {
+      name: shopForm.name.trim(),
+      description: shopForm.description.trim(),
+      address: shopForm.address.trim(),
+      opening_hours: shopForm.opening_hours.trim()
+    };
+    
+    console.log('📤 Submitting shop update:', updateData);
+    updateShopMutation.mutate({ id: shopData?.data?.id, data: updateData });
   };
 
   const handleEditProduct = async (product) => {
     console.log('🔍 Editing product:', product);
+    console.log('📦 Product status:', product.status);
     console.log('📦 Product is_available:', product.is_available);
-    console.log('📦 Product available:', product.available);
     
     try {
       // Fetch detailed product info from database
@@ -300,17 +352,15 @@ const ShopManagement = () => {
       
       const productData = detailedProduct.data || detailedProduct;
       
-      // Get is_available value
-      let isAvailable = true;
-      if (productData.is_available !== undefined && productData.is_available !== null) {
-        isAvailable = productData.is_available;
-      } else if (product.is_available !== undefined && product.is_available !== null) {
-        isAvailable = product.is_available;
-      } else {
-        console.log('⚠️ No is_available field found, using default true');
+      // Get status value (priority: API data > product data > default)
+      let statusValue = 'active';
+      if (productData.status) {
+        statusValue = productData.status;
+      } else if (product.status) {
+        statusValue = product.status;
       }
       
-      console.log('📦 Final is_available value:', isAvailable);
+      console.log('📦 Final status value:', statusValue);
       
       setEditingProduct(productData);
       setProductForm({
@@ -319,9 +369,10 @@ const ShopManagement = () => {
         price: (productData.price || product.price).toString(),
         categoryId: productData.categoryId || product.categoryId,
         image: null,
-        is_available: isAvailable,
-        status: productData.status || product.status || 'active'
+        is_available: productData.is_available !== undefined ? productData.is_available : product.available,
+        status: statusValue
       });
+      setProductImageUrl(productData.imageUrl || product.imageUrl);
       setShowProductForm(true);
     } catch (error) {
       console.error('❌ Error fetching product details:', error);
@@ -333,7 +384,6 @@ const ShopManagement = () => {
         price: product.price.toString(),
         categoryId: product.categoryId,
         image: null,
-        is_available: product.is_available !== undefined ? product.is_available : true,
         status: product.status || 'active'
       });
       setShowProductForm(true);
@@ -495,35 +545,54 @@ const ShopManagement = () => {
                    </div>
                   <div className="form-group">
                     <label>Ảnh món ăn:</label>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                      onChange={handleImageChange}
-                    />
-                    {productForm.image && (
-                      <div className="file-info">
-                        <p>📁 File đã chọn: {productForm.image.name}</p>
-                        <p>📏 Kích thước: {(productForm.image.size / 1024 / 1024).toFixed(2)} MB</p>
+                    {editingProduct ? (
+                      <ImageUpload
+                        productId={editingProduct.id}
+                        currentImageUrl={productImageUrl}
+                        onImageUpdate={(newImageUrl) => {
+                          setProductImageUrl(newImageUrl);
+                          // Update the product in the list
+                          queryClient.invalidateQueries(['products']);
+                        }}
+                      />
+                    ) : (
+                      <div className="image-upload-section">
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                          onChange={handleImageChange}
+                        />
+                        {productForm.image && (
+                          <div className="file-info">
+                            <p>📁 File đã chọn: {productForm.image.name}</p>
+                            <p>📏 Kích thước: {(productForm.image.size / 1024 / 1024).toFixed(2)} MB</p>
+                          </div>
+                        )}
+                        {isUploadingImage && (
+                          <div className="upload-status">
+                            <p>⏳ Đang upload ảnh...</p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
                   <div className="form-group">
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={productForm.is_available}
-                        onChange={(e) => setProductForm({ ...productForm, is_available: e.target.checked })}
-                      />
-                      {' '}Còn hàng
-                    </label>
+                    <label>Tình trạng sẵn có:</label>
+                    <select
+                      value={productForm.is_available}
+                      onChange={(e) => setProductForm({ ...productForm, is_available: e.target.value === 'true' })}
+                    >
+                      <option value={true}>✅ Có sẵn</option>
+                      <option value={false}>❌ Không có sẵn</option>
+                    </select>
                   </div>
                   <div className="form-group">
-                    <label>Trạng thái:</label>
+                    <label>Trạng thái bán hàng:</label>
                     <select
                       value={productForm.status}
                       onChange={(e) => setProductForm({ ...productForm, status: e.target.value })}
                     >
-                      <option value="active">✅ Còn hàng</option>
+                      <option value="active">✅ Đang bán</option>
                       <option value="inactive">⏸️ Tạm ngừng bán</option>
                       <option value="out_of_stock">❌ Hết hàng</option>
                     </select>
@@ -584,8 +653,10 @@ const ShopManagement = () => {
                       <span className="category">{product.category?.name}</span>
                     </div>
                     <div className="product-status">
-                      <span className={`status ${product.is_available ? 'available' : 'unavailable'}`}>
-                        {product.is_available ? '✅ Còn hàng' : '❌ Hết hàng'}
+                      <span className={`status ${product.status === 'active' ? 'available' : 'unavailable'}`}>
+                        {product.status === 'active' ? '✅ Còn hàng' : 
+                         product.status === 'inactive' ? '⏸️ Tạm ngừng' : 
+                         product.status === 'out_of_stock' ? '❌ Hết hàng' : '❌ Không xác định'}
                       </span>
                     </div>
                   </div>
@@ -663,21 +734,12 @@ const ShopManagement = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Số điện thoại:</label>
+                    <label>Giờ mở cửa:</label>
                     <input
-                      type="tel"
-                      value={shopForm.phone}
-                      onChange={(e) => setShopForm({ ...shopForm, phone: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Email:</label>
-                    <input
-                      type="email"
-                      value={shopForm.email}
-                      onChange={(e) => setShopForm({ ...shopForm, email: e.target.value })}
-                      required
+                      type="text"
+                      value={shopForm.opening_hours}
+                      onChange={(e) => setShopForm({ ...shopForm, opening_hours: e.target.value })}
+                      placeholder="Ví dụ: 8AM-10PM"
                     />
                   </div>
                   <div className="form-actions">
@@ -709,12 +771,8 @@ const ShopManagement = () => {
                 <span className="value">{shopData.data.address}</span>
               </div>
               <div className="info-item">
-                <span className="label">Số điện thoại:</span>
-                <span className="value">{shopData.data.phone}</span>
-              </div>
-              <div className="info-item">
-                <span className="label">Email:</span>
-                <span className="value">{shopData.data.email}</span>
+                <span className="label">Giờ mở cửa:</span>
+                <span className="value">{shopData.data.opening_hours || 'Chưa cập nhật'}</span>
               </div>
               <div className="info-item">
                 <span className="label">Đánh giá trung bình:</span>

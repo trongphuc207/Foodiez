@@ -107,7 +107,7 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
         {filteredProducts.map((product) => (
           <div
             key={product.id}
-            className={`product-card ${!product.available || product.status !== 'active' ? 'unavailable' : ''}`}
+            className={`product-card ${!product.available ? 'unavailable' : ''}`}
           >
             {/* Ảnh sản phẩm */}
             <div 
@@ -139,11 +139,14 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
                   <span className="placeholder-text">Không có ảnh</span>
                 </div>
               </div>
-              {(!product.available || product.status !== 'active') && (
+              {!product.available && (
                 <div className="unavailable-overlay">
-                  <span>
-                    {product.status === 'out_of_stock' ? 'Hết hàng' : 'Tạm ngừng'}
-                  </span>
+                  <span>Không có sẵn</span>
+                </div>
+              )}
+              {product.available && product.status === 'out_of_stock' && (
+                <div className="unavailable-overlay">
+                  <span>Hết hàng</span>
                 </div>
               )}
             </div>
@@ -171,7 +174,7 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
                 </div>
                 
                 {/* Nút Add to Cart với icon đẹp hơn */}
-                {product.available && product.status === 'active' && (
+                {product.available && product.status !== 'out_of_stock' && (
                   <button 
                     className="add-to-cart-btn"
                     onClick={(e) => handleAddToCart(product, e)}

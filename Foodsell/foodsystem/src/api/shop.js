@@ -86,15 +86,48 @@ export const shopAPI = {
 
   // Cập nhật shop
   updateShop: async (id, shopData) => {
-    const response = await fetch(`${API_BASE_URL}/shops/${id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(shopData),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to update shop');
+    console.log('📤 API: Updating shop', id, 'with data:', shopData);
+    console.log('🔗 API endpoint:', `${API_BASE_URL}/shops/${id}`);
+    
+    // Filter out fields that shouldn't be updated
+    const filteredData = {
+      name: shopData.name,
+      description: shopData.description,
+      address: shopData.address,
+      opening_hours: shopData.opening_hours
+    };
+    
+    console.log('📤 API: Filtered data (excluding seller_id):', filteredData);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/shops/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(filteredData),
+      });
+      
+      console.log('📥 API: Shop update response status:', response.status);
+      
+      if (!response.ok) {
+        let errorMessage = 'Failed to update shop';
+        try {
+          const errorData = await response.json();
+          console.error('❌ API: Shop update error:', errorData);
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (parseError) {
+          console.error('❌ API: Could not parse error response:', parseError);
+          errorMessage = `Server error (${response.status}): ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+      
+      const result = await response.json();
+      console.log('✅ API: Shop update success:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ API: Shop update network error:', error);
+      throw error;
     }
-    return response.json();
   },
 
   // Cập nhật rating shop

@@ -329,6 +329,33 @@
   margin-bottom: 20px;
 }
 
+.image-upload-section {
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  background: #f9f9f9;
+  transition: all 0.3s ease;
+}
+
+.image-upload-section:hover {
+  border-color: #ff6b35;
+  background: #fff5f0;
+}
+
+.upload-status {
+  margin-top: 10px;
+  padding: 10px;
+  background: #e3f2fd;
+  border-radius: 4px;
+  color: #1976d2;
+}
+
+.upload-status p {
+  margin: 0;
+  font-weight: 500;
+}
+
 .form-group label {
   display: block;
   margin-bottom: 8px;

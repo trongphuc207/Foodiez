@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { shopAPI } from '../../api/shop';
 import { productAPI } from '../../api/product';
 import { useCart } from '../../contexts/CartContext';
+import ProductDetail from '../FoodProductComponent/ProductDetail';
 import './ShopDetail.css';
 
 const ShopDetail = () => {
@@ -16,6 +17,7 @@ const ShopDetail = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchKeyword, setSearchKeyword] = useState('');
   const [productQuantities, setProductQuantities] = useState({});
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     loadShopData();
@@ -64,8 +66,11 @@ const ShopDetail = () => {
   };
 
   const handleProductClick = (productId) => {
-    // Navigate to product detail or open modal
-    console.log('Product clicked:', productId);
+    // Tìm sản phẩm theo ID và mở modal chi tiết
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      setSelectedProduct(product);
+    }
   };
 
   const handleQuantityChange = (productId, change) => {
@@ -258,24 +263,29 @@ const ShopDetail = () => {
                     <div className="product-info">
                       <h4 className="product-name">{product.name}</h4>
                       <p className="product-description">{product.description}</p>
-                      <div className="product-price">${product.price}</div>
+                      <div className="product-price">{product.price.toLocaleString('vi-VN')} VND</div>
                       <div className="product-status">
-                        {product.available ? (
-                          <span className="in-stock">✓ Còn hàng</span>
-                        ) : (
+                        {!product.available ? (
+                          <span className="out-of-stock">✗ Không có sẵn</span>
+                        ) : product.status === 'out_of_stock' ? (
                           <span className="out-of-stock">✗ Hết hàng</span>
+                        ) : (
+                          <span className="in-stock">✓ Còn hàng</span>
                         )}
                       </div>
                       
                       {/* Add to Cart Section */}
-                      {product.available && (
+                      {product.available && product.status !== 'out_of_stock' && (
                         <div className="add-to-cart-section">
                           <div className="quantity-selector">
                             <label className="quantity-label">Số lượng:</label>
                             <div className="quantity-controls">
                               <button 
                                 className="quantity-btn minus"
-                                onClick={() => handleQuantityChange(product.id, -1)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleQuantityChange(product.id, -1);
+                                }}
                               >
                                 -
                               </button>
@@ -291,7 +301,10 @@ const ShopDetail = () => {
                               />
                               <button 
                                 className="quantity-btn plus"
-                                onClick={() => handleQuantityChange(product.id, 1)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleQuantityChange(product.id, 1);
+                                }}
                               >
                                 +
                               </button>
@@ -299,7 +312,10 @@ const ShopDetail = () => {
                           </div>
                           <button 
                             className="add-to-cart-btn"
-                            onClick={() => handleAddToCart(product)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddToCart(product);
+                            }}
                           >
                             🛒 THÊM VÀO GIỎ HÀNG
                           </button>
@@ -314,6 +330,14 @@ const ShopDetail = () => {
         </div>
 
       </div>
+
+      {/* Product Detail Modal */}
+      {selectedProduct && (
+        <ProductDetail
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </div>
   );
 };

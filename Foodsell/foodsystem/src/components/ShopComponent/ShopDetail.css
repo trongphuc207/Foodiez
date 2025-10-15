@@ -419,6 +419,10 @@
   padding: 16px;
   background: white;
   border-radius: 0 0 12px 12px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .product-name {
@@ -431,6 +435,9 @@
   letter-spacing: 0.2px;
   position: relative;
   padding-bottom: 6px;
+  display: block;
+  visibility: visible;
+  opacity: 1;
 }
 
 .product-name::after {
@@ -460,11 +467,18 @@
   color: #ff6b35;
   font-weight: 700;
   margin-bottom: 10px;
+  display: block;
+  visibility: visible;
+  opacity: 1;
 }
 
 .product-status {
   font-size: 0.9rem;
   font-weight: 600;
+  display: block;
+  visibility: visible;
+  opacity: 1;
+  margin-bottom: 10px;
 }
 
 .in-stock {
@@ -498,6 +512,10 @@
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid #e9ecef;
+  display: block;
+  visibility: visible;
+  opacity: 1;
+  width: 100%;
 }
 
 .quantity-selector {
@@ -581,6 +599,10 @@
   letter-spacing: 0.5px;
   position: relative;
   overflow: hidden;
+  display: block;
+  visibility: visible;
+  opacity: 1;
+  margin-top: 10px;
 }
 
 .add-to-cart-btn::before {
