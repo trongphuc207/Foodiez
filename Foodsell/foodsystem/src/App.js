@@ -16,25 +16,25 @@ function App() {
           <Router>
             <Routes>
               {routes.map((route, index) => (
-                <Route 
-                  key={index} 
-                  path={route.path} 
+                <Route
+                  key={index}
+                  path={route.path} // đảm bảo '/admin/*' trong routes/index.js
                   element={
                     <div className="app-layout">
                       {route.isShowHeader !== false && <Header toggleSidebar={() => {}} />}
                       <main className="main-content">
                         <route.component />
                       </main>
-                      {route.isShowHeader !== false && <Footer/>}
+                      {route.isShowHeader !== false && <Footer />}
                     </div>
-                  } 
+                  }
                 />
               ))}
             </Routes>
           </Router>
         </CartProvider>
       </div>
-      {/* DevTools đã được tắt */}
+      
     </QueryClientProvider>
   );
 }
