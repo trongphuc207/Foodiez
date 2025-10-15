@@ -1,0 +1,17 @@
+.notif-bell { position: relative; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.notif-bell .icon { font-size: 20px; }
+.notif-bell .badge { position: absolute; top: -6px; right: -6px; background: #d9534f; color: #fff; border-radius: 10px; font-size: 10px; padding: 2px 6px; }
+.notif-list { display: grid; gap: 12px; }
+.notif-header { display: flex; justify-content: space-between; align-items: center; }
+.notif-item { border: 1px solid #eee; padding: 12px; border-radius: 8px; background: #fff; }
+.notif-item.unread { background: #fff9f2; }
+.notif-title { font-weight: 600; margin-bottom: 4px; }
+.notif-message { color: #333; margin-bottom: 6px; }
+.notif-footer { display: flex; gap: 8px; font-size: 12px; color: #666; align-items: center; justify-content: space-between; }
+.notif-empty { text-align: center; color: #999; padding: 16px; }
+.notif-btn { background: #f0f0f0; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
+
+
+
+
+

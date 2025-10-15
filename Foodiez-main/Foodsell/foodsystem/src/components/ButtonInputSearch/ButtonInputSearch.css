@@ -1,0 +1,44 @@
+/* ButtonInputSearch Component Styles */
+.button-input-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  transition: border-color 0.2s ease;
+}
+
+.button-input-search:focus-within {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.button-input-search input {
+  border: none;
+  outline: none;
+  flex: 1;
+  padding: 4px;
+  font-size: 14px;
+}
+
+.button-input-search button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+}
+
+.button-input-search button:hover {
+  background: #0056b3;
+}
+
+.button-input-search button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
