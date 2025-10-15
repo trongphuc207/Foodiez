@@ -87,6 +87,12 @@ public class ProductController {
         return service.seedData();
     }
     
+    // GET: Test endpoint
+    @GetMapping("/test")
+    public String test() {
+        return "Products API is working!";
+    }
+    
     // POST: Upload ảnh cho sản phẩm
     @PostMapping("/{id}/upload-image")
     public ResponseEntity<ApiResponse<Product>> uploadProductImage(

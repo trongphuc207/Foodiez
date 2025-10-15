@@ -92,9 +92,12 @@ const ResetPasswordPage = () => {
       
       const data = await response.json();
       
-      if (response.ok && data.status === 'success') {
+      if (response.ok) {
         alert('Password reset successfully! You can now login with your new password.');
-        navigate('/');
+        // Redirect to home page after a short delay
+        setTimeout(() => {
+          navigate('/');
+        }, 1500);
       } else {
         throw new Error(data.message || 'Failed to reset password');
       }

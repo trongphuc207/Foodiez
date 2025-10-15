@@ -29,24 +29,12 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(rawPassword));
         user.setFullName(fullName);
         user.setRole("buyer");
-        user.setIsVerified(false); // Explicitly set to false for manual registration
-        
-        // Generate verification token
-        String verificationToken = java.util.UUID.randomUUID().toString();
-        LocalDateTime expiryTime = LocalDateTime.now().plusHours(24); // Token expires in 24 hours
-        user.setVerificationToken(verificationToken);
-        user.setVerificationTokenExpiry(expiryTime);
+        user.setIsVerified(false); // Set to false until OTP is verified
         
         User savedUser = userRepository.save(user);
         
-        // Send verification email
-        try {
-            emailService.sendVerificationEmail(email, verificationToken);
-            System.out.println("✅ Verification email sent to: " + email);
-        } catch (Exception e) {
-            System.err.println("❌ Failed to send verification email: " + e.getMessage());
-            // Don't throw exception here, user is still created
-        }
+        // Send OTP for signup verification
+        sendOTPForSignup(email);
         
         return savedUser;
     }
@@ -62,6 +50,12 @@ public class AuthService {
         if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
             throw new RuntimeException("Sai email hoặc mật khẩu");
         }
+
+        // Bỏ kiểm tra OTP - cho phép đăng nhập ngay với email/password
+        // if (!user.getIsVerified()) {
+        //     throw new RuntimeException("Tài khoản chưa được xác thực. Vui lòng kiểm tra email để lấy mã OTP");
+        // }
+
         return user;
     }
     
@@ -235,6 +229,52 @@ public class AuthService {
         user.setProfileImage(null);
         user.setUpdatedAt(LocalDateTime.now());
         
+        return userRepository.save(user);
+    }
+
+    public void sendOTPForSignup(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Email không tồn tại"));
+
+        // Generate 6-digit OTP
+        String otpCode = String.format("%06d", new java.util.Random().nextInt(1000000));
+        LocalDateTime otpExpiry = LocalDateTime.now().plusMinutes(10); // OTP expires in 10 minutes
+
+        // Save OTP to user
+        user.setOtpCode(otpCode);
+        user.setOtpExpiry(otpExpiry);
+        userRepository.save(user);
+
+        // Send OTP email
+        try {
+            emailService.sendOTPEmailSignup(email, otpCode);
+            System.out.println("✅ OTP sent to: " + email + " - Code: " + otpCode);
+        } catch (Exception e) {
+            System.err.println("❌ Failed to send OTP email: " + e.getMessage());
+            // Don't throw exception here, OTP is still saved
+        }
+    }
+
+    public User verifyOTPAndActivateAccount(String email, String otpCode) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Email không tồn tại"));
+
+        // Check if OTP code matches
+        if (user.getOtpCode() == null || !user.getOtpCode().equals(otpCode)) {
+            throw new RuntimeException("Mã OTP không đúng");
+        }
+
+        // Check if OTP is expired
+        if (user.getOtpExpiry() == null || user.getOtpExpiry().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới");
+        }
+
+        // Activate account and clear OTP
+        user.setIsVerified(true);
+        user.setOtpCode(null);
+        user.setOtpExpiry(null);
+        user.setUpdatedAt(LocalDateTime.now());
+
         return userRepository.save(user);
     }
 }

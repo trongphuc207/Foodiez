@@ -3,13 +3,14 @@ import { useNavigate } from "react-router-dom";
 import ButtonInputSearch from "../ButtonInputSearch/ButtonInputSearch";
 import LoginSignUp from "../LoginSignUpComponent/LoginSignUp";
 import Cart from "../CartComponent/Cart";
+import SidebarComponent from "../SidebarComponent/SidebarComponent";
 import { useAuth } from "../../hooks/useAuth";
 import { useCart } from "../../contexts/CartContext";
 import "./Header.css";
 
 const Header = ({ toggleSidebar }) => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [showNavbar, setShowNavbar] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
   const [showCart, setShowCart] = useState(false);
 
   // NEW: state mở modal và mode (login/signup)
@@ -53,6 +54,7 @@ const Header = ({ toggleSidebar }) => {
     <header className="header">
       <div className="header-container">
         <div className="header-left">
+
           <div className="navbar-dropdown">
             <button
               className="hamburger-btn"
@@ -82,6 +84,16 @@ const Header = ({ toggleSidebar }) => {
               </div>
             )}
           </div>
+=======
+          <button
+            className="hamburger-btn"
+            onClick={() => setShowSidebar(true)}
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+
         </div>
 
         <div
@@ -207,6 +219,12 @@ const Header = ({ toggleSidebar }) => {
       <Cart 
         isOpen={showCart} 
         onClose={() => setShowCart(false)} 
+      />
+
+      {/* === Sidebar === */}
+      <SidebarComponent 
+        isOpen={showSidebar} 
+        onClose={() => setShowSidebar(false)} 
       />
     </header>
   );

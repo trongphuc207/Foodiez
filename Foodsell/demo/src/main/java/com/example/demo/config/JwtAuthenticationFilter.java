@@ -8,12 +8,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -42,18 +45,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (userOpt.isPresent()) {
                     User user = userOpt.get();
                     
-                    // 4. Tạo Authentication object
+                    // 4. Tạo authorities từ role
+                    List<GrantedAuthority> authorities = new ArrayList<>();
+                    if (user.getRole() != null) {
+                        authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().toUpperCase()));
+                    }
+                    
+                    // 5. Tạo Authentication object với authorities
                     UsernamePasswordAuthenticationToken authentication = 
                         new UsernamePasswordAuthenticationToken(
                             user, 
                             null, 
-                            new ArrayList<>()
+                            authorities
                         );
                     
-                    // 5. Set authentication vào SecurityContext
+                    // 6. Set authentication vào SecurityContext
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                     
-                    System.out.println("✅ JWT Authentication successful for user: " + email);
+                    System.out.println("✅ JWT Authentication successful for user: " + email + " with role: " + user.getRole());
                 }
             } catch (Exception e) {
                 // Log error nhưng không throw exception

@@ -48,8 +48,9 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
   const handleAddToCart = (product, e) => {
     e.stopPropagation() // Ngăn không cho click vào product card
     
-    // Mở ProductDetail modal để chọn số lượng và add vào giỏ
-    setSelectedProduct(product)
+    // Thêm sản phẩm vào giỏ hàng
+    addToCart(product)
+    alert(`Đã thêm ${product.name} vào giỏ hàng!`)
   }
 
   const handleProductImageClick = (product, e) => {
