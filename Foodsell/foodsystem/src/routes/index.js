@@ -6,6 +6,7 @@ import InformationPage from '../Page/InformationPage/InformationPage';
 import CustomerProfile from '../components/CustomerProfileComponent/CustomerProfile';
 import ResetPasswordPage from '../Page/ResetPasswordPage/ResetPasswordPage';
 import AdminPage from '../Page/AdminPage/AdminPage';
+import ProductDetailTest from '../components/FoodProductComponent/ProductDetailTest';
 
 import ShopList from '../components/ShopComponent/ShopList';
 import ShopDetail from '../components/ShopComponent/ShopDetail';
@@ -167,6 +168,11 @@ export const routes = [
             component: Unauthorized,
             isShowHeader: false
 
+        },
+        {
+            path: '/test-product-detail',
+            component: ProductDetailTest,
+            isShowHeader: true
         },
         {
             path: '*',
