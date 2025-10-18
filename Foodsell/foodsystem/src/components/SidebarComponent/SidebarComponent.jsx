@@ -2,24 +2,6 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import './SidebarComponent.css'
-import { 
-  FiHome, 
-  FiShoppingBag, 
-  FiShoppingCart, 
-  FiPackage, 
-  FiHeart, 
-  FiMapPin, 
-  FiMessageCircle,
-  FiCoffee,
-  FiBarChart,
-  FiDollarSign,
-  FiUsers,
-  FiSettings,
-  FiStar,
-  FiX,
-  FiLogOut,
-  FiUser
-} from 'react-icons/fi'
 
 const SidebarComponent = ({ isOpen, onClose }) => {
   const navigate = useNavigate()
@@ -34,33 +16,32 @@ const SidebarComponent = ({ isOpen, onClose }) => {
   }, [user?.role])
 
   const customerMenuItems = [
-    { icon: <FiHome />, label: 'Trang chủ', path: '/' },
-    { icon: <FiShoppingBag />, label: 'Sản phẩm', path: '/products' },
-    { icon: <FiShoppingCart />, label: 'Giỏ hàng', path: '/cart' },
-    { icon: <FiPackage />, label: 'Đơn hàng của tôi', path: '/orders' },
-    { icon: <FiHeart />, label: 'Yêu thích', path: '/favorites' },
-    { icon: <FiMapPin />, label: 'Địa chỉ giao hàng', path: '/delivery-address' },
-    { icon: <FiMessageCircle />, label: 'Hỗ trợ', path: '/support' }
+    { icon: <i className="bi bi-house-door"></i>, label: 'Trang chủ', path: '/' },
+    { icon: <i className="bi bi-bag"></i>, label: 'Sản phẩm', path: '/products' },
+    { icon: <i className="bi bi-cart"></i>, label: 'Giỏ hàng', path: '/cart' },
+    { icon: <i className="bi bi-box"></i>, label: 'Đơn hàng của tôi', path: '/orders' },
+    { icon: <i className="bi bi-heart"></i>, label: 'Yêu thích', path: '/favorites' },
+    { icon: <i className="bi bi-geo-alt"></i>, label: 'Địa chỉ giao hàng', path: '/delivery-address' },
+    { icon: <i className="bi bi-chat-dots"></i>, label: 'Hỗ trợ', path: '/support' }
   ]
 
   const sellerMenuItems = [
-    { icon: <FiHome />, label: 'Trang chủ', path: '/seller' },
-    { icon: <FiCoffee />, label: 'Sản phẩm', path: '/seller/products' },
-    { icon: <FiBarChart />, label: 'Dashboard', path: '/seller/dashboard' },
-    { icon: <FiPackage />, label: 'Đơn hàng', path: '/seller/orders' },
-    { icon: <FiDollarSign />, label: 'Doanh thu', path: '/seller/revenue' },
-    { icon: <FiUsers />, label: 'Khách hàng', path: '/seller/customers' },
-    { icon: <FiSettings />, label: 'Cài đặt', path: '/seller/settings' }
+    { icon: <i className="bi bi-house-door"></i>, label: 'Trang chủ', path: '/seller' },
+    { icon: <i className="bi bi-cup-hot"></i>, label: 'Sản phẩm', path: '/seller/products' },
+    { icon: <i className="bi bi-graph-up"></i>, label: 'Dashboard', path: '/seller/dashboard' },
+    { icon: <i className="bi bi-box"></i>, label: 'Đơn hàng', path: '/seller/orders' },
+    { icon: <i className="bi bi-currency-dollar"></i>, label: 'Doanh thu', path: '/seller/revenue' },
+    { icon: <i className="bi bi-people"></i>, label: 'Khách hàng', path: '/seller/customers' },
+    { icon: <i className="bi bi-gear"></i>, label: 'Cài đặt', path: '/seller/settings' }
   ]
 
   const shipperMenuItems = [
-    { icon: <FiHome />, label: 'Trang chủ', path: '/shipper' },
-    { icon: <FiPackage />, label: 'Đơn hàng', path: '/shipper/orders' },
-    { icon: <FiBarChart />, label: 'Dashboard', path: '/shipper/dashboard' },
-    { icon: <FiMapPin />, label: 'Tuyến đường', path: '/shipper/routes' },
-    { icon: <FiDollarSign />, label: 'Thu nhập', path: '/shipper/earnings' },
-    { icon: <FiStar />, label: 'Đánh giá', path: '/shipper/reviews' },
-    { icon: <FiSettings />, label: 'Cài đặt', path: '/shipper/settings' }
+    { icon: <i className="bi bi-house-door"></i>, label: 'Trang chủ', path: '/' },
+    { icon: <i className="bi bi-box"></i>, label: 'Đơn hàng', path: '/shipper/orders' },
+    { icon: <i className="bi bi-graph-up"></i>, label: 'Dashboard', path: '/shipper/dashboard' },
+    { icon: <i className="bi bi-currency-dollar"></i>, label: 'Thu nhập', path: '/shipper/earnings' },
+    { icon: <i className="bi bi-star"></i>, label: 'Đánh giá', path: '/shipper/history' },
+    { icon: <i className="bi bi-gear"></i>, label: 'Cài đặt', path: '/shipper/overview' }
   ]
 
   const getMenuItems = () => {
@@ -121,7 +102,7 @@ const SidebarComponent = ({ isOpen, onClose }) => {
             {getRoleLabel()}
           </div>
           <button className="close-btn" onClick={onClose}>
-            <FiX />
+            <i className="bi bi-x"></i>
           </button>
         </div>
 
@@ -177,7 +158,7 @@ const SidebarComponent = ({ isOpen, onClose }) => {
           <div className="sidebar-footer">
             <div className="user-info">
               <div className="user-avatar">
-                <FiUser />
+                <i className="bi bi-person"></i>
               </div>
               <div className="user-details">
                 <div className="user-name">{user.fullName}</div>
@@ -185,7 +166,7 @@ const SidebarComponent = ({ isOpen, onClose }) => {
               </div>
             </div>
             <button className="logout-btn" onClick={handleLogout}>
-              <FiLogOut /> Đăng xuất
+              <i className="bi bi-box-arrow-right"></i> Đăng xuất
             </button>
           </div>
         )}

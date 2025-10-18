@@ -4,6 +4,7 @@ import FoodProduct from "../../components/FoodProductComponent/ProductList";
 import Banner from "../../components/BannerComponent/Banner";
 import Navigation from "../../components/NavigationComponent/Navigation";
 import VoucherSection from "../../components/VoucherComponent/VoucherSection";
+import CartCheckComponent from "../../components/CartCheckComponent/CartCheckComponent";
 import "./HomePage.css";
 
 export default function HomePage() {
@@ -11,6 +12,7 @@ export default function HomePage() {
 
   return (
     <div className="container py-4">
+      <CartCheckComponent />
       <Navigation />
       <Banner />
       

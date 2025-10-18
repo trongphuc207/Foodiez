@@ -76,6 +76,15 @@ export const routes = [
             isShowHeader: false
         },
         {
+            path: '/shipper',
+            component: () => (
+                <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">
+                    <ShipperDashboardPage />
+                </RouteGuard>
+            ),
+            isShowHeader: false
+        },
+        {
             path: '/shipper/dashboard',
             component: () => (
                 <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">

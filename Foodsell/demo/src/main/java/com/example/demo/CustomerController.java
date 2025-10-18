@@ -118,4 +118,87 @@ public class CustomerController {
         
         return ResponseEntity.ok(response);
     }
+    
+    // PUT: Cập nhật trạng thái đơn hàng (cho PayOS callback)
+    @PutMapping("/orders/{orderCode}/status")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> updateOrderStatus(
+            @PathVariable String orderCode,
+            @RequestBody Map<String, String> statusUpdate) {
+        
+        String newStatus = statusUpdate.get("status");
+        
+        // TODO: Implement actual status update logic
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Order status updated to: " + newStatus);
+        response.put("orderCode", orderCode);
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    // GET: Chi tiết đơn hàng
+    @GetMapping("/orders/{orderId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> getOrderDetails(@PathVariable Integer orderId) {
+        var currentUser = roleChecker.getCurrentUser();
+        if (currentUser == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "User not authenticated");
+            return ResponseEntity.status(401).body(error);
+        }
+        
+        // TODO: Implement actual order details logic
+        Map<String, Object> orderDetails = new HashMap<>();
+        orderDetails.put("id", orderId);
+        orderDetails.put("status", "pending");
+        orderDetails.put("totalAmount", 15000);
+        orderDetails.put("createdAt", "2025-10-16T03:00:00Z");
+        orderDetails.put("items", List.of());
+        
+        return ResponseEntity.ok(orderDetails);
+    }
+    
+    // POST: Hủy đơn hàng
+    @PostMapping("/orders/{orderId}/cancel")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> cancelOrder(
+            @PathVariable Integer orderId,
+            @RequestBody Map<String, String> cancelData) {
+        
+        String reason = cancelData.getOrDefault("reason", "Customer cancelled");
+        
+        // TODO: Implement actual cancel order logic
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Order cancelled successfully");
+        response.put("orderId", orderId);
+        response.put("reason", reason);
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    // POST: Đánh giá đơn hàng
+    @PostMapping("/orders/{orderId}/review")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> reviewOrder(
+            @PathVariable Integer orderId,
+            @RequestBody Map<String, Object> reviewData) {
+        
+        Integer rating = (Integer) reviewData.get("rating");
+        String comment = (String) reviewData.get("comment");
+        String imageUrl = (String) reviewData.get("imageUrl");
+        
+        // TODO: Implement actual review logic
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Review submitted successfully");
+        response.put("orderId", orderId);
+        response.put("rating", rating);
+        response.put("comment", comment);
+        response.put("imageUrl", imageUrl);
+        
+        return ResponseEntity.ok(response);
+    }
 }

@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
 import './ShipperHistoryPage.css'
+import SidebarComponent from '../../components/SidebarComponent/SidebarComponent'
 
 export default function ShipperHistoryPage() {
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [selectedDate, setSelectedDate] = useState('today')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const historyData = [
     {
@@ -112,9 +114,17 @@ export default function ShipperHistoryPage() {
 
   return (
     <div className="shipper-history-page">
+      {/* Header with Menu Button */}
       <div className="page-header">
-        <h1 className="page-title">Lịch sử</h1>
-        <p className="page-subtitle">Xem lại các đơn hàng đã giao</p>
+        <div className="header-left">
+          <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
+            <i className="bi bi-list"></i>
+          </button>
+          <div className="header-title">
+            <h1 className="page-title">Lịch sử</h1>
+            <p className="page-subtitle">Xem lại các đơn hàng đã giao</p>
+          </div>
+        </div>
       </div>
 
       <div className="history-stats">
@@ -230,6 +240,12 @@ export default function ShipperHistoryPage() {
           <p>Chưa có đơn hàng nào trong bộ lọc này</p>
         </div>
       )}
+
+      {/* Sidebar */}
+      <SidebarComponent
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
     </div>
   )
 }

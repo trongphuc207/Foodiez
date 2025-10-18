@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getUserUnusedVouchers, applyVoucher } from '../../api/voucher';
 import './VoucherSelector.css';
 
@@ -9,14 +9,7 @@ const VoucherSelector = ({ userId, orderAmount, onVoucherApplied, appliedVoucher
   const [showVoucherList, setShowVoucherList] = useState(false);
   const [applyingVoucher, setApplyingVoucher] = useState(false);
 
-  // Lấy danh sách voucher của user
-  useEffect(() => {
-    if (userId) {
-      loadUserVouchers();
-    }
-  }, [userId]);
-
-  const loadUserVouchers = async () => {
+  const loadUserVouchers = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -31,7 +24,14 @@ const VoucherSelector = ({ userId, orderAmount, onVoucherApplied, appliedVoucher
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  // Lấy danh sách voucher của user
+  useEffect(() => {
+    if (userId) {
+      loadUserVouchers();
+    }
+  }, [userId, loadUserVouchers]);
 
   // Áp dụng voucher
   const handleApplyVoucher = async (voucherCode) => {

@@ -1,7 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
 import './ShipperOverviewPage.css'
+import SidebarComponent from '../../components/SidebarComponent/SidebarComponent'
 
 export default function ShipperOverviewPage() {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  
   const stats = [
     {
       title: "Đơn hàng hôm nay",
@@ -39,10 +42,16 @@ export default function ShipperOverviewPage() {
 
   return (
     <div className="shipper-overview-page">
+      {/* Header with Menu Button */}
       <div className="page-header">
-        <div className="header-content">
-          <h1 className="page-title">Tổng quan Shipper</h1>
-          <p className="page-subtitle">Quản lý và theo dõi đơn hàng giao của bạn</p>
+        <div className="header-left">
+          <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
+            <i className="bi bi-list"></i>
+          </button>
+          <div className="header-content">
+            <h1 className="page-title">Tổng quan Shipper</h1>
+            <p className="page-subtitle">Quản lý và theo dõi đơn hàng giao của bạn</p>
+          </div>
         </div>
         <div className="header-actions">
           <button className="action-btn secondary">Lịch sử</button>
@@ -117,6 +126,12 @@ export default function ShipperOverviewPage() {
           </div>
         </div>
       </div>
+
+      {/* Sidebar */}
+      <SidebarComponent
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
     </div>
   )
 }

@@ -105,7 +105,7 @@
   flex-wrap: wrap;
 }
 
-.retry-payment-btn, .continue-shopping-btn {
+.go-back-btn {
   padding: 15px 30px;
   border: none;
   border-radius: 10px;
@@ -113,26 +113,15 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 150px;
+  min-width: 200px;
 }
 
-.retry-payment-btn {
-  background: #e74c3c;
-  color: white;
-}
-
-.retry-payment-btn:hover {
-  background: #c0392b;
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
-}
-
-.continue-shopping-btn {
+.go-back-btn {
   background: #667eea;
   color: white;
 }
 
-.continue-shopping-btn:hover {
+.go-back-btn:hover {
   background: #5a6fd8;
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
@@ -204,7 +193,7 @@
     align-items: center;
   }
 
-  .retry-payment-btn, .continue-shopping-btn {
+  .go-back-btn {
     width: 100%;
     max-width: 300px;
   }

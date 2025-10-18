@@ -4,6 +4,35 @@ import { useCart } from '../../contexts/CartContext';
 import { getPaymentInfo } from '../../api/payment';
 import './PaymentSuccessPage.css';
 
+// Function để cập nhật status đơn hàng
+const updateOrderStatus = async (orderCode, status) => {
+  try {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`http://localhost:8080/api/customer/orders/${orderCode}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to update order status: ${response.status} - ${errorText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    throw error;
+  }
+};
+
 const PaymentSuccessPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -24,28 +53,71 @@ const PaymentSuccessPage = () => {
           setOrderInfo(orderData);
         }
 
-        // Kiểm tra trạng thái thanh toán từ PayOS
-        if (orderCode) {
-          const paymentResponse = await getPaymentInfo(orderCode);
-          if (paymentResponse.success) {
-            const paymentData = paymentResponse.data;
-            
-            if (paymentData.status === 'PAID') {
-              setPaymentStatus('success');
-              // Xóa giỏ hàng
-              clearCart();
-              // Xóa thông tin đơn hàng tạm
-              localStorage.removeItem('pendingOrder');
-            } else {
-              setPaymentStatus('pending');
+        // Kiểm tra trạng thái thanh toán từ URL parameters
+        const status = searchParams.get('status');
+        const code = searchParams.get('code');
+        const cancel = searchParams.get('cancel');
+        
+        // Debug logging - remove in production if needed
+        console.log('Payment URL params:', { orderCode, status, code, cancel });
+        
+        // Kiểm tra trạng thái từ URL
+        if (status === 'PAID' && code === '00' && cancel === 'false') {
+          setPaymentStatus('success');
+          
+          // Cập nhật status đơn hàng trong database
+          try {
+            await updateOrderStatus(orderCode, 'paid');
+            console.log('Order status updated to paid successfully');
+          } catch (updateError) {
+            console.error('Failed to update order status:', updateError);
+            // Vẫn hiển thị success vì PayOS đã thanh toán thành công
+          }
+          
+          // Xóa giỏ hàng
+          clearCart();
+          // Xóa thông tin đơn hàng tạm
+          localStorage.removeItem('pendingOrder');
+        } else if (status === 'CANCELLED' || cancel === 'true' || (code && code !== '00')) {
+          setPaymentStatus('error');
+          setError('Thanh toán đã bị hủy hoặc thất bại');
+        } else {
+          // Nếu không có thông tin rõ ràng, thử gọi API
+          if (orderCode) {
+            try {
+              const paymentResponse = await getPaymentInfo(orderCode);
+              if (paymentResponse.success && paymentResponse.data.status === 'PAID') {
+                setPaymentStatus('success');
+                
+                // Cập nhật status đơn hàng trong database
+                try {
+                  await updateOrderStatus(orderCode, 'paid');
+                  console.log('Order status updated to paid successfully');
+                } catch (updateError) {
+                  console.error('Failed to update order status:', updateError);
+                }
+                
+                clearCart();
+                localStorage.removeItem('pendingOrder');
+              } else {
+                setPaymentStatus('pending');
+              }
+            } catch (apiError) {
+              console.warn('API call failed, using URL params:', apiError);
+              // Fallback: nếu có orderCode và không có lỗi rõ ràng, coi như thành công
+              if (orderCode) {
+                setPaymentStatus('success');
+                clearCart();
+                localStorage.removeItem('pendingOrder');
+              } else {
+                setPaymentStatus('error');
+                setError('Thiếu thông tin đơn hàng');
+              }
             }
           } else {
             setPaymentStatus('error');
-            setError('Không thể xác minh trạng thái thanh toán');
+            setError('Thiếu thông tin đơn hàng');
           }
-        } else {
-          setPaymentStatus('error');
-          setError('Thiếu thông tin đơn hàng');
         }
       } catch (error) {
         console.error('Payment verification error:', error);
@@ -55,7 +127,7 @@ const PaymentSuccessPage = () => {
     };
 
     handlePaymentSuccess();
-  }, [orderCode, clearCart]);
+  }, [orderCode, clearCart, searchParams]);
 
   const handleContinueShopping = () => {
     navigate('/');

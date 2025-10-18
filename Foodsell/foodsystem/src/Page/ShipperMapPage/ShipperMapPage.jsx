@@ -1,8 +1,10 @@
 import React, { useState } from 'react'
 import './ShipperMapPage.css'
+import SidebarComponent from '../../components/SidebarComponent/SidebarComponent'
 
 export default function ShipperMapPage() {
   const [selectedOrder, setSelectedOrder] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const deliveryPoints = [
     {
@@ -53,9 +55,17 @@ export default function ShipperMapPage() {
 
   return (
     <div className="shipper-map-page">
+      {/* Header with Menu Button */}
       <div className="page-header">
-        <h1 className="page-title">Bản đồ</h1>
-        <p className="page-subtitle">Theo dõi tuyến đường và địa điểm giao hàng</p>
+        <div className="header-left">
+          <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
+            <i className="bi bi-list"></i>
+          </button>
+          <div className="header-title">
+            <h1 className="page-title">Bản đồ</h1>
+            <p className="page-subtitle">Theo dõi tuyến đường và địa điểm giao hàng</p>
+          </div>
+        </div>
       </div>
 
       <div className="map-container">
@@ -131,6 +141,12 @@ export default function ShipperMapPage() {
           </div>
         </div>
       </div>
+
+      {/* Sidebar */}
+      <SidebarComponent
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
     </div>
   )
 }

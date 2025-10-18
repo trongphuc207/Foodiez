@@ -313,7 +313,10 @@ export default function ShipperDashboard() {
             {/* Customer Info */}
             <div className="customer-info">
               <div className="customer-avatar">
-                {order.customer.charAt(order.customer.lastIndexOf(' ') + 1)}
+                {order.customer && order.customer.length > 0 
+                  ? order.customer.charAt(order.customer.lastIndexOf(' ') + 1)
+                  : '?'
+                }
               </div>
               <div className="customer-details">
                 <div className="customer-name">{order.customer}</div>
