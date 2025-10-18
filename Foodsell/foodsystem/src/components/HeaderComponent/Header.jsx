@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import ButtonInputSearch from "../ButtonInputSearch/ButtonInputSearch";
 import SimpleSearch from "../ButtonInputSearch/SimpleSearch";
 import LoginSignUp from "../LoginSignUpComponent/LoginSignUp";
 import Cart from "../CartComponent/Cart";
@@ -13,7 +12,7 @@ const Header = ({ toggleSidebar }) => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showCart, setShowCart] = useState(false);
-  const [showNavbar, setShowNavbar] = useState(false);
+  const [showNavbar] = useState(false);
 
   // NEW: state mở modal và mode (login/signup)
   const [showAuth, setShowAuth] = useState(false);

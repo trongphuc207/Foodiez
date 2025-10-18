@@ -13,7 +13,7 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [currentLayout] = useState('grid') // Sử dụng grid layout đẹp hơn
-  const { addToCart } = useCart()
+  const { addToCart: addToCartFunction } = useCart()
 
   // gọi API lấy sản phẩm hoặc sử dụng products từ props
   useEffect(() => {

@@ -4,12 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { 
   FiHome, 
-  FiShoppingBag, 
-  FiShoppingCart, 
   FiPackage, 
-  FiHeart, 
-  FiMapPin, 
-  FiMessageCircle,
   FiBarChart,
   FiUsers,
   FiDollarSign,

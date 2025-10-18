@@ -40,7 +40,7 @@ const CartCheckComponent = () => {
         console.error('CartCheckComponent: Error restoring cart:', error);
       }
     }
-  }, [cartItems.length]);
+  }, [cartItems]);
 
   return null; // Component không render gì
 };
