@@ -163,6 +163,34 @@ export const authAPI = {
     if (!response.ok) throw new Error('Đổi mật khẩu thất bại');
     return response.json();
   },
+
+  sendOTP: async (email) => {
+    const response = await fetch(`${API_BASE_URL}/auth/send-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Gửi OTP thất bại');
+    }
+    return response.json();
+  },
+
+  verifyOTP: async (payload) => {
+    const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Xác thực OTP thất bại');
+    }
+    return response.json();
+  },
 };
 
 // ==== TOKEN HELPERS (chỉ dùng MỘT key) ====

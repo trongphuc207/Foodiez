@@ -46,7 +46,7 @@ export const useForm = (initialValues, validate) => {
     const { name } = e.target;
     setTouched(prev => ({ ...prev, [name]: true }));
     
-    // Validate field on blur
+    // Validate field on blur only if it has been touched
     if (validate) {
       const fieldErrors = validate(values);
       setErrors(prev => ({ ...prev, [name]: fieldErrors[name] || '' }));

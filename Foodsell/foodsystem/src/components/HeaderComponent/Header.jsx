@@ -24,6 +24,37 @@ const Header = ({ toggleSidebar }) => {
   // Cart context
   const { getTotalItems } = useCart();
 
+  // Navigate hook
+  const navigate = useNavigate();
+
+  // Handle navigation after successful login
+  useEffect(() => {
+    const handleAuthSuccess = (event) => {
+      const userData = event.detail?.data;
+      if (userData) {
+        console.log('🎉 Auth success in Header:', userData);
+        
+        // Navigate based on user role
+        if (userData.role === 'admin') {
+          navigate('/admin');
+        } else if (userData.role === 'seller') {
+          navigate('/seller');
+        } else if (userData.role === 'shipper') {
+          navigate('/shipper');
+        } else {
+          // Default customer - stay on current page or go to home
+          navigate('/');
+        }
+        
+        // Close auth modal
+        setShowAuth(false);
+      }
+    };
+
+    window.addEventListener('authSuccess', handleAuthSuccess);
+    return () => window.removeEventListener('authSuccess', handleAuthSuccess);
+  }, [navigate]);
+
   // Đóng modal khi bấm ESC và quản lý scrollbar
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && setShowAuth(false);
@@ -50,8 +81,6 @@ const Header = ({ toggleSidebar }) => {
     setShowAuth(true);
     setShowUserDropdown(false);
   };
-
-  const navigate = useNavigate();
 
   const handleSearch = (keyword) => {
     if (!keyword) return;
