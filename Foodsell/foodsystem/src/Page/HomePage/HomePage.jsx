@@ -9,6 +9,11 @@ import "./HomePage.css";
 
 export default function HomePage() {
   const [showVoucherSection, setShowVoucherSection] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null); // null = "Tất cả"
+
+  const handleCategorySelect = (categoryId) => {
+    setSelectedCategoryId(categoryId);
+  };
 
   return (
     <div className="container py-4">
@@ -40,8 +45,11 @@ export default function HomePage() {
         )}
       </div>
       
-      <FoodCategories />
-      <FoodProduct />
+      <FoodCategories 
+        onCategorySelect={handleCategorySelect}
+        selectedCategoryId={selectedCategoryId}
+      />
+      <FoodProduct category={selectedCategoryId} />
     </div>
   );
 }

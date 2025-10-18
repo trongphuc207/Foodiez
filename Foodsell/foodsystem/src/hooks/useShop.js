@@ -10,12 +10,17 @@ export const useShop = () => {
   const fetchShops = async () => {
     try {
       setLoading(true);
-      const [shopsData, namesData] = await Promise.all([
-        shopAPI.getAllShops(),
-        shopAPI.getShopNames()
-      ]);
-      setShops(shopsData);
-      setShopNames(namesData);
+      const shopsResponse = await shopAPI.getAllShops();
+      setShops(shopsResponse.data || []);
+      
+      // Tạo shopNames từ shops data
+      const namesMap = {};
+      if (shopsResponse.data) {
+        shopsResponse.data.forEach(shop => {
+          namesMap[shop.id] = shop.name;
+        });
+      }
+      setShopNames(namesMap);
       setError(null);
     } catch (err) {
       setError(err.message);

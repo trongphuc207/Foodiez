@@ -27,15 +27,58 @@ public class ProductController {
     public List<Product> getAllProducts() {
         return service.getAllProducts();
     }
-@GetMapping("/search")
-public List<Product> searchProducts(@RequestParam String keyword) {
-    return service.searchProducts(keyword);
-}
+
+    // GET: Lấy sản phẩm theo shop ID
+    @GetMapping("/shop/{shopId}")
+    public ResponseEntity<ApiResponse<List<Product>>> getProductsByShopId(@PathVariable int shopId) {
+        try {
+            List<Product> products = service.getProductsByShopId(shopId);
+            return ResponseEntity.ok(ApiResponse.success(products, "Lấy sản phẩm theo shop thành công"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ApiResponse.error("Lỗi khi lấy sản phẩm theo shop: " + e.getMessage()));
+        }
+    }
+    // GET: Tìm kiếm sản phẩm
+    @GetMapping("/search")
+    public List<Product> searchProducts(@RequestParam String keyword) {
+        return service.searchProducts(keyword);
+    }
 
     // POST: Tạo mới sản phẩm
     @PostMapping
     public Product createProduct(@RequestBody Product product) {
         return service.createProduct(product);
+    }
+    
+    // PUT: Cập nhật sản phẩm
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<Product>> updateProduct(@PathVariable int id, @RequestBody Product product) {
+        try {
+            Optional<Product> existingProductOpt = service.getProductById(id);
+            if (existingProductOpt.isPresent()) {
+                Product existingProduct = existingProductOpt.get();
+                
+                // Cập nhật các trường
+                existingProduct.setName(product.getName());
+                existingProduct.setDescription(product.getDescription());
+                existingProduct.setPrice(product.getPrice());
+                existingProduct.setAvailable(product.isAvailable());
+                existingProduct.setStatus(product.getStatus());
+                existingProduct.setCategoryId(product.getCategoryId());
+                
+                // Giữ nguyên imageUrl nếu không được cung cấp
+                if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+                    existingProduct.setImageUrl(product.getImageUrl());
+                }
+                
+                Product updatedProduct = service.updateProduct(existingProduct);
+                return ResponseEntity.ok(ApiResponse.success(updatedProduct, "Cập nhật sản phẩm thành công"));
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ApiResponse.error("Lỗi khi cập nhật sản phẩm: " + e.getMessage()));
+        }
     }
     
     // GET: Tạo dữ liệu mẫu

@@ -30,9 +30,13 @@ public class SecurityConfig {
                 // Public endpoints
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/products/**").permitAll()
+                .requestMatchers("/api/categories/**").permitAll()
+                .requestMatchers("/api/shops/**").permitAll()
                 .requestMatchers("/api/orders/test").permitAll()
                 .requestMatchers("/api/payos/**").permitAll()
                 .requestMatchers("/test/**").permitAll()
+                .requestMatchers("/uploads/**").permitAll()
+                .requestMatchers("/login/oauth2/code/**").permitAll()
                 
                 // Voucher endpoints (public for now, can be restricted later)
                 .requestMatchers("/api/vouchers/**").permitAll()

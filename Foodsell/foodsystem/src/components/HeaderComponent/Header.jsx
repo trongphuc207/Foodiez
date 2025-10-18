@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ButtonInputSearch from "../ButtonInputSearch/ButtonInputSearch";
+import SimpleSearch from "../ButtonInputSearch/SimpleSearch";
 import LoginSignUp from "../LoginSignUpComponent/LoginSignUp";
 import Cart from "../CartComponent/Cart";
 import SidebarComponent from "../SidebarComponent/SidebarComponent";
@@ -12,6 +13,7 @@ const Header = ({ toggleSidebar }) => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showCart, setShowCart] = useState(false);
+  const [showNavbar, setShowNavbar] = useState(false);
 
   // NEW: state mở modal và mode (login/signup)
   const [showAuth, setShowAuth] = useState(false);
@@ -23,12 +25,26 @@ const Header = ({ toggleSidebar }) => {
   // Cart context
   const { getTotalItems } = useCart();
 
-  // Đóng modal khi bấm ESC
+  // Đóng modal khi bấm ESC và quản lý scrollbar
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && setShowAuth(false);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // Quản lý scrollbar khi modal mở/đóng
+  useEffect(() => {
+    if (showAuth) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    
+    // Cleanup khi component unmount
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [showAuth]);
 
   const openAuth = (mode = "login") => {
     setAuthMode(mode);
@@ -54,6 +70,7 @@ const Header = ({ toggleSidebar }) => {
     <header className="header">
       <div className="header-container">
         <div className="header-left">
+          {/* Hamburger menu bên trái */}
           <button
             className="hamburger-btn"
             onClick={() => setShowSidebar(true)}
@@ -82,10 +99,8 @@ const Header = ({ toggleSidebar }) => {
 
         <div className="header-center">
           <div className="search-container">
-            <ButtonInputSearch
+            <SimpleSearch
               placeholder="Tìm kiếm món ăn, nhà hàng..."
-              textButton="Tìm kiếm"
-              size="large"
               onSearch={handleSearch}
             />
           </div>
@@ -153,6 +168,17 @@ const Header = ({ toggleSidebar }) => {
                     >
                       👤 Thông tin cá nhân
                     </button>
+                    {user?.role === 'seller' && (
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          navigate('/shop-management');
+                          setShowUserDropdown(false);
+                        }}
+                      >
+                        🏪 Quản lý cửa hàng
+                      </button>
+                    )}
                     <button
                       className="dropdown-item"
                       onClick={handleLogout}

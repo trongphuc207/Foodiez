@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SearchOutlined } from '@ant-design/icons'; 
+import { FiSearch, FiX } from 'react-icons/fi';
 import './ButtonInputSearch.css';
 
 const ButtonInputSearch = ({ size, placeholder, textButton, onSearch }) => {
@@ -20,7 +20,7 @@ const ButtonInputSearch = ({ size, placeholder, textButton, onSearch }) => {
     <div className={`modern-search-wrapper ${size || 'large'}`}>
       <div className={`modern-search-container ${isFocused ? 'focused' : ''}`}>
         <div className="search-icon-wrapper">
-          <SearchOutlined className="search-icon" />
+          <FiSearch className="search-icon" />
         </div>
         <input
           type="text"
@@ -37,7 +37,7 @@ const ButtonInputSearch = ({ size, placeholder, textButton, onSearch }) => {
             className="clear-button"
             onClick={() => setKeyword("")}
           >
-            ×
+            <FiX />
           </button>
         )}
       </div>
@@ -46,7 +46,7 @@ const ButtonInputSearch = ({ size, placeholder, textButton, onSearch }) => {
         onClick={handleSearch}
         disabled={!keyword.trim()}
       >
-        <SearchOutlined className="button-icon" />
+        <FiSearch className="button-icon" />
         <span className="button-text">{textButton || "Tìm kiếm"}</span>
       </button>
     </div>

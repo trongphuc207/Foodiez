@@ -16,7 +16,21 @@ public class ProductService {
         return repo.findAll();
     }
     public List<Product> searchProducts(String keyword) {
-        return repo.findByNameContainingIgnoreCase(keyword);
+        System.out.println("🔍 Searching for keyword: '" + keyword + "'");
+        
+        // Thử cả 2 cách search
+        List<Product> results1 = repo.findByNameContainingIgnoreCase(keyword);
+        List<Product> results2 = repo.searchProducts(keyword);
+        
+        System.out.println("📦 findByNameContainingIgnoreCase found: " + results1.size() + " products");
+        System.out.println("📦 searchProducts found: " + results2.size() + " products");
+        
+        // Trả về kết quả từ method nào có kết quả
+        return results1.size() > 0 ? results1 : results2;
+    }
+    
+    public List<Product> getProductsByShopId(int shopId) {
+        return repo.findByShopId(shopId);
     }
     public Product createProduct(Product product) {
         return repo.save(product);
