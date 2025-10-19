@@ -91,9 +91,11 @@
   padding: 8px;
   border-radius: 8px;
   transition: background-color 0.3s;
-  display: flex;
+  display: flex !important;
   align-items: center;
   justify-content: center;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .menu-btn svg {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import './ShipperEarningsPage.css'
 import SidebarComponent from '../../components/SidebarComponent/SidebarComponent'
+import { FiMenu } from 'react-icons/fi'
 
 export default function ShipperEarningsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('today')
@@ -71,15 +72,15 @@ export default function ShipperEarningsPage() {
 
   return (
     <div className="shipper-earnings-page">
-      {/* Header with Menu Button */}
-      <div className="page-header">
+      {/* Header with hamburger menu */}
+      <div className="dashboard-header">
         <div className="header-left">
           <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
-            <i className="bi bi-list"></i>
+            <FiMenu />
           </button>
           <div className="header-title">
-            <h1 className="page-title">Thu nhập</h1>
-            <p className="page-subtitle">Theo dõi thu nhập và giao dịch của bạn</p>
+            <h1>Thu nhập</h1>
+            <p>Theo dõi thu nhập và giao dịch của bạn</p>
           </div>
         </div>
       </div>

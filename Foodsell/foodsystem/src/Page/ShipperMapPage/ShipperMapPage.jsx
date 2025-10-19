@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import './ShipperMapPage.css'
 import SidebarComponent from '../../components/SidebarComponent/SidebarComponent'
+import { FiMenu } from 'react-icons/fi'
 
 export default function ShipperMapPage() {
   const [selectedOrder, setSelectedOrder] = useState(null)
@@ -55,15 +56,15 @@ export default function ShipperMapPage() {
 
   return (
     <div className="shipper-map-page">
-      {/* Header with Menu Button */}
-      <div className="page-header">
+      {/* Header with hamburger menu */}
+      <div className="dashboard-header">
         <div className="header-left">
           <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
-            <i className="bi bi-list"></i>
+            <FiMenu />
           </button>
           <div className="header-title">
-            <h1 className="page-title">Bản đồ</h1>
-            <p className="page-subtitle">Theo dõi tuyến đường và địa điểm giao hàng</p>
+            <h1>Tuyến đường</h1>
+            <p>Theo dõi tuyến đường và địa điểm giao hàng</p>
           </div>
         </div>
       </div>

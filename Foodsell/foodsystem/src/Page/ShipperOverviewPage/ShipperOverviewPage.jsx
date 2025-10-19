@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import './ShipperOverviewPage.css'
 import SidebarComponent from '../../components/SidebarComponent/SidebarComponent'
+import { FiMenu } from 'react-icons/fi'
 
 export default function ShipperOverviewPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -42,15 +43,15 @@ export default function ShipperOverviewPage() {
 
   return (
     <div className="shipper-overview-page">
-      {/* Header with Menu Button */}
-      <div className="page-header">
+      {/* Header with hamburger menu */}
+      <div className="dashboard-header">
         <div className="header-left">
           <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
-            <i className="bi bi-list"></i>
+            <FiMenu />
           </button>
-          <div className="header-content">
-            <h1 className="page-title">Tổng quan Shipper</h1>
-            <p className="page-subtitle">Quản lý và theo dõi đơn hàng giao của bạn</p>
+          <div className="header-title">
+            <h1>Cài đặt</h1>
+            <p>Quản lý và theo dõi đơn hàng giao của bạn</p>
           </div>
         </div>
         <div className="header-actions">

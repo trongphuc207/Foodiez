@@ -46,12 +46,13 @@ const SidebarComponent = ({ isOpen, onClose }) => {
   ]
 
   const shipperMenuItems = [
-    { icon: <i className="bi bi-house-door"></i>, label: 'Trang chủ', path: '/' },
-    { icon: <i className="bi bi-box"></i>, label: 'Đơn hàng', path: '/shipper/orders' },
-    { icon: <i className="bi bi-graph-up"></i>, label: 'Dashboard', path: '/shipper/dashboard' },
-    { icon: <i className="bi bi-currency-dollar"></i>, label: 'Thu nhập', path: '/shipper/earnings' },
-    { icon: <i className="bi bi-star"></i>, label: 'Đánh giá', path: '/shipper/history' },
-    { icon: <i className="bi bi-gear"></i>, label: 'Cài đặt', path: '/shipper/overview' }
+    { icon: <FiHome />, label: 'Trang chủ', path: '/' },
+    { icon: <FiPackage />, label: 'Đơn hàng', path: '/shipper/orders' },
+    { icon: <FiBarChart />, label: 'Dashboard', path: '/shipper/dashboard' },
+    { icon: <FiMapPin />, label: 'Tuyến đường', path: '/shipper/routes' },
+    { icon: <FiDollarSign />, label: 'Thu nhập', path: '/shipper/earnings' },
+    { icon: <FiStar />, label: 'Đánh giá', path: '/shipper/reviews' },
+    { icon: <FiSettings />, label: 'Cài đặt', path: '/shipper/settings' }
   ]
 
   // >>>> THÊM MENU ADMIN <<<<
