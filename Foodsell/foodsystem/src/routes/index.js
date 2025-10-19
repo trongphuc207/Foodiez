@@ -1,4 +1,5 @@
 import HomePage from '../Page/HomePage/HomePage';
+import { Navigate } from 'react-router-dom';
 import OrderPage from '../Page/OrderPage/OrderPage';
 import ProductPage from '../Page/productPPage/productPage';
 import NotFoundPage from '../Page/NotFoundPage/NotFoundPage';
@@ -76,6 +77,11 @@ export const routes = [
             isShowHeader: false
         },
         {
+            path: '/shipper',
+            component: () => <Navigate to="/shipper/dashboard" replace />,
+            isShowHeader: false
+        },
+        {
             path: '/shipper/dashboard',
             component: () => (
                 <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">
@@ -122,6 +128,33 @@ export const routes = [
         },
         {
             path: '/shipper/overview',
+            component: () => (
+                <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">
+                    <ShipperOverviewPage />
+                </RouteGuard>
+            ),
+            isShowHeader: false
+        },
+        {
+            path: '/shipper/routes',
+            component: () => (
+                <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">
+                    <ShipperMapPage />
+                </RouteGuard>
+            ),
+            isShowHeader: false
+        },
+        {
+            path: '/shipper/reviews',
+            component: () => (
+                <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">
+                    <ShipperHistoryPage />
+                </RouteGuard>
+            ),
+            isShowHeader: false
+        },
+        {
+            path: '/shipper/settings',
             component: () => (
                 <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">
                     <ShipperOverviewPage />

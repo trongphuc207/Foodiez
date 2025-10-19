@@ -1,9 +1,12 @@
 import React, { useState } from 'react'
 import './ShipperHistoryPage.css'
+import SidebarComponent from '../../components/SidebarComponent/SidebarComponent'
+import { FiMenu } from 'react-icons/fi'
 
 export default function ShipperHistoryPage() {
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [selectedDate, setSelectedDate] = useState('today')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const historyData = [
     {
@@ -112,9 +115,17 @@ export default function ShipperHistoryPage() {
 
   return (
     <div className="shipper-history-page">
-      <div className="page-header">
-        <h1 className="page-title">Lịch sử</h1>
-        <p className="page-subtitle">Xem lại các đơn hàng đã giao</p>
+      {/* Header with hamburger menu */}
+      <div className="dashboard-header">
+        <div className="header-left">
+          <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
+            <FiMenu />
+          </button>
+          <div className="header-title">
+            <h1>Đánh giá</h1>
+            <p>Xem lại các đơn hàng đã giao và đánh giá</p>
+          </div>
+        </div>
       </div>
 
       <div className="history-stats">
@@ -230,6 +241,12 @@ export default function ShipperHistoryPage() {
           <p>Chưa có đơn hàng nào trong bộ lọc này</p>
         </div>
       )}
+
+      {/* Sidebar */}
+      <SidebarComponent
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
     </div>
   )
 }

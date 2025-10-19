@@ -1,8 +1,11 @@
 import React, { useState } from 'react'
 import './ShipperOrdersPage.css'
+import SidebarComponent from '../../components/SidebarComponent/SidebarComponent'
+import { FiMenu } from 'react-icons/fi'
 
 export default function ShipperOrdersPage() {
   const [activeTab, setActiveTab] = useState('all')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const orders = [
     {
@@ -69,9 +72,17 @@ export default function ShipperOrdersPage() {
 
   return (
     <div className="shipper-orders-page">
-      <div className="page-header">
-        <h1 className="page-title">Đơn hàng</h1>
-        <p className="page-subtitle">Quản lý đơn hàng giao của bạn</p>
+      {/* Header with hamburger menu */}
+      <div className="dashboard-header">
+        <div className="header-left">
+          <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
+            <FiMenu />
+          </button>
+          <div className="header-title">
+            <h1>Đơn hàng</h1>
+            <p>Quản lý đơn hàng giao của bạn</p>
+          </div>
+        </div>
       </div>
 
       <div className="tabs-container">
@@ -144,6 +155,12 @@ export default function ShipperOrdersPage() {
           <p>Chưa có đơn hàng nào trong danh mục này</p>
         </div>
       )}
+
+      {/* Sidebar */}
+      <SidebarComponent
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
     </div>
   )
 }

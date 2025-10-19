@@ -1,8 +1,11 @@
 import React, { useState } from 'react'
 import './ShipperMapPage.css'
+import SidebarComponent from '../../components/SidebarComponent/SidebarComponent'
+import { FiMenu } from 'react-icons/fi'
 
 export default function ShipperMapPage() {
   const [selectedOrder, setSelectedOrder] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const deliveryPoints = [
     {
@@ -53,9 +56,17 @@ export default function ShipperMapPage() {
 
   return (
     <div className="shipper-map-page">
-      <div className="page-header">
-        <h1 className="page-title">Bản đồ</h1>
-        <p className="page-subtitle">Theo dõi tuyến đường và địa điểm giao hàng</p>
+      {/* Header with hamburger menu */}
+      <div className="dashboard-header">
+        <div className="header-left">
+          <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
+            <FiMenu />
+          </button>
+          <div className="header-title">
+            <h1>Tuyến đường</h1>
+            <p>Theo dõi tuyến đường và địa điểm giao hàng</p>
+          </div>
+        </div>
       </div>
 
       <div className="map-container">
@@ -131,6 +142,12 @@ export default function ShipperMapPage() {
           </div>
         </div>
       </div>
+
+      {/* Sidebar */}
+      <SidebarComponent
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
     </div>
   )
 }

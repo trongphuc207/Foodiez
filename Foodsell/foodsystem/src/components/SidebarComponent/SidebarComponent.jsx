@@ -54,7 +54,7 @@ const SidebarComponent = ({ isOpen, onClose }) => {
   ]
 
   const shipperMenuItems = [
-    { icon: <FiHome />, label: 'Trang chủ', path: '/shipper' },
+    { icon: <FiHome />, label: 'Trang chủ', path: '/' },
     { icon: <FiPackage />, label: 'Đơn hàng', path: '/shipper/orders' },
     { icon: <FiBarChart />, label: 'Dashboard', path: '/shipper/dashboard' },
     { icon: <FiMapPin />, label: 'Tuyến đường', path: '/shipper/routes' },
