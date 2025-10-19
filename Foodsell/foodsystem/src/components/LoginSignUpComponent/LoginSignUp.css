@@ -28,164 +28,159 @@
 }
 
 /* Social login */
-.auth-social{
-  margin:20px 0;
-  text-align:center;
+.auth-social{ margin:12px 0 6px; }
+.auth-google-btn{
+  width:100%;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  background:#fff; border:1px solid #e3e3e3; border-radius:10px;
+  height:44px; font-weight:600; cursor:pointer;
+  transition:box-shadow .2s, transform .05s;
+}
+.auth-google-btn:hover{ box-shadow:0 2px 10px rgba(0,0,0,.08); }
+.auth-google-btn:active{ transform:scale(.98); }
+.auth-g-icon{ width:18px; height:18px; }
+.auth-or-line{
+  display:flex; align-items:center; gap:12px;
+  margin:12px 0 8px; color:#888; font-size:13px;
+}
+.auth-or-line::before,.auth-or-line::after{
+  content:""; flex:1; height:1px; background:#eee;
 }
 
-/* Form */
-.auth-form{
-  margin:20px 0;
+/* OTP specific styles */
+.auth-otp-description {
+  text-align: center;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #666;
 }
 
-.auth-input-group{
-  position:relative;
-  margin-bottom:20px;
+.auth-resend-otp {
+  text-align: center;
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.auth-input-icon{
-  position:absolute;
-  left:12px;
-  top:50%;
-  transform:translateY(-50%);
-  width:20px;
-  height:20px;
-  opacity:0.6;
+.auth-resend-btn {
+  background: transparent;
+  border: none;
+  color: #43a047;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 8px;
 }
 
+.auth-resend-btn:hover {
+  color: #2e7d32;
+}
+
+.auth-resend-btn:disabled {
+  color: #ccc;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.auth-back-to-login-btn {
+  background: transparent;
+  border: 1px solid #ddd;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.auth-back-to-login-btn:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+  color: #333;
+}
+
+/* Nhóm inputs – dùng namespace để không dính bootstrap */
+.auth-inputs{
+  display:flex; flex-direction:column;
+  gap:12px; margin-bottom:16px;
+}
+
+/* Một hàng input */
 .auth-input{
-  width:100%;
-  padding:12px 12px 12px 44px;
-  border:2px solid #e1e5e9;
-  border-radius:8px;
-  font-size:16px;
-  transition:all 0.3s ease;
-  box-sizing:border-box;
+  display:flex; align-items:center; height:48px;
+  padding:0 14px;
+  border:1px solid #cde6d2; border-radius:10px;
+  background:#fafafa;
+  transition:border .2s, background .2s, box-shadow .2s;
 }
+.auth-input:hover{ background:#fff; border-color:#43a047; box-shadow:0 2px 10px rgba(67,160,71,.12); }
+.auth-input img{ width:20px; height:20px; margin-right:12px; opacity:.7; }
+.auth-icon{ width:20px; margin-right:12px; display:inline-flex; justify-content:center; }
 
-.auth-input:focus{
-  outline:none;
-  border-color:#43a047;
-  box-shadow:0 0 0 3px rgba(67,160,71,0.1);
+/* Reset ảnh hưởng của Bootstrap/form-control lên input bên trong */
+.auth-input input{
+  flex:1 1 auto; min-width:0; width:100%;
+  border:0 !important; outline:none !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  font-size:15px; color:#222;
+  padding:0; /* xoá padding bootstrap */
+  height:unset;
 }
+.auth-input input:focus{ outline:none !important; box-shadow:none !important; }
 
-.auth-submit{
-  width:100%;
-  padding:14px;
-  background:#43a047;
-  color:white;
-  border:none;
-  border-radius:8px;
-  font-size:16px;
-  font-weight:600;
-  cursor:pointer;
-  transition:all 0.3s ease;
-  margin-top:10px;
-}
+/* Lỗi */
+.auth-input.is-error{ border-color:#e57373; background:#fff; }
+.auth-field-error{ color:#e57373; font-size:12px; margin:-6px 2px 6px 36px; }
 
-.auth-submit:hover{
-  background:#388e3c;
-  transform:translateY(-1px);
-}
+/* Forgot (chỉ login) */
+.auth-forgot{ text-align:right; font-size:13px; color:#666; margin:0 0 12px; }
+.auth-forgot span{ color:#43a047; cursor:pointer; }
+.auth-forgot span:hover{ text-decoration:underline; }
 
-.auth-submit:disabled{
-  background:#ccc;
-  cursor:not-allowed;
-  transform:none;
-}
-
-.auth-error{
-  color:#d32f2f;
-  font-size:14px;
-  margin-top:4px;
-  margin-left:4px;
-}
-
-.auth-links{
-  text-align:center;
-  margin-top:20px;
-}
-
-.auth-link{
-  background:none;
-  border:none;
-  color:#43a047;
-  cursor:pointer;
-  text-decoration:underline;
-  font-size:14px;
-}
-
-.auth-link:hover{
-  color:#388e3c;
-}
-
+/* Nút chuyển chế độ */
 .auth-switch{
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:12px; margin-bottom:12px;
+}
+.auth-btn{
+  background:#43a047; color:#fff;
+  padding:12px 0; border-radius:10px;
+  font-weight:600; cursor:pointer; border:none;
+  transition:transform .1s, background .2s;
+}
+.auth-btn:hover{ background:#3a9440; }
+.auth-btn:active{ transform:scale(.98); }
+.auth-btn.is-active{ box-shadow:0 4px 12px rgba(67,160,71,.25); }
+
+/* Forgot password description */
+.auth-forgot-description{
+  text-align:center; margin-bottom:16px; color:#666;
+  font-size:14px; line-height:1.4;
+}
+
+/* Back button */
+.auth-back{
+  margin:12px 0;
   text-align:center;
-  margin-top:20px;
-  color:#666;
-  font-size:14px;
 }
 
-.auth-switch .auth-link{
-  color:#43a047;
-  font-weight:600;
+.auth-back-btn{
+  background:transparent; border:none; color:#43a047;
+  cursor:pointer; font-size:14px; font-weight:600;
+  transition:color .2s;
 }
+.auth-back-btn:hover{ color:#3a9440; }
 
-/* Overlay */
-.auth-overlay{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:rgba(0,0,0,0.5);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  z-index:1000;
+/* Submit cuối */
+.auth-submit{
+  width:100%; margin-top:4px;
+  background:#111; color:#fff; padding:12px 0;
+  border-radius:10px; border:none; font-weight:700; cursor:pointer;
+  transition:opacity .2s;
 }
-
-/* Responsive */
-@media (max-width: 768px) {
-  .auth-card{
-    width:95vw;
-    margin:12px auto;
-    padding:20px;
-  }
-  
-  .auth-title{
-    font-size:28px;
-  }
-  
-  .auth-input{
-    font-size:16px;
-    padding:14px 12px 14px 44px;
-  }
-  
-  .auth-submit{
-    padding:16px;
-    font-size:16px;
-  }
-}
-
-@media (max-width: 480px) {
-  .auth-card{
-    width:98vw;
-    margin:8px auto;
-    padding:16px;
-  }
-  
-  .auth-title{
-    font-size:24px;
-  }
-  
-  .auth-input{
-    font-size:16px;
-    padding:12px 12px 12px 40px;
-  }
-  
-  .auth-input-icon{
-    width:18px;
-    height:18px;
-  }
-}
+.auth-submit:hover{ opacity:.92; }
