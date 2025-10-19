@@ -28,7 +28,6 @@ import VoucherPage from '../Page/VoucherPage/VoucherPage';
 import RouteGuard from '../components/RouteGuard/RouteGuard';
 import Unauthorized from '../components/Unauthorized/Unauthorized';
 
-<<<<<<< HEAD
 export const routes = [
     {
         path: '/',

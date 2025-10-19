@@ -8,7 +8,9 @@ import {
   FiBarChart,
   FiUsers,
   FiDollarSign,
-  FiSettings
+  FiSettings,
+  FiMapPin,
+  FiStar
 } from 'react-icons/fi'
 import './SidebarComponent.css'
 
