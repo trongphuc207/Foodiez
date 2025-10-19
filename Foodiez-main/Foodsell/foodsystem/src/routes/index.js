@@ -27,6 +27,7 @@ import ShipperOverviewPage from '../Page/ShipperOverviewPage/ShipperOverviewPage
 import RouteGuard from '../components/RouteGuard/RouteGuard';
 import Unauthorized from '../components/Unauthorized/Unauthorized';
 import ReviewPage from '../Page/ReviewPage/ReviewPage';
+import ComplaintManagementPage from '../Page/ComplaintManagementPage/ComplaintManagementPage';
 
 export const routes = [ 
         {
@@ -115,6 +116,12 @@ export const routes = [
             path: '/reviews',
             component: ReviewPage,
             isShowHeader: true
+        },
+        {
+            path: '/admin/complaints',
+            component: ComplaintManagementPage,
+            isShowHeader: true,
+            requiredRole: 'admin'
         },
         {
             path: '/payment/success',

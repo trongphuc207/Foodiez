@@ -38,7 +38,7 @@ public class SecurityConfig {
                 // Protected endpoints
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
-=======
+
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/products/**").permitAll()
                 .requestMatchers("/api/orders/test").permitAll()
