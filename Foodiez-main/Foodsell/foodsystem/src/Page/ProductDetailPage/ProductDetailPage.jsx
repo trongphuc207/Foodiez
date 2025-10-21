@@ -27,16 +27,35 @@ export default function ProductDetailPage() {
 
   const handleSubmitReview = (payload) => {
     if (editingReview) {
-      // Optional: implement update flow if backend supports editing user's own review
-      // Skipping for now to match minimal requirements
+      // Update existing review
+      createReview.mutate({ 
+        reviewId: editingReview.id, 
+        ...payload,
+        isUpdate: true 
+      });
       setEditingReview(null);
       return;
     }
-    createReview.mutate({ productId, ...payload });
+    createReview.mutate({ 
+      productId, 
+      shopId: product?.shopId || 1, // Default shop ID
+      ...payload 
+    });
   };
 
   const handleDeleteReview = (reviewId) => {
-    deleteReview.mutate(reviewId);
+    if (window.confirm('Bạn có chắc muốn xóa đánh giá này?')) {
+      deleteReview.mutate(reviewId);
+    }
+  };
+
+  const handleReplyToReview = (reviewId, replyText) => {
+    // Implement reply to review API call
+    createReview.mutate({ 
+      reviewId, 
+      content: replyText,
+      isReply: true 
+    });
   };
 
   if (productLoading) return <div className="product-detail">Đang tải sản phẩm...</div>;
@@ -62,19 +81,33 @@ export default function ProductDetailPage() {
       )}
 
       <section className="product-reviews">
-        <h3>Đánh giá</h3>
-        <ReviewForm initialValue={editingReview} onSubmit={handleSubmitReview} submitting={createReview.isLoading} />
+        <h3>Đánh giá sản phẩm</h3>
+        <ReviewForm 
+          initialValue={editingReview} 
+          onSubmit={handleSubmitReview} 
+          submitting={createReview.isLoading}
+          productId={productId}
+          shopId={product?.shopId}
+        />
         {reviewLoading ? (
-          <div>Đang tải đánh giá...</div>
+          <div className="loading-reviews">Đang tải đánh giá...</div>
         ) : reviewError ? (
-          <div>Lỗi tải đánh giá</div>
+          <div className="error-reviews">Lỗi tải đánh giá</div>
         ) : (
-          <ReviewList reviews={reviews} onDelete={handleDeleteReview} onEdit={setEditingReview} />
+          <ReviewList 
+            reviews={reviews} 
+            onDelete={handleDeleteReview} 
+            onEdit={setEditingReview}
+            onReply={handleReplyToReview}
+          />
         )}
       </section>
     </div>
   );
 }
+
+
+
 
 
 
