@@ -1,0 +1,60 @@
+.admin-container {
+  display: flex;
+  min-height: 100vh;
+  background: #f7f9fc;
+}
+
+.admin-sidebar {
+  width: 220px;
+  background: #2b3a55;
+  color: white;
+  padding: 20px;
+}
+
+.admin-logo {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.admin-nav .nav-link {
+  display: block;
+  color: white;
+  padding: 8px 12px;
+  text-decoration: none;
+}
+
+.admin-nav .nav-link.active,
+.admin-nav .nav-link:hover {
+  background: #4e5d78;
+  border-radius: 5px;
+}
+
+.admin-main {
+  flex: 1;
+  background: white;
+}
+
+.admin-header {
+  background: #2b3a55;
+  color: white;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  background: white;
+  border: 1px solid #ddd;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.stat-icon {
+  font-size: 2rem;
+}
