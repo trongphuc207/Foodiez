@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 import { getPaymentInfo } from '../../api/payment';
@@ -12,14 +12,21 @@ const updateOrderStatus = async (orderCode, status) => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`http://localhost:8080/api/customer/orders/${orderCode}/status`, {
+    // Thêm timeout để tránh infinite loop
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 giây timeout
+
+    const response = await fetch(`http://localhost:8080/api/orders/customer/orders/${orderCode}/status`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify({ status })
+      body: JSON.stringify({ status }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -40,11 +47,18 @@ const PaymentSuccessPage = () => {
   const [paymentStatus, setPaymentStatus] = useState('loading');
   const [orderInfo, setOrderInfo] = useState(null);
   const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [hasProcessed, setHasProcessed] = useState(false);
 
-  const orderCode = searchParams.get('orderCode');
+  const orderCode = useMemo(() => searchParams.get('orderCode'), [searchParams]);
+  
+  const handlePaymentSuccess = useCallback(async () => {
+    let isMounted = true;
+    let timeoutId = null;
 
-  useEffect(() => {
-    const handlePaymentSuccess = async () => {
+    const processPayment = async () => {
+      if (!isMounted) return;
+
       try {
         // Lấy thông tin đơn hàng từ localStorage
         const pendingOrder = localStorage.getItem('pendingOrder');
@@ -63,6 +77,7 @@ const PaymentSuccessPage = () => {
         
         // Kiểm tra trạng thái từ URL
         if (status === 'PAID' && code === '00' && cancel === 'false') {
+          if (!isMounted) return;
           setPaymentStatus('success');
           
           // Cập nhật status đơn hàng trong database
@@ -79,13 +94,16 @@ const PaymentSuccessPage = () => {
           // Xóa thông tin đơn hàng tạm
           localStorage.removeItem('pendingOrder');
         } else if (status === 'CANCELLED' || cancel === 'true' || (code && code !== '00')) {
+          if (!isMounted) return;
           setPaymentStatus('error');
           setError('Thanh toán đã bị hủy hoặc thất bại');
         } else {
-          // Nếu không có thông tin rõ ràng, thử gọi API
-          if (orderCode) {
+          // Nếu không có thông tin rõ ràng, thử gọi API (chỉ retry tối đa 2 lần)
+          if (orderCode && retryCount < 2) {
             try {
               const paymentResponse = await getPaymentInfo(orderCode);
+              if (!isMounted) return;
+              
               if (paymentResponse.success && paymentResponse.data.status === 'PAID') {
                 setPaymentStatus('success');
                 
@@ -103,31 +121,56 @@ const PaymentSuccessPage = () => {
                 setPaymentStatus('pending');
               }
             } catch (apiError) {
-              console.warn('API call failed, using URL params:', apiError);
-              // Fallback: nếu có orderCode và không có lỗi rõ ràng, coi như thành công
-              if (orderCode) {
-                setPaymentStatus('success');
-                clearCart();
-                localStorage.removeItem('pendingOrder');
-              } else {
-                setPaymentStatus('error');
-                setError('Thiếu thông tin đơn hàng');
-              }
+              console.warn('API call failed, retrying...', apiError);
+              if (!isMounted) return;
+              
+              setRetryCount(prev => prev + 1);
+              // Retry sau 2 giây
+              timeoutId = setTimeout(() => {
+                if (isMounted) {
+                  processPayment();
+                }
+              }, 2000);
+              return;
             }
+          } else if (orderCode) {
+            // Fallback: nếu có orderCode và không có lỗi rõ ràng, coi như thành công
+            if (!isMounted) return;
+            setPaymentStatus('success');
+            clearCart();
+            localStorage.removeItem('pendingOrder');
           } else {
+            if (!isMounted) return;
             setPaymentStatus('error');
             setError('Thiếu thông tin đơn hàng');
           }
         }
       } catch (error) {
         console.error('Payment verification error:', error);
+        if (!isMounted) return;
         setPaymentStatus('error');
         setError('Có lỗi xảy ra khi xác minh thanh toán');
       }
     };
 
-    handlePaymentSuccess();
-  }, [orderCode, clearCart, searchParams]);
+    processPayment();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [orderCode, clearCart, searchParams, retryCount]);
+
+  useEffect(() => {
+    // Chỉ chạy một lần khi component mount
+    if (!hasProcessed) {
+      setHasProcessed(true);
+      handlePaymentSuccess();
+    }
+  }, []);
 
   const handleContinueShopping = () => {
     navigate('/');

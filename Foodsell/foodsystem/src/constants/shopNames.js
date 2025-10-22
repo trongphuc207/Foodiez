@@ -1,15 +1,12 @@
-// Shop names constants
+// Shop names constants - mapping với database thật
 export const shopNames = {
-  1: "Nhà hàng ABC",
-  2: "Quán ăn XYZ", 
-  3: "Cửa hàng đồ ăn nhanh",
-  4: "Nhà hàng hải sản",
-  5: "Quán cơm bình dân",
-  6: "Cửa hàng bánh mì",
-  7: "Nhà hàng lẩu",
-  8: "Quán phở",
-  9: "Cửa hàng pizza",
-  10: "Nhà hàng BBQ"
+  1: "Phở Delicious",
+  2: "Bánh Mì King", 
+  3: "Mì Quảng 123",
+  4: "Cơm Gà Bà Buội",
+  5: "Bún Chả Cá 109",
+  6: "Pizza Zone",
+  7: "Coffee & Chill"
 };
 
 export const getShopName = (shopId) => {

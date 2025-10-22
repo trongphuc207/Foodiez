@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -32,7 +33,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/products/**").permitAll()
                 .requestMatchers("/api/categories/**").permitAll()
                 .requestMatchers("/api/shops/**").permitAll()
-                .requestMatchers("/api/orders/test").permitAll()
+                .requestMatchers("/api/orders/debug/**").permitAll()
                 .requestMatchers("/api/payos/**").permitAll()
                 .requestMatchers("/test/**").permitAll()
                 .requestMatchers("/uploads/**").permitAll()
@@ -40,9 +41,6 @@ public class SecurityConfig {
                 
                 // Voucher endpoints (public for now, can be restricted later)
                 .requestMatchers("/api/vouchers/**").permitAll()
-                
-                // Static resources (uploads)
-                .requestMatchers("/uploads/**").permitAll()
                 
                 // Customer endpoints (accessible by all authenticated users)
                 .requestMatchers("/api/customer/**").authenticated()
@@ -59,6 +57,10 @@ public class SecurityConfig {
                 
                 // Admin endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                
+                // Order status update endpoint (for payment callbacks)
+                .requestMatchers(HttpMethod.PUT, "/api/orders/customer/orders/*/status")
+                .permitAll()
                 
                 // All other requests need authentication
                 .anyRequest().authenticated()

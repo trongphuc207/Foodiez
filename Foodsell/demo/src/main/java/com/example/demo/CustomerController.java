@@ -43,9 +43,18 @@ public class CustomerController {
     public List<OrderDTO> getMyOrders() {
         // Lấy user hiện tại và trả về orders của user đó
         var currentUser = roleChecker.getCurrentUser();
+        System.out.println("🔍 DEBUG: Current user: " + (currentUser != null ? currentUser.getId() : "null"));
+        
         if (currentUser != null) {
-            return orderService.getOrdersByBuyerId(currentUser.getId());
+            var orders = orderService.getOrdersByBuyerId(currentUser.getId());
+            System.out.println("🔍 DEBUG: Found " + orders.size() + " orders for user " + currentUser.getId());
+            for (var order : orders) {
+                System.out.println("🔍 DEBUG: Order ID: " + order.getId() + ", Status: " + order.getStatus() + ", Total: " + order.getTotalAmount());
+            }
+            return orders;
         }
+        
+        System.out.println("🔍 DEBUG: No current user found");
         return List.of();
     }
     

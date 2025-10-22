@@ -22,8 +22,18 @@ export default function OrderPage() {
           throw new Error('Bạn cần đăng nhập để xem đơn hàng. Vui lòng đăng nhập và thử lại.');
         }
         
-        const ordersData = await customerAPI.getOrders();
-        console.log('Orders loaded successfully:', ordersData);
+            const ordersData = await customerAPI.getOrders();
+            console.log('🔍 DEBUG: Orders data received:', ordersData);
+            console.log('🔍 DEBUG: Orders type:', typeof ordersData);
+            console.log('🔍 DEBUG: Orders length:', ordersData?.length || 'undefined');
+            
+            if (ordersData && ordersData.length > 0) {
+              console.log('🔍 DEBUG: First order:', ordersData[0]);
+              console.log('🔍 DEBUG: First order orderItems:', ordersData[0].orderItems);
+              console.log('🔍 DEBUG: First order total_amount:', ordersData[0].total_amount);
+              console.log('🔍 DEBUG: First order created_at:', ordersData[0].created_at);
+            }
+            
         setOrders(ordersData);
         setError(null);
       } catch (err) {
@@ -74,6 +84,9 @@ export default function OrderPage() {
   };
 
   const formatPrice = (price) => {
+    if (price == null || price === undefined || isNaN(price)) {
+      return '0 ₫';
+    }
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND'
@@ -81,7 +94,15 @@ export default function OrderPage() {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('vi-VN');
+    if (!dateString) {
+      return 'Không có ngày';
+    }
+    try {
+      return new Date(dateString).toLocaleString('vi-VN');
+    } catch (error) {
+      console.error('Error formatting date:', error, dateString);
+      return 'Ngày không hợp lệ';
+    }
   };
 
   const handleCancelOrder = async (orderId) => {
@@ -176,26 +197,43 @@ export default function OrderPage() {
               <div key={order.id} className="order-card">
                 <div className="order-header">
                   <div className="order-info">
-                    <h3>Đơn hàng #{order.id}</h3>
-                    <p className="order-date">Ngày đặt: {formatDate(order.created_at)}</p>
+                    <div className="order-number">
+                      <span className="order-label">Đơn hàng</span>
+                      <span className="order-id">#{order.order_code || order.id}</span>
+                    </div>
+                    <p className="order-date">
+                      <i className="calendar-icon">📅</i>
+                      {formatDate(order.created_at)}
+                    </p>
                   </div>
                   <div className="order-status">
-                    <span className={`status-badge ${getStatusClass(order.status)}`}>
-                      {getStatusText(order.status)}
-                    </span>
+                    <div className="status-indicator">
+                      <div className={`status-dot ${getStatusClass(order.status)}`}></div>
+                      <span className={`status-badge ${getStatusClass(order.status)}`}>
+                        {getStatusText(order.status)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
                 <div className="order-details">
                   <div className="order-items">
                     <h4>Sản phẩm:</h4>
-                    {order.items && order.items.map((item, index) => (
-                      <div key={index} className="order-item">
-                        <span className="item-name">{item.name}</span>
-                        <span className="item-quantity">x{item.quantity}</span>
-                        <span className="item-price">{formatPrice(item.unit_price)}</span>
+                    {order.orderItems && order.orderItems.length > 0 ? (
+                      order.orderItems.map((item, index) => (
+                        <div key={index} className="order-item">
+                          <span className="item-name">{item.name || 'Không có tên'}</span>
+                          <span className="item-quantity">x{item.quantity || 1}</span>
+                          <span className="item-price">{formatPrice(item.unit_price)}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="order-item">
+                        <span className="item-name">Không có thông tin sản phẩm</span>
+                        <span className="item-quantity">-</span>
+                        <span className="item-price">-</span>
                       </div>
-                    ))}
+                    )}
                   </div>
 
                   <div className="order-summary">
@@ -223,59 +261,151 @@ export default function OrderPage() {
                 </div>
 
                 <div className="order-actions">
-                  <button 
-                    className="btn btn-outline"
-                    onClick={() => setSelectedOrder(selectedOrder === order.id ? null : order.id)}
-                  >
-                    {selectedOrder === order.id ? 'Ẩn chi tiết' : 'Xem chi tiết'}
-                  </button>
-                  
-                      {order.status === 'pending' && (
-                        <button 
-                          className="btn btn-danger"
-                          onClick={() => {
-                            if (window.confirm('Bạn có chắc muốn hủy đơn hàng này?')) {
-                              handleCancelOrder(order.id);
-                            }
-                          }}
-                        >
-                          Hủy đơn hàng
-                        </button>
-                      )}
+                  <div className="action-buttons">
+                    <button 
+                      className="btn btn-outline btn-details"
+                      onClick={() => setSelectedOrder(selectedOrder === order.id ? null : order.id)}
+                    >
+                      <i className="icon">👁️</i>
+                      {selectedOrder === order.id ? 'Ẩn chi tiết' : 'Xem chi tiết'}
+                    </button>
+                    
+                    {order.status === 'pending' && (
+                      <button 
+                        className="btn btn-danger"
+                        onClick={() => {
+                          if (window.confirm('Bạn có chắc muốn hủy đơn hàng này?')) {
+                            handleCancelOrder(order.id);
+                          }
+                        }}
+                      >
+                        <i className="icon">❌</i>
+                        Hủy đơn hàng
+                      </button>
+                    )}
 
-                      {order.status === 'delivered' && (
-                        <button 
-                          className="btn btn-success"
-                          onClick={() => handleReviewOrder(order)}
-                        >
-                          Đánh giá
-                        </button>
-                      )}
+                    {order.status === 'delivered' && (
+                      <button 
+                        className="btn btn-success"
+                        onClick={() => handleReviewOrder(order)}
+                      >
+                        <i className="icon">⭐</i>
+                        Đánh giá
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="order-progress">
+                    <div className="progress-bar">
+                      <div className={`progress-step ${order.status === 'pending' || order.status === 'confirmed' || order.status === 'preparing' || order.status === 'shipping' || order.status === 'delivered' ? 'active' : ''}`}>
+                        <div className="step-icon">📦</div>
+                        <span>Đặt hàng</span>
+                      </div>
+                      <div className={`progress-step ${order.status === 'confirmed' || order.status === 'preparing' || order.status === 'shipping' || order.status === 'delivered' ? 'active' : ''}`}>
+                        <div className="step-icon">✅</div>
+                        <span>Xác nhận</span>
+                      </div>
+                      <div className={`progress-step ${order.status === 'preparing' || order.status === 'shipping' || order.status === 'delivered' ? 'active' : ''}`}>
+                        <div className="step-icon">👨‍🍳</div>
+                        <span>Chuẩn bị</span>
+                      </div>
+                      <div className={`progress-step ${order.status === 'shipping' || order.status === 'delivered' ? 'active' : ''}`}>
+                        <div className="step-icon">🚚</div>
+                        <span>Giao hàng</span>
+                      </div>
+                      <div className={`progress-step ${order.status === 'delivered' ? 'active' : ''}`}>
+                        <div className="step-icon">🎉</div>
+                        <span>Hoàn thành</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {selectedOrder === order.id && (
                   <div className="order-details-expanded">
-                    <div className="delivery-info">
-                      <h4>Thông tin giao hàng:</h4>
-                      <p><strong>Người nhận:</strong> {order.recipient_name}</p>
-                      <p><strong>Số điện thoại:</strong> {order.recipient_phone}</p>
-                      <p><strong>Địa chỉ:</strong> {order.address_text}</p>
-                    </div>
-                    
-                    {order.payment_info && (
-                      <div className="payment-info">
-                        <h4>Thông tin thanh toán:</h4>
-                        <p><strong>Phương thức:</strong> {order.payment_info.method}</p>
-                        <p><strong>Trạng thái:</strong> {order.payment_info.status}</p>
+                    <div className="details-grid">
+                      <div className="detail-section delivery-info">
+                        <div className="section-header">
+                          <i className="section-icon">📍</i>
+                          <h4>Thông tin giao hàng</h4>
+                        </div>
+                        <div className="section-content">
+                          <div className="info-item">
+                            <span className="info-label">Người nhận:</span>
+                            <span className="info-value">{order.recipient_name}</span>
+                          </div>
+                          <div className="info-item">
+                            <span className="info-label">Số điện thoại:</span>
+                            <span className="info-value">{order.recipient_phone}</span>
+                          </div>
+                          <div className="info-item">
+                            <span className="info-label">Địa chỉ:</span>
+                            <span className="info-value">{order.address_text}</span>
+                          </div>
+                        </div>
                       </div>
-                    )}
+                      
+                      {order.payment_info && (
+                        <div className="detail-section payment-info">
+                          <div className="section-header">
+                            <i className="section-icon">💳</i>
+                            <h4>Thông tin thanh toán</h4>
+                          </div>
+                          <div className="section-content">
+                            <div className="info-item">
+                              <span className="info-label">Phương thức:</span>
+                              <span className="info-value">{order.payment_info.method}</span>
+                            </div>
+                            <div className="info-item">
+                              <span className="info-label">Trạng thái:</span>
+                              <span className="info-value">{order.payment_info.status}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
-                    {order.tracking_code && (
-                      <div className="tracking-info">
-                        <h4>Theo dõi đơn hàng:</h4>
-                        <p><strong>Mã tracking:</strong> {order.tracking_code}</p>
+                      {order.tracking_code && (
+                        <div className="detail-section tracking-info">
+                          <div className="section-header">
+                            <i className="section-icon">🚚</i>
+                            <h4>Theo dõi đơn hàng</h4>
+                          </div>
+                          <div className="section-content">
+                            <div className="info-item">
+                              <span className="info-label">Mã tracking:</span>
+                              <span className="info-value tracking-code">{order.tracking_code}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="detail-section order-timeline">
+                        <div className="section-header">
+                          <i className="section-icon">⏰</i>
+                          <h4>Lịch sử đơn hàng</h4>
+                        </div>
+                        <div className="section-content">
+                          <div className="timeline">
+                            <div className="timeline-item completed">
+                              <div className="timeline-marker"></div>
+                              <div className="timeline-content">
+                                <span className="timeline-title">Đơn hàng được tạo</span>
+                                <span className="timeline-time">{formatDate(order.created_at)}</span>
+                              </div>
+                            </div>
+                            {order.status === 'confirmed' && (
+                              <div className="timeline-item completed">
+                                <div className="timeline-marker"></div>
+                                <div className="timeline-content">
+                                  <span className="timeline-title">Đã xác nhận thanh toán</span>
+                                  <span className="timeline-time">Gần đây</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
                 )}
               </div>

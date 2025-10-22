@@ -34,17 +34,8 @@ const Header = ({ toggleSidebar }) => {
       if (userData) {
         console.log('🎉 Auth success in Header:', userData);
         
-        // Navigate based on user role
-        if (userData.role === 'admin') {
-          navigate('/admin');
-        } else if (userData.role === 'seller') {
-          navigate('/seller');
-        } else if (userData.role === 'shipper') {
-          navigate('/shipper');
-        } else {
-          // Default customer - stay on current page or go to home
-          navigate('/');
-        }
+        // Redirect to Home after login (regardless of role)
+        navigate('/');
         
         // Close auth modal
         setShowAuth(false);
@@ -224,12 +215,10 @@ const Header = ({ toggleSidebar }) => {
       {/* === Modal Auth === */}
       {showAuth && (
         <div className="modal-overlay" onClick={() => setShowAuth(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <LoginSignUp
-              defaultMode={authMode}
-              onClose={() => setShowAuth(false)}
-            />
-          </div>
+          <LoginSignUp
+            defaultMode={authMode}
+            onClose={() => setShowAuth(false)}
+          />
         </div>
       )}
 

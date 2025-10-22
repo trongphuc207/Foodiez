@@ -1,5 +1,5 @@
 // Foodsell/foodsystem/src/components/SidebarComponent/SidebarComponent.jsx
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { 
@@ -20,6 +20,13 @@ const SidebarComponent = ({ isOpen, onClose }) => {
 
   // role mặc định lấy từ user, nếu không có thì là customer
   const [currentRole, setCurrentRole] = useState((user?.role || 'customer').toLowerCase())
+
+  // Cập nhật currentRole khi user thay đổi
+  useEffect(() => {
+    if (user?.role) {
+      setCurrentRole(user.role.toLowerCase())
+    }
+  }, [user?.role])
 
   const handleNavigate = (path) => {
     navigate(path)
@@ -183,11 +190,23 @@ const SidebarComponent = ({ isOpen, onClose }) => {
           <div className="sidebar-footer">
             <div className="user-info">
               <div className="user-avatar">
-                <i className="bi bi-person"></i>
+                {user.avatar ? (
+                  <img 
+                    src={user.avatar} 
+                    alt="Avatar" 
+                    className="avatar-image"
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                      e.target.nextSibling.style.display = 'block'
+                    }}
+                  />
+                ) : null}
+                <i className="bi bi-person" style={{ display: user.avatar ? 'none' : 'block' }}></i>
               </div>
               <div className="user-details">
                 <div className="user-name">{user.fullName || user.full_name || user.name}</div>
                 <div className="user-email">{user.email}</div>
+                <div className="user-role">{getRoleLabel()}</div>
               </div>
             </div>
             <button className="logout-btn" onClick={handleLogout}>

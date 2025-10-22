@@ -183,13 +183,63 @@ export const routes = [
         isShowHeader: true
     },
     {
-        path: '/seller/*',
+        path: '/seller',
+        component: () => <Navigate to="/seller/dashboard" replace />,
+        isShowHeader: false
+    },
+    {
+        path: '/seller/dashboard',
         component: () => (
             <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
                 <ShopDashboard />
             </RouteGuard>
         ),
-        isShowHeader: false,
+        isShowHeader: false
+    },
+    {
+        path: '/seller/products',
+        component: () => (
+            <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
+                <ShopDashboard />
+            </RouteGuard>
+        ),
+        isShowHeader: false
+    },
+    {
+        path: '/seller/orders',
+        component: () => (
+            <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
+                <ShopDashboard />
+            </RouteGuard>
+        ),
+        isShowHeader: false
+    },
+    {
+        path: '/seller/revenue',
+        component: () => (
+            <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
+                <ShopDashboard />
+            </RouteGuard>
+        ),
+        isShowHeader: false
+    },
+    {
+        path: '/seller/customers',
+        component: () => (
+            <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
+                <ShopDashboard />
+            </RouteGuard>
+        ),
+        isShowHeader: false
+    },
+    {
+        path: '/seller/settings',
+        component: () => (
+            <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
+                <ShopDashboard />
+            </RouteGuard>
+        ),
+        isShowHeader: false
     },
     {
         path: '/unauthorized',

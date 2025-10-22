@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
+import { useAuth } from '../../hooks/useAuth';
 import DeliveryInformationForm from '../../components/CheckoutComponent/DeliveryInformationForm';
 import PaymentMethodForm from '../../components/CheckoutComponent/PaymentMethodForm';
 import OrderConfirmation from '../../components/CheckoutComponent/OrderConfirmation';
@@ -10,6 +11,7 @@ import './CheckoutPage.css';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, loading } = useAuth();
   const { items: cartItems, getTotalAmount, getShippingFee, getGrandTotal, clearCart } = useCart();
   const [currentStep, setCurrentStep] = useState(1);
   const [deliveryInfo, setDeliveryInfo] = useState({});
@@ -17,6 +19,15 @@ const CheckoutPage = () => {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [appliedVoucher, setAppliedVoucher] = useState(null);
   const [voucherDiscount, setVoucherDiscount] = useState(0);
+
+  // Kiểm tra authentication - chờ load xong trạng thái đăng nhập rồi mới quyết định
+  useEffect(() => {
+    if (loading) return; // tránh redirect khi trạng thái đang tải profile
+    if (!isAuthenticated) {
+      alert('Vui lòng đăng nhập để thanh toán!');
+      navigate('/');
+    }
+  }, [loading, isAuthenticated, navigate]);
 
   // Khôi phục thông tin form từ pendingOrder (không khôi phục giỏ hàng)
   useEffect(() => {

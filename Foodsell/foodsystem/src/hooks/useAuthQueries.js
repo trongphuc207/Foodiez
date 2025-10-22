@@ -46,19 +46,12 @@ export const useLogin = () => {
 };
 
 export const useRegister = () => {
-  const queryClient = useQueryClient();
-  
   return useMutation({
     mutationFn: authAPI.register,
     onSuccess: (data) => {
-      // Set token and user data
-      setAuthToken(data.token);
-      // Invalidate and refetch profile to update UI immediately
-      queryClient.invalidateQueries({ queryKey: authKeys.profile() });
-      // Force refetch profile data
-      queryClient.refetchQueries({ queryKey: authKeys.profile() });
-      // Dispatch custom event to notify components
-      window.dispatchEvent(new CustomEvent('authSuccess', { detail: data }));
+      // Không tự động đăng nhập sau khi đăng ký
+      // Chỉ trả về thông báo thành công, yêu cầu xác thực OTP
+      console.log('Registration successful, OTP verification required');
     },
   });
 };

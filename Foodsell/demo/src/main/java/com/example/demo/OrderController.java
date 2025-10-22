@@ -61,8 +61,16 @@ public class OrderController {
             Integer totalAmount = (Integer) orderData.get("totalAmount");
             String status = (String) orderData.getOrDefault("status", "pending");
             
+            // Get current user ID from authentication
+            var currentUser = roleChecker.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseEntity.status(401).body(Map.of("success", false, "message", "User not authenticated"));
+            }
+            
+            
             // Create order using service
             Map<String, Object> result = orderService.createOrder(
+                currentUser.getId(), // Pass the actual buyer ID
                 deliveryInfo, 
                 paymentInfo, 
                 cartItems, 
@@ -152,4 +160,33 @@ public class OrderController {
             ));
         }
     }
+
+
+    // PUT: Cập nhật trạng thái đơn theo PayOS orderCode (buyer)
+    @PutMapping("/customer/orders/{orderCode}/status")
+    public ResponseEntity<Map<String, Object>> updateStatusByOrderCode(
+            @PathVariable Integer orderCode,
+            @RequestBody Map<String, String> body) {
+        try {
+            
+            String status = body.getOrDefault("status", "confirmed");
+            boolean ok = orderService.updateStatusByPayosOrderCode(orderCode, status);
+            
+            if (ok) {
+                return ResponseEntity.ok(Map.of("success", true, "message", "Status updated"));
+            } else {
+                return ResponseEntity.status(404).body(Map.of("success", false, "message", "Order not found"));
+            }
+        } catch (Exception e) {
+            System.err.println("❌ API Error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false, 
+                "message", "Internal server error: " + e.getMessage(),
+                "error", e.getClass().getSimpleName()
+            ));
+        }
+    }
+
+
 }

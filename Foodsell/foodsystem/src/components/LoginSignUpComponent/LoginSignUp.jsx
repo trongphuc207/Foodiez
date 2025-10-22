@@ -125,19 +125,16 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
         setRegisteredEmail(values.email);
         setMode('verify-otp');
       } else if (mode === 'verify-otp') {
-        // Verify OTP
+        // Verify OTP - useVerifyOTP hook đã tự động xử lý token và dispatch event
         await verifyOTPMutation.mutateAsync({
           email: registeredEmail,
           otpCode: values.otpCode
         });
-        alert('Xác thực OTP thành công! Tài khoản đã được kích hoạt. Vui lòng đăng nhập.');
+        alert('Xác thực OTP thành công! Tài khoản đã được kích hoạt.');
         
-        // Chuyển về trang đăng nhập với email đã điền sẵn
-        setMode('login');
-        loginForm.setValues({
-          email: registeredEmail,
-          password: ''
-        });
+        // Đóng modal - useVerifyOTP đã tự động đăng nhập
+        onClose && onClose();
+        
         // Reset OTP form
         otpForm.reset();
       } else {
@@ -175,7 +172,7 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
   const isLoading = loginMutation.isLoading || registerMutation.isLoading || forgotPasswordMutation.isLoading || verifyOTPMutation.isLoading || sendOTPMutation.isLoading;
 
   return (
-    <div className="auth-card">
+    <div className="auth-card" onClick={(e) => e.stopPropagation()}>
       {/* nút đóng modal (tuỳ) */}
       {onClose && (
         <button className="auth-close" onClick={onClose} aria-label="Close">×</button>
