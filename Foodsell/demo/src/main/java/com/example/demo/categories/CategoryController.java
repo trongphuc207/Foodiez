@@ -25,14 +25,32 @@ public class CategoryController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<Category>>> getAllCategories() {
         try {
-            // Mock data để test trước
+            // Mock data với ID cố định để đồng bộ với frontend
             List<Category> categories = new ArrayList<>();
-            categories.add(new Category("Phở", "Vietnamese noodle soup, ready-to-eat"));
-            categories.add(new Category("Bánh Mì", "Vietnamese sandwich, ready-to-eat"));
-            categories.add(new Category("Cơm", "Rice dishes, ready-to-eat"));
-            categories.add(new Category("Nước uống", "Beverages including coffee, tea, and soft drinks"));
-            categories.add(new Category("Pizza", "Món pizza phong cách Ý, nhiều loại topping đa dạng"));
-            categories.add(new Category("Bún", "Món bún Việt Nam truyền thống, dùng với thịt, chả"));
+            
+            Category pho = new Category("Phở", "Vietnamese noodle soup, ready-to-eat");
+            pho.setId(1);
+            categories.add(pho);
+            
+            Category banhMi = new Category("Bánh Mì", "Vietnamese sandwich, ready-to-eat");
+            banhMi.setId(2);
+            categories.add(banhMi);
+            
+            Category com = new Category("Cơm", "Rice dishes, ready-to-eat");
+            com.setId(3);
+            categories.add(com);
+            
+            Category nuocUong = new Category("Nước uống", "Beverages including coffee, tea, and soft drinks");
+            nuocUong.setId(4);
+            categories.add(nuocUong);
+            
+            Category pizza = new Category("Pizza", "Món pizza phong cách Ý, nhiều loại topping đa dạng");
+            pizza.setId(5);
+            categories.add(pizza);
+            
+            Category bun = new Category("Bún", "Món bún Việt Nam truyền thống, dùng với thịt, chả");
+            bun.setId(6);
+            categories.add(bun);
             
             return ResponseEntity.ok(ApiResponse.success(categories, "Lấy danh sách categories thành công"));
         } catch (Exception e) {

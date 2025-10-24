@@ -38,6 +38,30 @@ const ShopManagement = () => {
     opening_hours: ''
   });
 
+  // Scroll modal to top when opened
+  useEffect(() => {
+    if (showProductForm || showShopForm) {
+      // Prevent body scroll
+      document.body.style.overflow = 'hidden';
+      
+      // Scroll modal overlay to top
+      setTimeout(() => {
+        const modalOverlay = document.querySelector('.modal-overlay');
+        if (modalOverlay) {
+          modalOverlay.scrollTop = 0;
+        }
+      }, 0);
+    } else {
+      // Re-enable body scroll when modal is closed
+      document.body.style.overflow = 'auto';
+    }
+    
+    // Cleanup
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [showProductForm, showShopForm]);
+
   // Fetch shop data
   const { data: shopData, isLoading: shopLoading } = useQuery({
     queryKey: ['shop', user?.id],
@@ -492,6 +516,13 @@ const ShopManagement = () => {
           {showProductForm && (
             <div className="modal-overlay" onClick={() => setShowProductForm(false)}>
               <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <button 
+                  type="button"
+                  className="modal-close-btn" 
+                  onClick={() => setShowProductForm(false)}
+                >
+                  ✕
+                </button>
                 <h3>{editingProduct ? 'Sửa món ăn' : 'Thêm món ăn mới'}</h3>
                 <form onSubmit={handleProductSubmit}>
                   <div className="form-group">
@@ -706,6 +737,13 @@ const ShopManagement = () => {
           {showShopForm && (
             <div className="modal-overlay" onClick={() => setShowShopForm(false)}>
               <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <button 
+                  type="button"
+                  className="modal-close-btn" 
+                  onClick={() => setShowShopForm(false)}
+                >
+                  ✕
+                </button>
                 <h3>Cập nhật thông tin cửa hàng</h3>
                 <form onSubmit={handleShopSubmit}>
                   <div className="form-group">

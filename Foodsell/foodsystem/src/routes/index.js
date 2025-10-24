@@ -15,6 +15,7 @@ import ShopRegistration from '../components/ShopComponent/ShopRegistration';
 import ShopDashboard from '../components/ShopComponent/ShopDashboard';
 import CategoryManagement from '../components/CategoryComponent/CategoryManagement';
 import ShopManagement from '../components/ShopManagementComponent/ShopManagement';
+import SellerApp from '../components/SellerComponent/SellerApp';
 import CheckoutPage from '../Page/CheckoutPage/CheckoutPage';
 import PaymentSuccessPage from '../Page/PaymentSuccessPage/PaymentSuccessPage';
 import PaymentCancelPage from '../Page/PaymentCancelPage/PaymentCancelPage';
@@ -191,7 +192,7 @@ export const routes = [
         path: '/seller/dashboard',
         component: () => (
             <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
-                <ShopDashboard />
+                <SellerApp />
             </RouteGuard>
         ),
         isShowHeader: false
@@ -200,7 +201,7 @@ export const routes = [
         path: '/seller/products',
         component: () => (
             <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
-                <ShopDashboard />
+                <SellerApp />
             </RouteGuard>
         ),
         isShowHeader: false
@@ -209,7 +210,7 @@ export const routes = [
         path: '/seller/orders',
         component: () => (
             <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
-                <ShopDashboard />
+                <SellerApp />
             </RouteGuard>
         ),
         isShowHeader: false
@@ -218,7 +219,7 @@ export const routes = [
         path: '/seller/revenue',
         component: () => (
             <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
-                <ShopDashboard />
+                <SellerApp />
             </RouteGuard>
         ),
         isShowHeader: false
@@ -227,7 +228,7 @@ export const routes = [
         path: '/seller/customers',
         component: () => (
             <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
-                <ShopDashboard />
+                <SellerApp />
             </RouteGuard>
         ),
         isShowHeader: false
@@ -236,7 +237,7 @@ export const routes = [
         path: '/seller/settings',
         component: () => (
             <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
-                <ShopDashboard />
+                <SellerApp />
             </RouteGuard>
         ),
         isShowHeader: false
