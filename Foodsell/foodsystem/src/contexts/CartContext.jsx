@@ -57,7 +57,7 @@ const cartReducer = (state, action) => {
   }
 };
 
-// Cart Provider component
+
 export const CartProvider = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, {
     items: []

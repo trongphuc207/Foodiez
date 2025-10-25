@@ -12,3 +12,4 @@ const SellerSettings = () => {
 
 export default SellerSettings;
 
+
