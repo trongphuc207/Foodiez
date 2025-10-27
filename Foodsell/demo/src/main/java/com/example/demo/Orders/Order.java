@@ -63,6 +63,22 @@ public class Order {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // Thêm các trường cho hệ thống phân phối đơn hàng
+    @Column(name = "assigned_seller_id")
+    private Integer assignedSellerId;
+
+    @Column(name = "assigned_shipper_id")
+    private Integer assignedShipperId;
+
+    @Column(name = "assignment_status")
+    private String assignmentStatus = "pending"; // pending, assigned, accepted, rejected
+
+    @Column(name = "assigned_at")
+    private LocalDateTime assignedAt;
+
+    @Column(name = "accepted_at")
+    private LocalDateTime acceptedAt;
+
     // One-to-many relationship with OrderItem
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrderItem> orderItems;

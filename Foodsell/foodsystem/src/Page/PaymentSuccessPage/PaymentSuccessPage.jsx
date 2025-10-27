@@ -82,8 +82,8 @@ const PaymentSuccessPage = () => {
           
           // Cập nhật status đơn hàng trong database
           try {
-            await updateOrderStatus(orderCode, 'paid');
-            console.log('Order status updated to paid successfully');
+            await updateOrderStatus(orderCode, 'confirmed');
+            console.log('Order status updated to confirmed successfully');
           } catch (updateError) {
             console.error('Failed to update order status:', updateError);
             // Vẫn hiển thị success vì PayOS đã thanh toán thành công
@@ -109,8 +109,8 @@ const PaymentSuccessPage = () => {
                 
                 // Cập nhật status đơn hàng trong database
                 try {
-                  await updateOrderStatus(orderCode, 'paid');
-                  console.log('Order status updated to paid successfully');
+                  await updateOrderStatus(orderCode, 'confirmed');
+                  console.log('Order status updated to confirmed successfully');
                 } catch (updateError) {
                   console.error('Failed to update order status:', updateError);
                 }

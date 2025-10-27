@@ -7,8 +7,6 @@ import InformationPage from '../Page/InformationPage/InformationPage';
 import CustomerProfile from '../components/CustomerProfileComponent/CustomerProfile';
 import ResetPasswordPage from '../Page/ResetPasswordPage/ResetPasswordPage';
 import AdminApp from '../components/AdminComponent/AdminApp';
-import ProductDetailTest from '../components/FoodProductComponent/ProductDetailTest';
-
 import ShopList from '../components/ShopComponent/ShopList';
 import ShopDetail from '../components/ShopComponent/ShopDetail';
 import ShopRegistration from '../components/ShopComponent/ShopRegistration';
@@ -177,11 +175,7 @@ export const routes = [
         ),
         isShowHeader: false
     },
-    {
-        path: '/test-product-detail',
-        component: ProductDetailTest,
-        isShowHeader: true
-    },
+
     {
         path: '/seller',
         component: () => <Navigate to="/seller/dashboard" replace />,

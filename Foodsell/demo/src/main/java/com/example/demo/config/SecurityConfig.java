@@ -46,6 +46,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/customer/**").authenticated()
                 .requestMatchers("/api/orders/buyer/**").authenticated()
                 .requestMatchers("/api/orders").authenticated()
+                .requestMatchers("/api/cart/test").permitAll()  // Test endpoint
+                .requestMatchers("/api/cart/test-cart").authenticated()  // Test CartService endpoint
                 .requestMatchers("/api/cart/**").authenticated()
                 .requestMatchers("/api/favorites/**").authenticated()
                 

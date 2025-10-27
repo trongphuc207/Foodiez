@@ -77,8 +77,7 @@ public class CustomerController {
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("message", "Product added to cart");
-        response.put("item", cartItem);
-        
+        response.put("item", cartItem);       
         return ResponseEntity.ok(response);
     }
     

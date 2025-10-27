@@ -4,11 +4,13 @@ import './OrderPage.css';
 
 export default function OrderPage() {
   const [orders, setOrders] = useState([]);
+  const [assignedOrders, setAssignedOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewingOrder, setReviewingOrder] = useState(null);
+  const [activeTab, setActiveTab] = useState('my-orders'); // 'my-orders' hoặc 'assigned-orders'
 
   useEffect(() => {
     const loadOrders = async () => {
@@ -31,10 +33,47 @@ export default function OrderPage() {
               console.log('🔍 DEBUG: First order:', ordersData[0]);
               console.log('🔍 DEBUG: First order orderItems:', ordersData[0].orderItems);
               console.log('🔍 DEBUG: First order total_amount:', ordersData[0].total_amount);
+              console.log('🔍 DEBUG: First order totalAmount:', ordersData[0].totalAmount);
               console.log('🔍 DEBUG: First order created_at:', ordersData[0].created_at);
+              
+              // Debug từng order item
+              if (ordersData[0].orderItems && ordersData[0].orderItems.length > 0) {
+                ordersData[0].orderItems.forEach((item, index) => {
+                  console.log(`🔍 DEBUG: OrderItem ${index}:`, {
+                    productName: item.productName,
+                    name: item.name,
+                    unitPrice: item.unitPrice,
+                    unit_price: item.unit_price,
+                    quantity: item.quantity,
+                    totalPrice: item.totalPrice
+                  });
+                });
+              }
             }
             
         setOrders(ordersData);
+        
+        // Load assigned orders nếu user là seller hoặc shipper
+        const userRole = localStorage.getItem('userRole');
+        if (userRole === 'seller' || userRole === 'shipper') {
+          try {
+            const assignedResponse = await fetch('http://localhost:8080/api/orders/assignment/my-assigned-orders', {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (assignedResponse.ok) {
+              const assignedData = await assignedResponse.json();
+              console.log('🔍 DEBUG: Assigned orders:', assignedData);
+              setAssignedOrders(assignedData.orders || []);
+            }
+          } catch (error) {
+            console.log('No assigned orders or error loading:', error);
+          }
+        }
+        
         setError(null);
       } catch (err) {
         console.error('Error loading orders:', err);
@@ -139,6 +178,82 @@ export default function OrderPage() {
     }
   };
 
+  // Hàm xử lý chấp nhận đơn hàng được phân phối
+  const handleAcceptOrder = async (orderId) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`http://localhost:8080/api/orders/assignment/${orderId}/accept`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        alert('Đơn hàng đã được chấp nhận thành công!');
+        // Reload assigned orders
+        const assignedResponse = await fetch('http://localhost:8080/api/orders/assignment/my-assigned-orders', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (assignedResponse.ok) {
+          const assignedData = await assignedResponse.json();
+          setAssignedOrders(assignedData.orders || []);
+        }
+      } else {
+        const errorData = await response.json();
+        alert('Có lỗi xảy ra: ' + errorData.message);
+      }
+    } catch (error) {
+      console.error('Error accepting order:', error);
+      alert('Có lỗi xảy ra khi chấp nhận đơn hàng: ' + error.message);
+    }
+  };
+
+  // Hàm xử lý từ chối đơn hàng được phân phối
+  const handleRejectOrder = async (orderId) => {
+    const reason = prompt('Vui lòng nhập lý do từ chối đơn hàng:');
+    if (!reason) return;
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`http://localhost:8080/api/orders/assignment/${orderId}/reject`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason })
+      });
+
+      if (response.ok) {
+        alert('Đơn hàng đã được từ chối thành công!');
+        // Reload assigned orders
+        const assignedResponse = await fetch('http://localhost:8080/api/orders/assignment/my-assigned-orders', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (assignedResponse.ok) {
+          const assignedData = await assignedResponse.json();
+          setAssignedOrders(assignedData.orders || []);
+        }
+      } else {
+        const errorData = await response.json();
+        alert('Có lỗi xảy ra: ' + errorData.message);
+      }
+    } catch (error) {
+      console.error('Error rejecting order:', error);
+      alert('Có lỗi xảy ra khi từ chối đơn hàng: ' + error.message);
+    }
+  };
+
   if (loading) {
     return (
       <div className="order-page">
@@ -179,7 +294,25 @@ export default function OrderPage() {
           <p>Quản lý và theo dõi đơn hàng của bạn</p>
         </div>
 
-        {orders.length === 0 ? (
+        {/* Tabs cho Seller/Shipper */}
+        {localStorage.getItem('userRole') === 'seller' || localStorage.getItem('userRole') === 'shipper' ? (
+          <div className="order-tabs">
+            <button 
+              className={`tab-button ${activeTab === 'my-orders' ? 'active' : ''}`}
+              onClick={() => setActiveTab('my-orders')}
+            >
+              📦 Đơn hàng của tôi ({orders.length})
+            </button>
+            <button 
+              className={`tab-button ${activeTab === 'assigned-orders' ? 'active' : ''}`}
+              onClick={() => setActiveTab('assigned-orders')}
+            >
+              🎯 Đơn hàng được phân phối ({assignedOrders.length})
+            </button>
+          </div>
+        ) : null}
+
+        {activeTab === 'my-orders' && orders.length === 0 ? (
           <div className="empty-orders">
             <div className="empty-icon">📦</div>
             <h3>Chưa có đơn hàng nào</h3>
@@ -203,7 +336,7 @@ export default function OrderPage() {
                     </div>
                     <p className="order-date">
                       <i className="calendar-icon">📅</i>
-                      {formatDate(order.created_at)}
+                      {formatDate(order.createdAt || order.created_at)}
                     </p>
                   </div>
                   <div className="order-status">
@@ -222,9 +355,25 @@ export default function OrderPage() {
                     {order.orderItems && order.orderItems.length > 0 ? (
                       order.orderItems.map((item, index) => (
                         <div key={index} className="order-item">
-                          <span className="item-name">{item.name || 'Không có tên'}</span>
-                          <span className="item-quantity">x{item.quantity || 1}</span>
-                          <span className="item-price">{formatPrice(item.unit_price)}</span>
+                          <div className="item-info">
+                            <div className="item-image">
+                              <img 
+                                src={item.productImage || item.image_url || '/placeholder-product.png'} 
+                                alt={item.productName || item.name || 'Sản phẩm'}
+                                onError={(e) => {
+                                  e.target.src = '/placeholder-product.png';
+                                }}
+                              />
+                            </div>
+                            <div className="item-details">
+                              <span className="item-name">{item.productName || item.name || 'Không có tên'}</span>
+                              <span className="item-quantity">Số lượng: {item.quantity || 1}</span>
+                            </div>
+                          </div>
+                          <div className="item-price-info">
+                            <span className="item-price">{formatPrice(item.unitPrice || item.unit_price)}</span>
+                            <span className="item-total">Tổng: {formatPrice((item.unitPrice || item.unit_price) * (item.quantity || 1))}</span>
+                          </div>
                         </div>
                       ))
                     ) : (
@@ -236,10 +385,11 @@ export default function OrderPage() {
                     )}
                   </div>
 
+
                   <div className="order-summary">
                     <div className="summary-row">
                       <span>Tổng tiền hàng:</span>
-                      <span>{formatPrice(order.total_amount)}</span>
+                      <span>{formatPrice(order.totalAmount || order.total_amount)}</span>
                     </div>
                     {order.delivery_fee && (
                       <div className="summary-row">
@@ -255,7 +405,7 @@ export default function OrderPage() {
                     )}
                     <div className="summary-row total">
                       <span><strong>Tổng cộng:</strong></span>
-                      <span><strong>{formatPrice(order.total_amount)}</strong></span>
+                      <span><strong>{formatPrice(order.totalAmount || order.total_amount)}</strong></span>
                     </div>
                   </div>
                 </div>
@@ -295,30 +445,32 @@ export default function OrderPage() {
                     )}
                   </div>
 
-                  <div className="order-progress">
-                    <div className="progress-bar">
-                      <div className={`progress-step ${order.status === 'pending' || order.status === 'confirmed' || order.status === 'preparing' || order.status === 'shipping' || order.status === 'delivered' ? 'active' : ''}`}>
-                        <div className="step-icon">📦</div>
-                        <span>Đặt hàng</span>
-                      </div>
-                      <div className={`progress-step ${order.status === 'confirmed' || order.status === 'preparing' || order.status === 'shipping' || order.status === 'delivered' ? 'active' : ''}`}>
-                        <div className="step-icon">✅</div>
-                        <span>Xác nhận</span>
-                      </div>
-                      <div className={`progress-step ${order.status === 'preparing' || order.status === 'shipping' || order.status === 'delivered' ? 'active' : ''}`}>
-                        <div className="step-icon">👨‍🍳</div>
-                        <span>Chuẩn bị</span>
-                      </div>
-                      <div className={`progress-step ${order.status === 'shipping' || order.status === 'delivered' ? 'active' : ''}`}>
-                        <div className="step-icon">🚚</div>
-                        <span>Giao hàng</span>
-                      </div>
-                      <div className={`progress-step ${order.status === 'delivered' ? 'active' : ''}`}>
-                        <div className="step-icon">🎉</div>
-                        <span>Hoàn thành</span>
+                  {order.status !== 'pending' && (
+                    <div className="order-progress">
+                      <div className="progress-bar">
+                        <div className={`progress-step ${order.status === 'pending' || order.status === 'confirmed' || order.status === 'preparing' || order.status === 'shipping' || order.status === 'delivered' ? 'active' : ''}`}>
+                          <div className="step-icon">📦</div>
+                          <span>Đặt hàng</span>
+                        </div>
+                        <div className={`progress-step ${order.status === 'confirmed' || order.status === 'preparing' || order.status === 'shipping' || order.status === 'delivered' ? 'active' : ''}`}>
+                          <div className="step-icon">✅</div>
+                          <span>Xác nhận</span>
+                        </div>
+                        <div className={`progress-step ${order.status === 'preparing' || order.status === 'shipping' || order.status === 'delivered' ? 'active' : ''}`}>
+                          <div className="step-icon">👨‍🍳</div>
+                          <span>Chuẩn bị</span>
+                        </div>
+                        <div className={`progress-step ${order.status === 'shipping' || order.status === 'delivered' ? 'active' : ''}`}>
+                          <div className="step-icon">🚚</div>
+                          <span>Giao hàng</span>
+                        </div>
+                        <div className={`progress-step ${order.status === 'delivered' ? 'active' : ''}`}>
+                          <div className="step-icon">🎉</div>
+                          <span>Hoàn thành</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {selectedOrder === order.id && (
@@ -332,16 +484,22 @@ export default function OrderPage() {
                         <div className="section-content">
                           <div className="info-item">
                             <span className="info-label">Người nhận:</span>
-                            <span className="info-value">{order.recipient_name}</span>
+                            <span className="info-value">{order.recipientName || order.recipient_name || 'Chưa có thông tin'}</span>
                           </div>
                           <div className="info-item">
                             <span className="info-label">Số điện thoại:</span>
-                            <span className="info-value">{order.recipient_phone}</span>
+                            <span className="info-value">{order.recipientPhone || order.recipient_phone || 'Chưa có thông tin'}</span>
                           </div>
                           <div className="info-item">
                             <span className="info-label">Địa chỉ:</span>
-                            <span className="info-value">{order.address_text}</span>
+                            <span className="info-value">{order.addressText || order.address_text || 'Chưa có thông tin'}</span>
                           </div>
+                          {order.notes && (
+                            <div className="info-item">
+                              <span className="info-label">Ghi chú:</span>
+                              <span className="info-value">{order.notes}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       
@@ -410,6 +568,113 @@ export default function OrderPage() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Hiển thị đơn hàng được phân phối */}
+        {activeTab === 'assigned-orders' && (
+          <div className="assigned-orders-section">
+            {assignedOrders.length === 0 ? (
+              <div className="empty-orders">
+                <div className="empty-icon">🎯</div>
+                <h3>Chưa có đơn hàng được phân phối</h3>
+                <p>Bạn chưa có đơn hàng nào được phân phối. Hãy chờ hệ thống phân phối đơn hàng mới!</p>
+              </div>
+            ) : (
+              <div className="orders-list">
+                {assignedOrders.map(order => (
+                  <div key={order.id} className="order-card assigned-order">
+                    <div className="order-header">
+                      <div className="order-info">
+                        <div className="order-number">
+                          <span className="order-label">Đơn hàng được phân phối</span>
+                          <span className="order-id">#{order.order_code || order.id}</span>
+                        </div>
+                        <p className="order-date">
+                          <i className="calendar-icon">📅</i>
+                          {formatDate(order.createdAt || order.created_at)}
+                        </p>
+                      </div>
+                      <div className="order-status">
+                        <div className="status-indicator">
+                          <div className={`status-dot ${getStatusClass(order.status)}`}></div>
+                          <span className={`status-badge ${getStatusClass(order.status)}`}>
+                            {getStatusText(order.status)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="order-details">
+                      <div className="order-items">
+                        <h4>Sản phẩm:</h4>
+                        {order.orderItems && order.orderItems.length > 0 ? (
+                          order.orderItems.map((item, index) => (
+                            <div key={index} className="order-item">
+                              <div className="item-info">
+                                <div className="item-image">
+                                  <img 
+                                    src={item.productImage || item.image_url || '/placeholder-product.png'} 
+                                    alt={item.productName || item.name || 'Sản phẩm'}
+                                    onError={(e) => {
+                                      e.target.src = '/placeholder-product.png';
+                                    }}
+                                  />
+                                </div>
+                                <div className="item-details">
+                                  <span className="item-name">{item.productName || item.name || 'Không có tên'}</span>
+                                  <span className="item-quantity">Số lượng: {item.quantity}</span>
+                                </div>
+                                <div className="item-price-info">
+                                  <span className="item-price">{formatPrice(item.unitPrice || item.unit_price)}</span>
+                                  <span className="item-total">Tổng: {formatPrice((item.unitPrice || item.unit_price) * item.quantity)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="no-items">
+                            <span className="item-name">Không có sản phẩm</span>
+                            <span className="item-price">-</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="order-summary">
+                        <div className="summary-row">
+                          <span>Tổng tiền hàng:</span>
+                          <span>{formatPrice(order.totalAmount || order.total_amount)}</span>
+                        </div>
+                        <div className="summary-row total">
+                          <span><strong>Tổng cộng:</strong></span>
+                          <span><strong>{formatPrice(order.totalAmount || order.total_amount)}</strong></span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="order-actions">
+                      <div className="action-buttons">
+                        <button 
+                          className="btn btn-success"
+                          onClick={() => handleAcceptOrder(order.id)}
+                        >
+                          <i className="icon">✅</i>
+                          Chấp nhận
+                        </button>
+                        
+                        <button 
+                          className="btn btn-danger"
+                          onClick={() => handleRejectOrder(order.id)}
+                        >
+                          <i className="icon">❌</i>
+                          Từ chối
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

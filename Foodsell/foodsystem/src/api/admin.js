@@ -1,7 +1,7 @@
 // src/api/admin.js
 import { getAuthToken } from './auth';
 
-const API_BASE_URL = 'http://localhost:8080/api/admin';
+const API_BASE_URL = 'http://localhost:8080/admin';
 
 const getHeaders = () => ({
   'Content-Type': 'application/json',
@@ -36,6 +36,33 @@ export const adminAPI = {
   getOrders: async () => {
     const res = await fetch(`${API_BASE_URL}/orders`, { headers: getHeaders() });
     if (!res.ok) throw new Error('Không thể tải danh sách đơn hàng');
+    return res.json();
+  },
+
+  // Order Assignment APIs
+  assignOrderToSeller: async (orderId, sellerId) => {
+    const res = await fetch(`http://localhost:8080/api/orders/assignment/${orderId}/assign-seller/${sellerId}`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+    if (!res.ok) throw new Error('Không thể phân phối đơn hàng cho seller');
+    return res.json();
+  },
+
+  assignOrderToShipper: async (orderId, shipperId) => {
+    const res = await fetch(`http://localhost:8080/api/orders/assignment/${orderId}/assign-shipper/${shipperId}`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+    if (!res.ok) throw new Error('Không thể phân phối đơn hàng cho shipper');
+    return res.json();
+  },
+
+  getOrderHistory: async (orderId) => {
+    const res = await fetch(`http://localhost:8080/api/orders/${orderId}/history`, { 
+      headers: getHeaders() 
+    });
+    if (!res.ok) throw new Error('Không thể tải lịch sử đơn hàng');
     return res.json();
   },
 

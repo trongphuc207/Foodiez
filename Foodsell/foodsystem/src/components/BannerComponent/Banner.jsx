@@ -1,7 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Banner.css';
 
 const Banner = () => {
+  const navigate = useNavigate()
+
   return (
     <div className="banner-container">
       <div className="banner-content">
@@ -11,9 +14,15 @@ const Banner = () => {
           className="banner-image"
         />
         <div className="banner-overlay">
-          <h1 className="banner-title">Chào mừng đến với Foodsell</h1>
+          <h1 className="banner-title">Chào mừng đến với FoodieExpress</h1>
           <p className="banner-subtitle">Đặt món ăn ngon, giao hàng tận nơi</p>
-          <button className="banner-button">Đặt ngay</button>
+          <button
+            type="button"
+            className="banner-button"
+            onClick={() => navigate('/products')}
+          >
+            Đặt ngay
+          </button>
         </div>
       </div>
     </div>
