@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { cancelPayment } from '../../api/payment';
+// import { useCart } from '../../contexts/CartContext';
 import './PaymentCancelPage.css';
 
 const PaymentCancelPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  // const { clearCart } = useCart(); // Không sử dụng nữa
   const orderCode = searchParams.get('orderCode');
 
   useEffect(() => {
@@ -16,8 +18,9 @@ const PaymentCancelPage = () => {
           await cancelPayment(orderCode, 'User cancelled payment');
         }
 
-        // Xóa thông tin đơn hàng tạm
-        localStorage.removeItem('pendingOrder');
+        // KHÔNG xóa pendingOrder và KHÔNG xóa giỏ hàng
+        // Giữ nguyên để người dùng có thể thử lại hoặc tiếp tục mua sắm
+        console.log('Payment cancelled, keeping cart items and pending order for retry');
       } catch (error) {
         console.error('Payment cancellation error:', error);
         // Không cần hiển thị lỗi cho user vì họ đã hủy thanh toán
@@ -27,11 +30,23 @@ const PaymentCancelPage = () => {
     handlePaymentCancel();
   }, [orderCode]);
 
-  const handleRetryPayment = () => {
-    navigate('/checkout');
-  };
-
-  const handleContinueShopping = () => {
+  const handleGoBack = () => {
+    // Debug: kiểm tra pendingOrder trước khi chuyển
+    const pendingOrder = localStorage.getItem('pendingOrder');
+    console.log('PaymentCancelPage: pendingOrder before go back:', pendingOrder);
+    if (pendingOrder) {
+      const orderData = JSON.parse(pendingOrder);
+      console.log('PaymentCancelPage: orderData.cartItems:', orderData.cartItems);
+      
+      // Khôi phục giỏ hàng trực tiếp từ PaymentCancelPage
+      if (orderData.cartItems && orderData.cartItems.length > 0) {
+        console.log('PaymentCancelPage: Restoring cart directly...');
+        localStorage.setItem('cart', JSON.stringify(orderData.cartItems));
+        console.log('PaymentCancelPage: Cart restored to localStorage');
+      }
+    }
+    
+    // Chỉ quay về trang chủ, giữ nguyên giỏ hàng và pendingOrder
     navigate('/');
   };
 
@@ -43,6 +58,8 @@ const PaymentCancelPage = () => {
           <h1>Thanh toán đã bị hủy</h1>
           <p className="cancel-message">
             Bạn đã hủy quá trình thanh toán. Đơn hàng chưa được tạo.
+            <br />
+            <strong>Giỏ hàng của bạn vẫn được giữ lại</strong> để bạn có thể tiếp tục mua sắm.
           </p>
 
           <div className="cancel-reasons">
@@ -56,11 +73,8 @@ const PaymentCancelPage = () => {
           </div>
 
           <div className="cancel-actions">
-            <button onClick={handleRetryPayment} className="retry-payment-btn">
-              Thử thanh toán lại
-            </button>
-            <button onClick={handleContinueShopping} className="continue-shopping-btn">
-              Tiếp tục mua sắm
+            <button onClick={handleGoBack} className="go-back-btn">
+              Quay trở về
             </button>
           </div>
 

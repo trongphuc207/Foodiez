@@ -29,6 +29,17 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     // Find orders by shop ID and status
     List<Order> findByShopIdAndStatusOrderByCreatedAtDesc(Integer shopId, String status);
     
+    // Thêm các query cho hệ thống phân phối đơn hàng
+    List<Order> findByAssignedSellerIdAndAssignmentStatus(Integer sellerId, String assignmentStatus);
+    
+    List<Order> findByAssignedShipperIdAndAssignmentStatus(Integer shipperId, String assignmentStatus);
+    
+    List<Order> findByAssignmentStatusOrderByCreatedAtDesc(String assignmentStatus);
+    
+    List<Order> findByAssignedSellerIdOrderByCreatedAtDesc(Integer sellerId);
+    
+    List<Order> findByAssignedShipperIdOrderByCreatedAtDesc(Integer shipperId);
+    
     // Find order by ID with order items (for detailed view)
     @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems WHERE o.id = :orderId")
     Optional<Order> findByIdWithOrderItems(@Param("orderId") Integer orderId);
@@ -75,4 +86,10 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
            "GROUP BY o.id, o.totalAmount, o.status " +
            "ORDER BY o.id DESC")
     List<OrderSummaryDTO> findOrderSummariesByBuyerId(@Param("buyerId") Integer buyerId);
+
+    // Find by PayOS order code stored in notes (pattern: "PayOS:{code}")
+    Optional<Order> findFirstByNotesContaining(String text);
+    
+    // Find by orderCode (PayOS order code)
+    Optional<Order> findByOrderCode(Integer orderCode);
 }

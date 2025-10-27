@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -32,16 +33,21 @@ public class SecurityConfig {
                 .requestMatchers("/api/products/**").permitAll()
                 .requestMatchers("/api/categories/**").permitAll()
                 .requestMatchers("/api/shops/**").permitAll()
-                .requestMatchers("/api/orders/test").permitAll()
+                .requestMatchers("/api/orders/debug/**").permitAll()
                 .requestMatchers("/api/payos/**").permitAll()
                 .requestMatchers("/test/**").permitAll()
                 .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/login/oauth2/code/**").permitAll()
                 
+                // Voucher endpoints (public for now, can be restricted later)
+                .requestMatchers("/api/vouchers/**").permitAll()
+                
                 // Customer endpoints (accessible by all authenticated users)
                 .requestMatchers("/api/customer/**").authenticated()
                 .requestMatchers("/api/orders/buyer/**").authenticated()
                 .requestMatchers("/api/orders").authenticated()
+                .requestMatchers("/api/cart/test").permitAll()  // Test endpoint
+                .requestMatchers("/api/cart/test-cart").authenticated()  // Test CartService endpoint
                 .requestMatchers("/api/cart/**").authenticated()
                 .requestMatchers("/api/favorites/**").authenticated()
                 
@@ -53,6 +59,10 @@ public class SecurityConfig {
                 
                 // Admin endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                
+                // Order status update endpoint (for payment callbacks)
+                .requestMatchers(HttpMethod.PUT, "/api/orders/customer/orders/*/status")
+                .permitAll()
                 
                 // All other requests need authentication
                 .anyRequest().authenticated()

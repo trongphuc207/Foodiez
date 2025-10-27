@@ -3,7 +3,7 @@ import { useState, useEffect } from "react"
 import axios from "axios"
 import "./ProductList.css"
 import ProductDetail from "./ProductDetail"
-import { useCart } from "../../contexts/CartContext"
+// import { useCart } from "../../contexts/CartContext" // Không sử dụng vì chỉ mở ProductDetail modal
 import { getShopName } from "../../constants/shopNames"
 import { getCategoryName } from "../../constants/categoryNames"
 
@@ -13,7 +13,9 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [currentLayout] = useState('grid') // Sử dụng grid layout đẹp hơn
-  const { addToCart } = useCart()
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(12) // 4 hàng x 3 cột = 12 items
+  // const { addToCart: addToCartFunction } = useCart() // Không sử dụng vì chỉ mở ProductDetail modal
 
   // gọi API lấy sản phẩm hoặc sử dụng products từ props
   useEffect(() => {
@@ -25,13 +27,15 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
     } else {
       // Fetch từ API (cho HomePage)
       setLoading(true)
+      console.log("🔄 Fetching products from API...")
       axios.get("http://localhost:8080/api/products")
         .then((res) => {
+          console.log("✅ Products fetched:", res.data)
           setProducts(res.data)
           setError(null)
         })
         .catch((err) => {
-          console.error("Lỗi khi gọi API:", err)
+          console.error("❌ Lỗi khi gọi API:", err)
           setError("Không thể tải danh sách sản phẩm")
         })
         .finally(() => {
@@ -44,6 +48,19 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
   const filteredProducts = category
     ? products.filter((p) => p.categoryId === category)
     : products
+
+  // Tính toán phân trang
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentProducts = filteredProducts.slice(startIndex, endIndex)
+
+  // Hàm chuyển trang
+  const handlePageChange = (page) => {
+    // guard: only change to a valid page
+    if (page < 1 || page > totalPages) return
+    setCurrentPage(page)
+  }
 
   const handleAddToCart = (product, e) => {
     e.stopPropagation() // Ngăn không cho click vào product card
@@ -81,6 +98,14 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
     )
   }
 
+  console.log("🔍 ProductList render:", {
+    products: products.length,
+    filteredProducts: filteredProducts.length,
+    currentProducts: currentProducts.length,
+    currentPage,
+    totalPages
+  })
+
   return (
     <div className="product-list-container">
       <div className="product-list-header">
@@ -89,7 +114,7 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
             <h2>
               {category ? getCategoryName(category) : "Tất cả sản phẩm"}
             </h2>
-            <p>{filteredProducts.length} sản phẩm</p>
+            <p>{filteredProducts.length} sản phẩm (Trang {currentPage}/{totalPages})</p>
           </div>
           <div className="layout-toggle">
             <button 
@@ -103,7 +128,7 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
       </div>
 
       <div className={currentLayout === 'grid' ? 'products-grid' : 'products-list'}>
-        {filteredProducts.map((product) => (
+        {currentProducts.map((product) => (
           <div
             key={product.id}
             className={`product-card ${!product.available ? 'unavailable' : ''}`}
@@ -190,6 +215,38 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
       {filteredProducts.length === 0 && (
         <div className="no-products">
           <p>Không có sản phẩm nào</p>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button 
+            type="button"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            « Trước
+          </button>
+          
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            <button
+              key={page}
+              type="button"
+              onClick={() => handlePageChange(page)}
+              className={currentPage === page ? 'active' : ''}
+            >
+              {page}
+            </button>
+          ))}
+          
+          <button 
+            type="button"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Sau »
+          </button>
         </div>
       )}
 

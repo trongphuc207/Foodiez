@@ -1,4 +1,5 @@
 import HomePage from '../Page/HomePage/HomePage';
+import { Navigate } from 'react-router-dom';
 import OrderPage from '../Page/OrderPage/OrderPage';
 import ProductPage from '../Page/productPPage/productPage';
 import NotFoundPage from '../Page/NotFoundPage/NotFoundPage';
@@ -6,8 +7,6 @@ import InformationPage from '../Page/InformationPage/InformationPage';
 import CustomerProfile from '../components/CustomerProfileComponent/CustomerProfile';
 import ResetPasswordPage from '../Page/ResetPasswordPage/ResetPasswordPage';
 import AdminApp from '../components/AdminComponent/AdminApp';
-import ProductDetailTest from '../components/FoodProductComponent/ProductDetailTest';
-
 import ShopList from '../components/ShopComponent/ShopList';
 import ShopDetail from '../components/ShopComponent/ShopDetail';
 import ShopRegistration from '../components/ShopComponent/ShopRegistration';
@@ -23,6 +22,7 @@ import ShipperEarningsPage from '../Page/ShipperEarningsPage/ShipperEarningsPage
 import ShipperHistoryPage from '../Page/ShipperHistoryPage/ShipperHistoryPage';
 import ShipperMapPage from '../Page/ShipperMapPage/ShipperMapPage';
 import ShipperOverviewPage from '../Page/ShipperOverviewPage/ShipperOverviewPage';
+import VoucherPage from '../Page/VoucherPage/VoucherPage';
 import RouteGuard from '../components/RouteGuard/RouteGuard';
 import Unauthorized from '../components/Unauthorized/Unauthorized';
 
@@ -36,7 +36,6 @@ export const routes = [
         path: '/orders',
         component: OrderPage,
         isShowHeader: true
-
     },
     {
         path: '/products',
@@ -59,7 +58,6 @@ export const routes = [
         isShowHeader: false
     },
     {
-
         path: '/admin/*',
         component: () => (
             <RouteGuard requiredRole="admin" redirectTo="/unauthorized" allowAdminBypass>
@@ -69,7 +67,6 @@ export const routes = [
         isShowHeader: false, // ẩn Header/Footer chung vì AdminApp đã có layout riêng
     },
     {
-
         path: '/shops',
         component: ShopList,
         isShowHeader: true
@@ -105,6 +102,11 @@ export const routes = [
         isShowHeader: true
     },
     {
+        path: '/vouchers',
+        component: VoucherPage,
+        isShowHeader: true
+    },
+    {
         path: '/payment/success',
         component: PaymentSuccessPage,
         isShowHeader: false
@@ -112,6 +114,11 @@ export const routes = [
     {
         path: '/payment/cancel',
         component: PaymentCancelPage,
+        isShowHeader: false
+    },
+    {
+        path: '/shipper',
+        component: () => <Navigate to="/shipper/dashboard" replace />,
         isShowHeader: false
     },
     {
@@ -168,34 +175,73 @@ export const routes = [
         ),
         isShowHeader: false
     },
+
+    {
+        path: '/seller',
+        component: () => <Navigate to="/seller/dashboard" replace />,
+        isShowHeader: false
+    },
+    {
+        path: '/seller/dashboard',
+        component: () => (
+            <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
+                <ShopDashboard />
+            </RouteGuard>
+        ),
+        isShowHeader: false
+    },
+    {
+        path: '/seller/products',
+        component: () => (
+            <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
+                <ShopDashboard />
+            </RouteGuard>
+        ),
+        isShowHeader: false
+    },
+    {
+        path: '/seller/orders',
+        component: () => (
+            <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
+                <ShopDashboard />
+            </RouteGuard>
+        ),
+        isShowHeader: false
+    },
+    {
+        path: '/seller/revenue',
+        component: () => (
+            <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
+                <ShopDashboard />
+            </RouteGuard>
+        ),
+        isShowHeader: false
+    },
+    {
+        path: '/seller/customers',
+        component: () => (
+            <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
+                <ShopDashboard />
+            </RouteGuard>
+        ),
+        isShowHeader: false
+    },
+    {
+        path: '/seller/settings',
+        component: () => (
+            <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
+                <ShopDashboard />
+            </RouteGuard>
+        ),
+        isShowHeader: false
+    },
     {
         path: '/unauthorized',
         component: Unauthorized,
         isShowHeader: false
-
-    },
-    {
-        path: '/test-product-detail',
-        component: ProductDetailTest,
-        isShowHeader: true
     },
     {
         path: '*',
         component: NotFoundPage
-    },
-      // Seller (nếu có)
-  {
-    path: '/seller/*',
-    component: () => (
-      <RouteGuard requiredRole="seller" redirectTo="/unauthorized" allowAdminBypass>
-        <ShopDashboard />
-      </RouteGuard>
-    ),
-    isShowHeader: false,
-  },
-
-  // Unauthorized & 404
-  { path: '/unauthorized', component: Unauthorized, isShowHeader: false },
-  { path: '*', component: NotFoundPage, isShowHeader: true },
-    
+    }
 ];

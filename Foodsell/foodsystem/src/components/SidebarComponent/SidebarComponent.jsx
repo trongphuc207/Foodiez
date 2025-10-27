@@ -1,26 +1,18 @@
 // Foodsell/foodsystem/src/components/SidebarComponent/SidebarComponent.jsx
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import './SidebarComponent.css'
 import { 
   FiHome, 
-  FiShoppingBag, 
-  FiShoppingCart, 
   FiPackage, 
-  FiHeart, 
-  FiMapPin, 
-  FiMessageCircle,
-  FiCoffee,
   FiBarChart,
-  FiDollarSign,
   FiUsers,
+  FiDollarSign,
   FiSettings,
-  FiStar,
-  FiX,
-  FiLogOut,
-  FiUser
+  FiMapPin,
+  FiStar
 } from 'react-icons/fi'
+import './SidebarComponent.css'
 
 const SidebarComponent = ({ isOpen, onClose }) => {
   const navigate = useNavigate()
@@ -29,6 +21,13 @@ const SidebarComponent = ({ isOpen, onClose }) => {
   // role mặc định lấy từ user, nếu không có thì là customer
   const [currentRole, setCurrentRole] = useState((user?.role || 'customer').toLowerCase())
 
+  // Cập nhật currentRole khi user thay đổi
+  useEffect(() => {
+    if (user?.role) {
+      setCurrentRole(user.role.toLowerCase())
+    }
+  }, [user?.role])
+
   const handleNavigate = (path) => {
     navigate(path)
     onClose && onClose()
@@ -36,27 +35,27 @@ const SidebarComponent = ({ isOpen, onClose }) => {
 
   // ===== MENU CHO TỪNG ROLE =====
   const customerMenuItems = [
-    { icon: <FiHome />, label: 'Trang chủ', path: '/' },
-    { icon: <FiShoppingBag />, label: 'Sản phẩm', path: '/products' },
-    { icon: <FiShoppingCart />, label: 'Giỏ hàng', path: '/cart' },
-    { icon: <FiPackage />, label: 'Đơn hàng của tôi', path: '/orders' },
-    { icon: <FiHeart />, label: 'Yêu thích', path: '/favorites' },
-    { icon: <FiMapPin />, label: 'Địa chỉ giao hàng', path: '/addresses' },
-    { icon: <FiMessageCircle />, label: 'Hỗ trợ', path: '/support' }
+    { icon: <i className="bi bi-house-door"></i>, label: 'Trang chủ', path: '/' },
+    { icon: <i className="bi bi-bag"></i>, label: 'Sản phẩm', path: '/products' },
+    { icon: <i className="bi bi-cart"></i>, label: 'Giỏ hàng', path: '/cart' },
+    { icon: <i className="bi bi-box"></i>, label: 'Đơn hàng của tôi', path: '/orders' },
+    { icon: <i className="bi bi-heart"></i>, label: 'Yêu thích', path: '/favorites' },
+    { icon: <i className="bi bi-geo-alt"></i>, label: 'Địa chỉ giao hàng', path: '/delivery-address' },
+    { icon: <i className="bi bi-chat-dots"></i>, label: 'Hỗ trợ', path: '/support' }
   ]
 
   const sellerMenuItems = [
-    { icon: <FiHome />, label: 'Trang chủ', path: '/seller' },
-    { icon: <FiCoffee />, label: 'Sản phẩm', path: '/seller/products' },
-    { icon: <FiBarChart />, label: 'Dashboard', path: '/seller/dashboard' },
-    { icon: <FiPackage />, label: 'Đơn hàng', path: '/seller/orders' },
-    { icon: <FiDollarSign />, label: 'Doanh thu', path: '/seller/revenue' },
-    { icon: <FiUsers />, label: 'Khách hàng', path: '/seller/customers' },
-    { icon: <FiSettings />, label: 'Cài đặt', path: '/seller/settings' }
+    { icon: <i className="bi bi-house-door"></i>, label: 'Trang chủ', path: '/seller' },
+    { icon: <i className="bi bi-cup-hot"></i>, label: 'Sản phẩm', path: '/seller/products' },
+    { icon: <i className="bi bi-graph-up"></i>, label: 'Dashboard', path: '/seller/dashboard' },
+    { icon: <i className="bi bi-box"></i>, label: 'Đơn hàng', path: '/seller/orders' },
+    { icon: <i className="bi bi-currency-dollar"></i>, label: 'Doanh thu', path: '/seller/revenue' },
+    { icon: <i className="bi bi-people"></i>, label: 'Khách hàng', path: '/seller/customers' },
+    { icon: <i className="bi bi-gear"></i>, label: 'Cài đặt', path: '/seller/settings' }
   ]
 
   const shipperMenuItems = [
-    { icon: <FiHome />, label: 'Trang chủ', path: '/shipper' },
+    { icon: <FiHome />, label: 'Trang chủ', path: '/' },
     { icon: <FiPackage />, label: 'Đơn hàng', path: '/shipper/orders' },
     { icon: <FiBarChart />, label: 'Dashboard', path: '/shipper/dashboard' },
     { icon: <FiMapPin />, label: 'Tuyến đường', path: '/shipper/routes' },
@@ -135,7 +134,7 @@ const SidebarComponent = ({ isOpen, onClose }) => {
         <div className="sidebar-header">
           <div className="role-badge">{getRoleLabel()}</div>
           <button className="close-btn" onClick={onClose}>
-            <FiX />
+            <i className="bi bi-x"></i>
           </button>
         </div>
 
@@ -153,8 +152,8 @@ const SidebarComponent = ({ isOpen, onClose }) => {
           ))}
         </nav>
 
-        {/* Role Switching - hiển thị nếu là admin hoặc có nhiều role */}
-        {(user?.role?.toLowerCase() === 'admin' || user?.roles?.length > 1) && (
+        {/* Role Switching - chỉ hiển thị nếu người dùng có nhiều role và KHÔNG phải admin */}
+        {(user?.roles?.length > 1 && user?.role?.toLowerCase() !== 'admin') && (
           <div className="role-switching">
             <h3 className="role-switching-title">CHUYỂN ĐỔI VAI TRÒ</h3>
             <div className="role-buttons">
@@ -191,15 +190,27 @@ const SidebarComponent = ({ isOpen, onClose }) => {
           <div className="sidebar-footer">
             <div className="user-info">
               <div className="user-avatar">
-                <FiUser />
+                {user.avatar ? (
+                  <img 
+                    src={user.avatar} 
+                    alt="Avatar" 
+                    className="avatar-image"
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                      e.target.nextSibling.style.display = 'block'
+                    }}
+                  />
+                ) : null}
+                <i className="bi bi-person" style={{ display: user.avatar ? 'none' : 'block' }}></i>
               </div>
               <div className="user-details">
                 <div className="user-name">{user.fullName || user.full_name || user.name}</div>
                 <div className="user-email">{user.email}</div>
+                <div className="user-role">{getRoleLabel()}</div>
               </div>
             </div>
             <button className="logout-btn" onClick={handleLogout}>
-              <FiLogOut /> Đăng xuất
+              <i className="bi bi-box-arrow-right"></i> Đăng xuất
             </button>
           </div>
         )}

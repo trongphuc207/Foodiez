@@ -1,19 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
+import { useAuth } from '../../hooks/useAuth';
 import DeliveryInformationForm from '../../components/CheckoutComponent/DeliveryInformationForm';
 import PaymentMethodForm from '../../components/CheckoutComponent/PaymentMethodForm';
 import OrderConfirmation from '../../components/CheckoutComponent/OrderConfirmation';
+import VoucherSelector from '../../components/VoucherComponent/VoucherSelector';
 import { createPaymentLink, createPaymentData } from '../../api/payment';
 import './CheckoutPage.css';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, loading } = useAuth();
   const { items: cartItems, getTotalAmount, getShippingFee, getGrandTotal, clearCart } = useCart();
   const [currentStep, setCurrentStep] = useState(1);
   const [deliveryInfo, setDeliveryInfo] = useState({});
   const [paymentInfo, setPaymentInfo] = useState({});
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [appliedVoucher, setAppliedVoucher] = useState(null);
+  const [voucherDiscount, setVoucherDiscount] = useState(0);
+
+  // Kiểm tra authentication - chờ load xong trạng thái đăng nhập rồi mới quyết định
+  useEffect(() => {
+    if (loading) return; // tránh redirect khi trạng thái đang tải profile
+    if (!isAuthenticated) {
+      alert('Vui lòng đăng nhập để thanh toán!');
+      navigate('/');
+    }
+  }, [loading, isAuthenticated, navigate]);
+
+  // Khôi phục thông tin form từ pendingOrder (không khôi phục giỏ hàng)
+  useEffect(() => {
+    const pendingOrder = localStorage.getItem('pendingOrder');
+    const hasRestored = sessionStorage.getItem('hasRestoredFromPending');
+    console.log('CheckoutPage: pendingOrder exists:', !!pendingOrder);
+    console.log('CheckoutPage: hasRestored from session:', hasRestored);
+    
+    if (pendingOrder && !hasRestored) {
+      try {
+        const orderData = JSON.parse(pendingOrder);
+        console.log('Restoring form data from pendingOrder:', orderData);
+        
+        // Chỉ khôi phục thông tin form, không khôi phục giỏ hàng
+        if (orderData.deliveryInfo) {
+          setDeliveryInfo(orderData.deliveryInfo);
+        }
+        if (orderData.paymentInfo) {
+          setPaymentInfo(orderData.paymentInfo);
+        }
+        if (orderData.appliedVoucher) {
+          setAppliedVoucher(orderData.appliedVoucher);
+        }
+        if (orderData.voucherDiscount) {
+          setVoucherDiscount(orderData.voucherDiscount);
+        }
+        
+        // Chuyển đến bước xác nhận đơn hàng nếu đã có đầy đủ thông tin
+        if (orderData.deliveryInfo && orderData.paymentInfo) {
+          setCurrentStep(3);
+        } else if (orderData.deliveryInfo) {
+          setCurrentStep(2);
+        }
+        
+        // Đánh dấu đã khôi phục form data
+        sessionStorage.setItem('hasRestoredFromPending', 'true');
+      } catch (error) {
+        console.error('Error restoring form data:', error);
+      }
+    }
+  }, []);
 
   const steps = [
     {
@@ -46,7 +101,41 @@ const CheckoutPage = () => {
     setCurrentStep(3);
   };
 
+  // Xử lý áp dụng voucher
+  const handleVoucherApplied = (voucherInfo) => {
+    setAppliedVoucher(voucherInfo);
+    setVoucherDiscount(voucherInfo.discountAmount);
+  };
+
+  // Xử lý xóa voucher
+  const handleRemoveVoucher = () => {
+    setAppliedVoucher(null);
+    setVoucherDiscount(0);
+  };
+
+  // Tính tổng tiền sau khi áp dụng voucher
+  const getFinalTotal = () => {
+    const grandTotal = getGrandTotal();
+    return Math.max(0, grandTotal - voucherDiscount);
+  };
+
+  // Helper function để kiểm tra authentication
+  const checkAuthentication = () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      alert('Bạn cần đăng nhập để đặt hàng. Vui lòng đăng nhập và thử lại.');
+      navigate('/login');
+      return false;
+    }
+    return true;
+  };
+
   const handleOrderComplete = async () => {
+    // Kiểm tra authentication trước khi xử lý
+    if (!checkAuthentication()) {
+      return;
+    }
+
     setIsProcessingPayment(true);
     try {
       console.log('=== STARTING ORDER PROCESSING ===');
@@ -62,7 +151,7 @@ const CheckoutPage = () => {
         const paymentData = createPaymentData(
           deliveryInfo,
           cartItems,
-          getGrandTotal()
+          getFinalTotal() // Sử dụng tổng tiền sau khi áp dụng voucher
         );
 
         console.log('Payment data created:', paymentData);
@@ -88,27 +177,50 @@ const CheckoutPage = () => {
             const mappedCartItems = cartItems.map(item => ({
               productId: item.id,
               name: item.name || item.productName || 'Sản phẩm',
-              quantity: item.quantity || 1,
-              price: item.price || item.unitPrice || 0
+              quantity: Math.round(item.quantity || 1), // Đảm bảo là số nguyên
+              price: Math.round(item.price || item.unitPrice || 0) // Đảm bảo là số nguyên
             }));
             
+            // Map deliveryInfo để match với backend
+            const mappedDeliveryInfo = {
+              recipientName: deliveryInfo.fullName,
+              recipientPhone: deliveryInfo.phone,
+              addressText: `${deliveryInfo.address}, ${deliveryInfo.district}, ${deliveryInfo.city}`,
+              notes: deliveryInfo.notes
+            };
+
             const orderData = {
-              deliveryInfo,
+              deliveryInfo: mappedDeliveryInfo,
               paymentInfo,
               cartItems: mappedCartItems,
               payosOrderCode: paymentData.orderCode,
-              totalAmount: getGrandTotal(),
-              status: 'pending_payment'
+              totalAmount: Math.round(getFinalTotal()), // Đảm bảo là số nguyên
+              originalAmount: Math.round(getGrandTotal()), // Đảm bảo là số nguyên
+              voucherDiscount: Math.round(voucherDiscount), // Đảm bảo là số nguyên
+              appliedVoucher: appliedVoucher,
+              status: 'pending' // PayOS status - chờ thanh toán
             };
             
             // Gọi API tạo đơn hàng
-            console.log('=== CREATING ORDER IN DATABASE ===');
+            console.log('=== CREATING PAYOS ORDER IN DATABASE ===');
             console.log('Order data to send:', orderData);
+            console.log('Total amount (rounded):', Math.round(getFinalTotal()));
+            console.log('Original amount (rounded):', Math.round(getGrandTotal()));
+            console.log('Voucher discount (rounded):', Math.round(voucherDiscount));
             
+            const token = localStorage.getItem('authToken');
+            console.log('Auth token exists:', !!token);
+            console.log('Token length:', token ? token.length : 0);
+            
+            if (!token) {
+              throw new Error('Bạn cần đăng nhập để đặt hàng. Vui lòng đăng nhập và thử lại.');
+            }
+
             const orderResponse = await fetch('http://localhost:8080/api/orders', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
               },
               body: JSON.stringify(orderData)
             });
@@ -118,8 +230,17 @@ const CheckoutPage = () => {
             
             if (!orderResponse.ok) {
               const errorText = await orderResponse.text();
-              console.error('Order API error response:', errorText);
-              throw new Error(`Failed to create order: ${orderResponse.status} - ${errorText}`);
+              console.error('PayOS Order API error response:', errorText);
+              
+              if (orderResponse.status === 401) {
+                throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+              } else if (orderResponse.status === 403) {
+                throw new Error('Bạn không có quyền tạo đơn hàng. Vui lòng kiểm tra tài khoản.');
+              } else if (orderResponse.status === 400) {
+                throw new Error('Dữ liệu đơn hàng không hợp lệ. Vui lòng kiểm tra lại thông tin.');
+              } else {
+                throw new Error(`Lỗi tạo đơn hàng PayOS: ${orderResponse.status} - ${errorText}`);
+              }
             }
             
             const orderResult = await orderResponse.json();
@@ -137,16 +258,91 @@ const CheckoutPage = () => {
           console.error('Payment creation failed:', paymentResponse);
           throw new Error(paymentResponse.message || 'Không thể tạo link thanh toán PayOS');
         }
-      } else {
+      } else if (paymentInfo.method === 'cod') {
         // Xử lý COD (Cash on Delivery)
         console.log('=== PROCESSING COD PAYMENT ===');
-        console.log('Order completed (COD):', { deliveryInfo, paymentInfo, cartItems });
+        console.log('Order data for COD:', { deliveryInfo, paymentInfo, cartItems });
         
-        // Hiển thị thông báo thành công
-        alert('Đơn hàng đã được đặt thành công! Cảm ơn bạn đã mua hàng.');
+        // Map cartItems để có productId thay vì id
+        const mappedCartItems = cartItems.map(item => ({
+          productId: item.id,
+          name: item.name || item.productName || 'Sản phẩm',
+          quantity: Math.round(item.quantity || 1), // Đảm bảo là số nguyên
+          price: Math.round(item.price || item.unitPrice || 0) // Đảm bảo là số nguyên
+        }));
+
+        // Map deliveryInfo để match với backend
+        const mappedDeliveryInfo = {
+          recipientName: deliveryInfo.fullName,
+          recipientPhone: deliveryInfo.phone,
+          addressText: `${deliveryInfo.address}, ${deliveryInfo.district}, ${deliveryInfo.city}`,
+          notes: deliveryInfo.notes
+        };
+
+        const orderData = {
+          deliveryInfo: mappedDeliveryInfo,
+          paymentInfo,
+          cartItems: mappedCartItems,
+          totalAmount: Math.round(getFinalTotal()), // Đảm bảo là số nguyên
+          originalAmount: Math.round(getGrandTotal()), // Đảm bảo là số nguyên
+          voucherDiscount: Math.round(voucherDiscount), // Đảm bảo là số nguyên
+          appliedVoucher: appliedVoucher,
+          status: 'pending' // COD status - chờ thanh toán khi nhận hàng
+        };
+
+        console.log('=== CREATING COD ORDER IN DATABASE ===');
+        console.log('Order data to send:', orderData);
+        console.log('Total amount (rounded):', Math.round(getFinalTotal()));
+        console.log('Original amount (rounded):', Math.round(getGrandTotal()));
+        console.log('Voucher discount (rounded):', Math.round(voucherDiscount));
+
+        // Gọi API tạo đơn hàng COD
+        const token = localStorage.getItem('authToken');
+        console.log('Auth token exists:', !!token);
+        console.log('Token length:', token ? token.length : 0);
         
-        // Xóa giỏ hàng
+        if (!token) {
+          throw new Error('Bạn cần đăng nhập để đặt hàng. Vui lòng đăng nhập và thử lại.');
+        }
+
+        const orderResponse = await fetch('http://localhost:8080/api/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(orderData)
+        });
+
+        console.log('COD Order API response status:', orderResponse.status);
+        console.log('COD Order API response ok:', orderResponse.ok);
+
+        if (!orderResponse.ok) {
+          const errorText = await orderResponse.text();
+          console.error('COD Order API error response:', errorText);
+          
+          if (orderResponse.status === 401) {
+            throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+          } else if (orderResponse.status === 403) {
+            throw new Error('Bạn không có quyền tạo đơn hàng. Vui lòng kiểm tra tài khoản.');
+          } else if (orderResponse.status === 400) {
+            throw new Error('Dữ liệu đơn hàng không hợp lệ. Vui lòng kiểm tra lại thông tin.');
+          } else {
+            throw new Error(`Lỗi tạo đơn hàng COD: ${orderResponse.status} - ${errorText}`);
+          }
+        }
+
+        const orderResult = await orderResponse.json();
+        console.log('COD Order created successfully:', orderResult);
+
+        // Xóa giỏ hàng sau khi tạo đơn hàng thành công
         clearCart();
+        
+        // Xóa pendingOrder nếu có
+        localStorage.removeItem('pendingOrder');
+
+        // Hiển thị thông báo thành công
+        alert('Đơn hàng COD đã được đặt thành công! Bạn sẽ thanh toán khi nhận hàng.');
         
         // Chuyển về trang chủ sau 1 giây
         setTimeout(() => {
@@ -178,11 +374,20 @@ const CheckoutPage = () => {
         );
       case 2:
         return (
-          <PaymentMethodForm 
-            onSubmit={handlePaymentSubmit}
-            onBack={() => setCurrentStep(1)}
-            initialData={paymentInfo}
-          />
+          <div>
+            <VoucherSelector
+              userId={1} // TODO: Lấy từ authentication context
+              orderAmount={getGrandTotal()}
+              onVoucherApplied={handleVoucherApplied}
+              appliedVoucher={appliedVoucher}
+              onRemoveVoucher={handleRemoveVoucher}
+            />
+            <PaymentMethodForm 
+              onSubmit={handlePaymentSubmit}
+              onBack={() => setCurrentStep(1)}
+              initialData={paymentInfo}
+            />
+          </div>
         );
       case 3:
         return (
@@ -193,6 +398,9 @@ const CheckoutPage = () => {
             totalAmount={getTotalAmount()}
             shippingFee={getShippingFee()}
             grandTotal={getGrandTotal()}
+            voucherDiscount={voucherDiscount}
+            appliedVoucher={appliedVoucher}
+            finalTotal={getFinalTotal()}
             onComplete={handleOrderComplete}
             onBack={() => setCurrentStep(2)}
             isProcessingPayment={isProcessingPayment}

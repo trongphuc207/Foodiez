@@ -3,6 +3,7 @@ import React from "react"
 import { useNavigate } from "react-router-dom"
 import "./Cart.css"
 import { useCart } from "../../contexts/CartContext"
+import { useAuth } from "../../hooks/useAuth"
 
 const Cart = ({ isOpen, onClose }) => {
   const { 
@@ -13,10 +14,15 @@ const Cart = ({ isOpen, onClose }) => {
     getShippingFee, 
     getGrandTotal 
   } = useCart();
-
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const handleCheckout = () => {
+    if (!isAuthenticated) {
+      alert('Vui lòng đăng nhập để thanh toán!');
+      onClose(); // Close cart modal
+      return;
+    }
     console.log("[v0] Proceeding to checkout with items:", cartItems)
     onClose(); // Close cart modal
     navigate('/checkout'); // Navigate to checkout page
@@ -28,7 +34,10 @@ const Cart = ({ isOpen, onClose }) => {
     <div className="cart-overlay" onClick={onClose}>
       <div className="cart-container" onClick={(e) => e.stopPropagation()}>
         <div className="cart-header">
-          <h2>🛒 Giỏ hàng của bạn</h2>
+          <div className="header-title">
+            <span className="header-icon">🛒</span>
+            <h2>Giỏ hàng của bạn</h2>
+          </div>
           <button className="close-cart-btn" onClick={onClose}>
             ×
           </button>
@@ -46,18 +55,18 @@ const Cart = ({ isOpen, onClose }) => {
                 <div key={`${item.id}-${item.shopId}`} className="cart-item">
                   <img src={item.image || "/placeholder.svg"} alt={item.name} />
                   <div className="item-info">
-                    <h3>{item.name}</h3>
-                    <p className="shop-name">{item.shop}</p>
-                    <p className="item-price">{item.price.toLocaleString()}đ</p>
+                    <h3>{item.shop}</h3>
+                    <p className="shop-name">{item.name}</p>
+                    <p className="item-price">{item.price.toLocaleString()}₫</p>
                   </div>
                   <div className="item-actions">
                     <div className="quantity-controls">
-                      <button onClick={() => updateQuantity(item.id, item.quantity - 1)}>-</button>
+                      <button onClick={() => updateQuantity(item.id, item.quantity - 1)}>−</button>
                       <span>{item.quantity}</span>
                       <button onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
                     </div>
                     <button className="remove-btn" onClick={() => removeFromCart(item.id)}>
-                      🗑️
+                      Xóa
                     </button>
                   </div>
                 </div>
@@ -66,19 +75,19 @@ const Cart = ({ isOpen, onClose }) => {
 
             <div className="cart-summary">
               <div className="summary-row">
-                <span>Tạm tính:</span>
-                <span>{getTotalAmount().toLocaleString()}VND</span>
+                <span className="summary-label">Tạm tính:</span>
+                <span className="summary-value">{getTotalAmount().toLocaleString()}₫</span>
               </div>
               <div className="summary-row">
-                <span>Phí vận chuyển:</span>
-                <span>{getShippingFee().toLocaleString()}VND</span>
+                <span className="summary-label">Phí vận chuyển:</span>
+                <span className="summary-value">{getShippingFee().toLocaleString()}₫</span>
               </div>
               <div className="summary-row total">
-                <span>Tổng cộng:</span>
-                <span>{getGrandTotal().toLocaleString()}VND</span>
+                <span className="summary-label">Tổng cộng:</span>
+                <span className="summary-value">{getGrandTotal().toLocaleString()}₫</span>
               </div>
               <button className="checkout-btn" onClick={handleCheckout}>
-                Thanh toán
+                THANH TOÁN
               </button>
             </div>
           </>

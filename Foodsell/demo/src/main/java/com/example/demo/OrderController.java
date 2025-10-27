@@ -2,6 +2,7 @@ package com.example.demo;
 
 import com.example.demo.dto.OrderDTO;
 import com.example.demo.Orders.OrderService;
+import com.example.demo.Orders.OrderHistory;
 import com.example.demo.config.RoleChecker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,11 +33,11 @@ public class OrderController {
         return orderService.getAllOrders();
     }
     
-    // GET: Lấy đơn hàng theo ID (authenticated users)
-    @GetMapping("/{id}")
+    // GET: Lấy lịch sử đơn hàng theo order ID
+    @GetMapping("/{id}/history")
     @PreAuthorize("isAuthenticated()")
-    public OrderDTO getOrderById(@PathVariable Integer id) {
-        return orderService.getOrderById(id);
+    public List<OrderHistory> getOrderHistory(@PathVariable Integer id) {
+        return orderService.getOrderHistory(id);
     }
     
     // GET: Test endpoint
@@ -60,8 +61,16 @@ public class OrderController {
             Integer totalAmount = (Integer) orderData.get("totalAmount");
             String status = (String) orderData.getOrDefault("status", "pending");
             
+            // Get current user ID from authentication
+            var currentUser = roleChecker.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseEntity.status(401).body(Map.of("success", false, "message", "User not authenticated"));
+            }
+            
+            
             // Create order using service
             Map<String, Object> result = orderService.createOrder(
+                currentUser.getId(), // Pass the actual buyer ID
                 deliveryInfo, 
                 paymentInfo, 
                 cartItems, 
@@ -151,4 +160,33 @@ public class OrderController {
             ));
         }
     }
+
+
+    // PUT: Cập nhật trạng thái đơn theo PayOS orderCode (buyer)
+    @PutMapping("/customer/orders/{orderCode}/status")
+    public ResponseEntity<Map<String, Object>> updateStatusByOrderCode(
+            @PathVariable Integer orderCode,
+            @RequestBody Map<String, String> body) {
+        try {
+            
+            String status = body.getOrDefault("status", "confirmed");
+            boolean ok = orderService.updateStatusByPayosOrderCode(orderCode, status);
+            
+            if (ok) {
+                return ResponseEntity.ok(Map.of("success", true, "message", "Status updated"));
+            } else {
+                return ResponseEntity.status(404).body(Map.of("success", false, "message", "Order not found"));
+            }
+        } catch (Exception e) {
+            System.err.println("❌ API Error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false, 
+                "message", "Internal server error: " + e.getMessage(),
+                "error", e.getClass().getSimpleName()
+            ));
+        }
+    }
+
+
 }

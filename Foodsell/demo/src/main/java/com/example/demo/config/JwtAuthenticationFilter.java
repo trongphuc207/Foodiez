@@ -31,8 +31,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         
+        String requestURI = request.getRequestURI();
+        System.out.println("🔍 JWT Filter processing request: " + requestURI);
+        
         // 1. Extract token từ request
         String token = extractTokenFromRequest(request);
+        System.out.println("🔑 Token extracted: " + (token != null ? "YES" : "NO"));
         
         if (token != null && jwtUtil.validateToken(token)) {
             try {

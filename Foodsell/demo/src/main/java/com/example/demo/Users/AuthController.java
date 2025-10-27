@@ -43,6 +43,21 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(null, "Mã OTP đã được gửi đến email của bạn"));
     }
 
+    @PostMapping("/make-admin/{email}")
+    public ResponseEntity<ApiResponse<User>> makeAdmin(@PathVariable String email) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (!userOpt.isPresent()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("User not found"));
+        }
+        
+        User user = userOpt.get();
+        user.setRole("admin");
+        user.setIsVerified(true);
+        User updatedUser = userRepository.save(user);
+        
+        return ResponseEntity.ok(ApiResponse.success(updatedUser, "User role updated to admin"));
+    }
+    
     @PostMapping("/verify-otp")
     public ResponseEntity<ApiResponse<User>> verifyOTP(@Valid @RequestBody OTPRequest request) {
         User user = authService.verifyOTPAndActivateAccount(request.getEmail(), request.getOtpCode());
@@ -190,12 +205,10 @@ public class AuthController {
     public ResponseEntity<ApiResponse<User>> googleAuth(@RequestBody java.util.Map<String, String> req) {
         try {
             String credential = req.get("credential");
-            System.out.println("🔍 Google OAuth credential received");
-            
+            System.out.println("🔍 Google OAuth credential received");           
             // TODO: Verify Google JWT token here
             // For now, we'll decode the token to get user info
-            // In production, you should verify the JWT token with Google
-            
+            // In production, you should verify the JWT token with Google            
             // Decode JWT token to get user info (simplified - in production use proper verification)
             String[] parts = credential.split("\\.");
             if (parts.length >= 2) {

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import ButtonInputSearch from "../ButtonInputSearch/ButtonInputSearch";
 import SimpleSearch from "../ButtonInputSearch/SimpleSearch";
 import LoginSignUp from "../LoginSignUpComponent/LoginSignUp";
 import Cart from "../CartComponent/Cart";
@@ -13,7 +12,8 @@ const Header = ({ toggleSidebar }) => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showCart, setShowCart] = useState(false);
-  const [showNavbar, setShowNavbar] = useState(false);
+  const [showContactDropdown, setShowContactDropdown] = useState(false);
+  const [showNavbar] = useState(false);
 
   // NEW: state mở modal và mode (login/signup)
   const [showAuth, setShowAuth] = useState(false);
@@ -24,6 +24,28 @@ const Header = ({ toggleSidebar }) => {
 
   // Cart context
   const { getTotalItems } = useCart();
+
+  // Navigate hook
+  const navigate = useNavigate();
+
+  // Handle navigation after successful login
+  useEffect(() => {
+    const handleAuthSuccess = (event) => {
+      const userData = event.detail?.data;
+      if (userData) {
+        console.log('🎉 Auth success in Header:', userData);
+        
+        // Redirect to Home after login (regardless of role)
+        navigate('/');
+        
+        // Close auth modal
+        setShowAuth(false);
+      }
+    };
+
+    window.addEventListener('authSuccess', handleAuthSuccess);
+    return () => window.removeEventListener('authSuccess', handleAuthSuccess);
+  }, [navigate]);
 
   // Đóng modal khi bấm ESC và quản lý scrollbar
   useEffect(() => {
@@ -51,8 +73,6 @@ const Header = ({ toggleSidebar }) => {
     setShowAuth(true);
     setShowUserDropdown(false);
   };
-
-  const navigate = useNavigate();
 
   const handleSearch = (keyword) => {
     if (!keyword) return;
@@ -111,7 +131,32 @@ const Header = ({ toggleSidebar }) => {
             🔔<span className="notification-badge">3</span>
           </button>
 
-          <button className="action-btn contact-btn">📞 Liên hệ</button>
+          <div className="contact-wrapper">
+            <button
+              type="button"
+              className="action-btn contact-btn"
+              onClick={() => {
+                setShowContactDropdown(!showContactDropdown)
+                setShowUserDropdown(false)
+              }}
+            >
+              📞 Liên hệ
+            </button>
+
+            {showContactDropdown && (
+              <div className="contact-dropdown">
+                {/* phone link*/}
+                <a className="contact-item" href="tel:0978126731">📞 0978126731</a>
+              </div>
+            )}
+          </div>
+
+          <button 
+            className="action-btn voucher-btn"
+            onClick={() => navigate('/vouchers')}
+          >
+            🎫 Voucher
+          </button>
 
           <button 
             className="cart-btn"
@@ -120,7 +165,16 @@ const Header = ({ toggleSidebar }) => {
             🛒 Giỏ hàng ({getTotalItems()})
           </button>
 
-          <button className="order-btn">Đặt hàng ngay</button>
+          {user ? (
+            <button 
+              className="order-btn"
+              onClick={() => navigate('/orders')}
+            >
+              📦 Đơn hàng của tôi
+            </button>
+          ) : (
+            <button className="order-btn">Đặt hàng ngay</button>
+          )}
 
           <div className="user-dropdown">
             <button
@@ -161,6 +215,17 @@ const Header = ({ toggleSidebar }) => {
                     >
                       👤 Thông tin cá nhân
                     </button>
+                    {(user?.role === 'seller' || user?.role === 'shipper' || user?.role === 'buyer') && (
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          navigate('/orders');
+                          setShowUserDropdown(false);
+                        }}
+                      >
+                        📦 Đơn hàng của tôi
+                      </button>
+                    )}
                     {user?.role === 'seller' && (
                       <button
                         className="dropdown-item"
@@ -189,12 +254,10 @@ const Header = ({ toggleSidebar }) => {
       {/* === Modal Auth === */}
       {showAuth && (
         <div className="modal-overlay" onClick={() => setShowAuth(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <LoginSignUp
-              defaultMode={authMode}
-              onClose={() => setShowAuth(false)}
-            />
-          </div>
+          <LoginSignUp
+            defaultMode={authMode}
+            onClose={() => setShowAuth(false)}
+          />
         </div>
       )}
 

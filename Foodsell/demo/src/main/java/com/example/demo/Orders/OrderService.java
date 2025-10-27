@@ -2,6 +2,8 @@ package com.example.demo.Orders;
 
 import com.example.demo.dto.OrderDTO;
 import com.example.demo.dto.OrderItemDTO;
+import com.example.demo.products.ProductService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -16,10 +18,16 @@ import java.util.Optional;
 public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final OrderHistoryRepository orderHistoryRepository;
+    private final ProductService productService;
+    private final OrderAssignmentService orderAssignmentService;
 
-    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository) {
+    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository, OrderHistoryRepository orderHistoryRepository, ProductService productService, OrderAssignmentService orderAssignmentService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
+        this.orderHistoryRepository = orderHistoryRepository;
+        this.productService = productService;
+        this.orderAssignmentService = orderAssignmentService;
     }
 
     public List<OrderDTO> getAllOrders() {
@@ -71,7 +79,7 @@ public class OrderService {
     
     // Create new order with PayOS integration
     @Transactional
-    public Map<String, Object> createOrder(Map<String, Object> deliveryInfo, Map<String, Object> paymentInfo, 
+    public Map<String, Object> createOrder(Integer buyerId, Map<String, Object> deliveryInfo, Map<String, Object> paymentInfo, 
                                           List<Map<String, Object>> cartItems, Integer payosOrderCode, 
                                           Integer totalAmount, String status) {
         try {
@@ -79,7 +87,7 @@ public class OrderService {
             
             // Create new order
             Order order = new Order();
-            order.setBuyerId(1); // Default buyer ID - you might want to get this from authentication
+            order.setBuyerId(buyerId); // Use the actual buyer ID from authentication
             order.setShopId(1); // Default shop ID - you might want to get this from cart items
             order.setDeliveryAddressId(1); // Default address ID
             order.setTotalAmount(new BigDecimal(totalAmount));
@@ -87,10 +95,23 @@ public class OrderService {
             
             // Set delivery information
             if (deliveryInfo != null) {
-                order.setRecipientName((String) deliveryInfo.get("recipientName"));
-                order.setRecipientPhone((String) deliveryInfo.get("recipientPhone"));
-                order.setAddressText((String) deliveryInfo.get("addressText"));
+                System.out.println("🔍 DEBUG: deliveryInfo received: " + deliveryInfo);
+                String recipientName = (String) deliveryInfo.get("recipientName");
+                String recipientPhone = (String) deliveryInfo.get("recipientPhone");
+                String addressText = (String) deliveryInfo.get("addressText");
+                System.out.println("🔍 DEBUG: recipientName: " + recipientName);
+                System.out.println("🔍 DEBUG: recipientPhone: " + recipientPhone);
+                System.out.println("🔍 DEBUG: addressText: " + addressText);
+                
+                order.setRecipientName(recipientName);
+                order.setRecipientPhone(recipientPhone);
+                order.setAddressText(addressText);
+            } else {
+                System.out.println("🔍 DEBUG: deliveryInfo is NULL!");
             }
+            
+            // Set PayOS order code
+            order.setOrderCode(payosOrderCode);
             
             // Set PayOS order code in notes
             String notes = "PayOS:" + payosOrderCode;
@@ -104,6 +125,10 @@ public class OrderService {
             // Save order
             Order savedOrder = orderRepository.save(order);
             System.out.println("✅ Order created with ID: " + savedOrder.getId());
+            
+            // Tạo order history cho việc tạo đơn hàng
+            createOrderHistory(savedOrder.getId(), null, status, "order_created", 
+                "Order was created with PayOS order code: " + payosOrderCode, "system");
             
             // Create order items
             if (cartItems != null && !cartItems.isEmpty()) {
@@ -143,6 +168,10 @@ public class OrderService {
                 }
                 System.out.println("✅ Created " + cartItems.size() + " order items");
             }
+            
+            // Tự động phân phối đơn hàng cho seller và shipper
+            System.out.println("🔄 Auto-assigning order " + savedOrder.getId() + " to seller and shipper...");
+            orderAssignmentService.autoAssignNewOrder(savedOrder.getId());
             
             // Return success response
             Map<String, Object> result = new HashMap<>();
@@ -279,6 +308,27 @@ public class OrderService {
         dto.setQuantity(orderItem.getQuantity());
         dto.setUnitPrice(orderItem.getUnitPrice());
         dto.setTotalPrice(orderItem.getTotalPrice());
+        
+        // Lấy thông tin sản phẩm từ ProductService
+        try {
+            System.out.println("🔍 DEBUG: Looking for product ID: " + orderItem.getProductId());
+            var product = productService.getProductById(orderItem.getProductId());
+            if (product.isPresent()) {
+                var productData = product.get();
+                String productName = productData.getName();
+                String productImage = productData.getImageUrl();
+                System.out.println("🔍 DEBUG: Found product: " + productName + ", Image: " + productImage);
+                dto.setProductName(productName);
+                dto.setProductImage(productImage);
+            } else {
+                System.out.println("🔍 DEBUG: Product not found for ID: " + orderItem.getProductId());
+                dto.setProductName("Sản phẩm không tồn tại (ID: " + orderItem.getProductId() + ")");
+            }
+        } catch (Exception e) {
+            System.out.println("🔍 DEBUG: Error getting product: " + e.getMessage());
+            dto.setProductName("Không thể lấy tên sản phẩm: " + e.getMessage());
+        }
+        
         return dto;
     }
     
@@ -302,17 +352,40 @@ public class OrderService {
             
             if (orderOpt.isPresent()) {
                 Order order = orderOpt.get();
+                String oldStatus = order.getStatus();
                 
                 // Update order status based on payment status
                 if ("PAID".equals(status)) {
-                    order.setStatus("paid");
-                    System.out.println("✅ Order " + order.getId() + " marked as PAID");
+                    // Cập nhật từ pending_payment thành paid
+                    if ("pending_payment".equals(order.getStatus())) {
+                        order.setStatus("confirmed");
+                        System.out.println("✅ Order " + order.getId() + " updated from pending_payment to PAID");
+                        
+                        // Tạo order history
+                        createOrderHistory(order.getId(), oldStatus, "confirmed", "payment_success", 
+                            "Payment completed successfully via PayOS. Transaction ID: " + transactionId, "system");
+                    } else {
+                        order.setStatus("confirmed");
+                        System.out.println("✅ Order " + order.getId() + " marked as PAID");
+                        
+                        // Tạo order history
+                        createOrderHistory(order.getId(), oldStatus, "confirmed", "payment_success", 
+                            "Payment completed successfully via PayOS. Transaction ID: " + transactionId, "system");
+                    }
                 } else if ("CANCELLED".equals(status)) {
                     order.setStatus("cancelled");
                     System.out.println("❌ Order " + order.getId() + " marked as CANCELLED");
+                    
+                    // Tạo order history
+                    createOrderHistory(order.getId(), oldStatus, "cancelled", "payment_cancelled", 
+                        "Payment was cancelled. Transaction ID: " + transactionId, "system");
                 } else if ("EXPIRED".equals(status)) {
                     order.setStatus("expired");
                     System.out.println("⏰ Order " + order.getId() + " marked as EXPIRED");
+                    
+                    // Tạo order history
+                    createOrderHistory(order.getId(), oldStatus, "expired", "payment_expired", 
+                        "Payment link expired. Transaction ID: " + transactionId, "system");
                 }
                 
                 // Update notes with payment information
@@ -335,4 +408,55 @@ public class OrderService {
             return false;
         }
     }
+    
+    // Tạo order history
+    @Transactional
+    public void createOrderHistory(Integer orderId, String statusFrom, String statusTo, 
+                                 String action, String description, String createdBy) {
+        try {
+            OrderHistory history = new OrderHistory(orderId, statusFrom, statusTo, action, description, createdBy);
+            orderHistoryRepository.save(history);
+            System.out.println("📝 Order history created: Order " + orderId + " " + statusFrom + " → " + statusTo);
+        } catch (Exception e) {
+            System.err.println("❌ Error creating order history: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    // Lấy lịch sử đơn hàng
+    public List<OrderHistory> getOrderHistory(Integer orderId) {
+        return orderHistoryRepository.findByOrderIdOrderByCreatedAtDesc(orderId);
+    }
+    
+    @Transactional
+    // Cập nhật trạng thái đơn hàng theo PayOS orderCode
+    public boolean updateStatusByPayosOrderCode(Integer orderCode, String status) {
+        try {
+            
+            // Tìm đơn hàng theo orderCode
+            Optional<Order> orderOpt = orderRepository.findByOrderCode(orderCode);
+            if (orderOpt.isEmpty()) {
+                return false;
+            }
+            
+            Order order = orderOpt.get();
+            String oldStatus = order.getStatus();
+            
+            // Cập nhật trạng thái
+            order.setStatus(status);
+            orderRepository.save(order);
+            
+            // Tạo lịch sử
+            createOrderHistory(order.getId(), oldStatus, status, "PAYMENT_UPDATE", 
+                "Order status updated from payment callback", "SYSTEM");
+            
+            return true;
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error updating order status: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
 }

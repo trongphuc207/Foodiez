@@ -12,9 +12,9 @@ const Footer = () => {
               Mang đến những món ăn ngon nhất từ các nhà hàng uy tín, giao hàng nhanh chóng và an toàn đến tận nơi.
             </p>
             <div className="social-links">
-              <Link to="/facebook" className="social-link">📘 Facebook</Link>
-              <Link to="/instagram" className="social-link">📷 Instagram</Link>
-              <Link to="/twitter" className="social-link">🐦 Twitter</Link>
+              <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" className="social-link">📘 Facebook</a>
+              <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" className="social-link">📷 Instagram</a>
+              <a href="https://twitter.com/" target="_blank" rel="noopener noreferrer" className="social-link">🐦 Twitter</a>
             </div>
           </div>
 
@@ -41,8 +41,8 @@ const Footer = () => {
           <div className="footer-section">
             <h4 className="section-title">Liên hệ</h4>
             <ul className="footer-links">
-              <li><span className="footer-link">📞 Hotline: +84778956030</span></li>
-              <li><span className="footer-link">✉️ Email: trongphuc20704@gmail.com</span></li>
+              <li><a className="footer-link" href="tel:+84778956030">📞 Hotline: +84 778 956 030</a></li>
+              <li><a className="footer-link" href="mailto:trongphuc20704@gmail.com">✉️ Email: trongphuc20704@gmail.com</a></li>
               <li><span className="footer-link">📍 Địa chỉ: FPT University</span></li>
             </ul>
           </div>

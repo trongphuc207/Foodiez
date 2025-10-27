@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 // import { useNavigate } from 'react-router-dom' // Commented out - not used yet
 import './ShipperDashboard.css'
 import AddressDetailModal from './AddressDetailModal'
 import SidebarComponent from '../SidebarComponent/SidebarComponent'
+import { shipperAPI } from '../../api/shipper'
 import { 
   FiPackage, 
   FiCheck, 
@@ -19,8 +20,45 @@ export default function ShipperDashboard() {
   const [selectedAddress, setSelectedAddress] = useState(null)
   const [showAddressModal, setShowAddressModal] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [orders, setOrders] = useState([])
+  const [dashboardData, setDashboardData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const orders = [
+  // Load data from API
+  useEffect(() => {
+    loadShipperData()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadShipperData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Load orders and dashboard data in parallel
+      const [ordersResponse, dashboardResponse] = await Promise.all([
+        shipperAPI.getOrders(),
+        shipperAPI.getDashboard()
+      ])
+      
+      setOrders(ordersResponse || [])
+      setDashboardData(dashboardResponse)
+      
+      // Debug log
+      console.log('Shipper data loaded:', { ordersResponse, dashboardResponse })
+    } catch (err) {
+      console.error('Error loading shipper data:', err)
+      setError(err.message)
+      // Fallback to mock data if API fails
+      setOrders(getMockOrders())
+      setDashboardData(getMockDashboardData())
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Mock data fallback
+  const getMockOrders = () => [
     {
       id: "DH001",
       customer: "Nguyễn Văn A",
@@ -72,6 +110,38 @@ export default function ShipperDashboard() {
     }
   ]
 
+  const getMockDashboardData = () => ({
+    totalOrders: 4,
+    deliveredOrders: 1,
+    deliveringOrders: 2,
+    totalEarnings: "30.000₫"
+  })
+
+  // Handle order actions
+  const handleAcceptOrder = async (orderId) => {
+    try {
+      console.log('Accepting order:', orderId)
+      await shipperAPI.acceptOrder(orderId)
+      // Reload data after accepting order
+      loadShipperData()
+    } catch (err) {
+      console.error('Error accepting order:', err)
+      alert('Không thể nhận đơn hàng: ' + err.message)
+    }
+  }
+
+  const handleUpdateStatus = async (orderId, status) => {
+    try {
+      console.log('Updating order status:', orderId, status)
+      await shipperAPI.updateDeliveryStatus(orderId, status)
+      // Reload data after updating status
+      loadShipperData()
+    } catch (err) {
+      console.error('Error updating status:', err)
+      alert('Không thể cập nhật trạng thái: ' + err.message)
+    }
+  }
+
   const tabs = [
     { id: 'all', label: 'Tất cả', count: orders.length },
     { id: 'waiting_pickup', label: 'Chờ lấy', count: orders.filter(o => o.status === 'waiting_pickup').length },
@@ -114,6 +184,31 @@ export default function ShipperDashboard() {
     setSelectedAddress(null)
   }
 
+  if (loading) {
+    return (
+      <div className="shipper-dashboard">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="shipper-dashboard">
+        <div className="error-container">
+          <h3>Lỗi tải dữ liệu</h3>
+          <p>{error}</p>
+          <button onClick={loadShipperData} className="retry-btn">
+            Thử lại
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="shipper-dashboard">
       {/* Header */}
@@ -141,7 +236,9 @@ export default function ShipperDashboard() {
             <FiPackage />
           </div>
           <div className="card-content">
-            <div className="card-number">4</div>
+            <div className="card-number">
+              {loading ? '...' : (dashboardData?.totalOrders || orders.length)}
+            </div>
             <div className="card-label">Tổng đơn</div>
           </div>
         </div>
@@ -150,7 +247,9 @@ export default function ShipperDashboard() {
             <FiCheck />
           </div>
           <div className="card-content">
-            <div className="card-number">1</div>
+            <div className="card-number">
+              {loading ? '...' : orders.filter(o => o.status === 'delivered').length}
+            </div>
             <div className="card-label">Đã giao</div>
           </div>
         </div>
@@ -159,7 +258,9 @@ export default function ShipperDashboard() {
             <FiTruck />
           </div>
           <div className="card-content">
-            <div className="card-number">2</div>
+            <div className="card-number">
+              {loading ? '...' : orders.filter(o => o.status === 'delivering').length}
+            </div>
             <div className="card-label">Đang giao</div>
           </div>
         </div>
@@ -168,7 +269,9 @@ export default function ShipperDashboard() {
             <FiDollarSign />
           </div>
           <div className="card-content">
-            <div className="card-number">30.000₫</div>
+            <div className="card-number">
+              {loading ? '...' : (dashboardData?.totalEarnings || '0₫')}
+            </div>
             <div className="card-label">Thu nhập</div>
           </div>
         </div>
@@ -210,7 +313,10 @@ export default function ShipperDashboard() {
             {/* Customer Info */}
             <div className="customer-info">
               <div className="customer-avatar">
-                {order.customer.charAt(order.customer.lastIndexOf(' ') + 1)}
+                {order.customer && order.customer.length > 0 
+                  ? order.customer.charAt(order.customer.lastIndexOf(' ') + 1)
+                  : '?'
+                }
               </div>
               <div className="customer-details">
                 <div className="customer-name">{order.customer}</div>
@@ -279,7 +385,11 @@ export default function ShipperDashboard() {
             {/* Action Buttons */}
             <div className="order-actions">
               {order.status === 'waiting_pickup' && (
-                <button className="action-btn primary">
+                <button 
+                  className="action-btn primary"
+                  onClick={() => handleAcceptOrder(order.id)}
+                  disabled={loading}
+                >
                   <span className="btn-icon"><FiPackage /></span>
                   Nhận đơn
                   <span className="btn-icon"><FiTruck /></span>
@@ -287,7 +397,11 @@ export default function ShipperDashboard() {
               )}
               {order.status === 'picked_up' && (
                 <div className="action-group">
-                  <button className="action-btn primary">
+                  <button 
+                    className="action-btn primary"
+                    onClick={() => handleUpdateStatus(order.id, 'delivering')}
+                    disabled={loading}
+                  >
                     <span className="btn-icon"><FiTruck /></span>
                     Bắt đầu giao
                   </button>
@@ -298,7 +412,11 @@ export default function ShipperDashboard() {
               )}
               {order.status === 'delivering' && (
                 <div className="action-group">
-                  <button className="action-btn success">
+                  <button 
+                    className="action-btn success"
+                    onClick={() => handleUpdateStatus(order.id, 'delivered')}
+                    disabled={loading}
+                  >
                     <span className="btn-icon"><FiCheck /></span>
                     Hoàn thành
                   </button>

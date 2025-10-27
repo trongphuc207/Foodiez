@@ -39,6 +39,9 @@ public class Order {
     @Column(name = "notes", columnDefinition = "NVARCHAR(MAX)")
     private String notes;
 
+    @Column(name = "order_code")
+    private Integer orderCode;
+
     @Column(name = "recipient_name")
     private String recipientName;
 
@@ -56,6 +59,25 @@ public class Order {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    // Thêm các trường cho hệ thống phân phối đơn hàng
+    @Column(name = "assigned_seller_id")
+    private Integer assignedSellerId;
+
+    @Column(name = "assigned_shipper_id")
+    private Integer assignedShipperId;
+
+    @Column(name = "assignment_status")
+    private String assignmentStatus = "pending"; // pending, assigned, accepted, rejected
+
+    @Column(name = "assigned_at")
+    private LocalDateTime assignedAt;
+
+    @Column(name = "accepted_at")
+    private LocalDateTime acceptedAt;
 
     // One-to-many relationship with OrderItem
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -92,6 +114,12 @@ public class Order {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
+    }
+
+    // Auto set updatedAt when updating
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
 }
