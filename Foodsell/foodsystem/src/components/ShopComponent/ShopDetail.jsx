@@ -4,17 +4,23 @@ import { shopAPI } from '../../api/shop';
 import { productAPI } from '../../api/product';
 import { useCart } from '../../contexts/CartContext';
 import ProductDetail from '../FoodProductComponent/ProductDetail';
+import ShopReviewList from '../ReviewComponent/ShopReviewList';
+import { useAuth } from '../../hooks/useAuth';
 import './ShopDetail.css';
 
 const ShopDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { user } = useAuth();
   const [shop, setShop] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+
+  // Debug: Log user info
+  console.log('🔍 ShopDetail Debug:', { user, shopId: id });
   const [searchKeyword, setSearchKeyword] = useState('');
   const [productQuantities, setProductQuantities] = useState({});
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -329,6 +335,15 @@ const ShopDetail = () => {
           </div>
         </div>
 
+      </div>
+
+      {/* Shop Reviews Section */}
+      <div className="shop-reviews-section">
+        <ShopReviewList 
+          shopId={parseInt(id)}
+          userRole={user?.role}
+          currentUserId={user?.id}
+        />
       </div>
 
       {/* Product Detail Modal */}

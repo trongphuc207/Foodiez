@@ -125,7 +125,7 @@ public class ShopController {
     
     // PUT: Cập nhật rating cho shop
     @PutMapping("/{id}/rating")
-    public ResponseEntity<ApiResponse<Shop>> updateShopRating(@PathVariable int id, @RequestParam Double rating) {
+    public ResponseEntity<ApiResponse<Shop>> updateShopRating(@PathVariable int id, @RequestParam Integer rating) {
         try {
             Shop updatedShop = shopService.updateShopRating(id, rating);
             return ResponseEntity.ok(ApiResponse.success(updatedShop, "Cập nhật rating shop thành công"));
