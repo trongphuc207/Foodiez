@@ -181,8 +181,16 @@ const CheckoutPage = () => {
               price: Math.round(item.price || item.unitPrice || 0) // Đảm bảo là số nguyên
             }));
             
+            // Map deliveryInfo để match với backend
+            const mappedDeliveryInfo = {
+              recipientName: deliveryInfo.fullName,
+              recipientPhone: deliveryInfo.phone,
+              addressText: `${deliveryInfo.address}, ${deliveryInfo.district}, ${deliveryInfo.city}`,
+              notes: deliveryInfo.notes
+            };
+
             const orderData = {
-              deliveryInfo,
+              deliveryInfo: mappedDeliveryInfo,
               paymentInfo,
               cartItems: mappedCartItems,
               payosOrderCode: paymentData.orderCode,
@@ -263,8 +271,16 @@ const CheckoutPage = () => {
           price: Math.round(item.price || item.unitPrice || 0) // Đảm bảo là số nguyên
         }));
 
+        // Map deliveryInfo để match với backend
+        const mappedDeliveryInfo = {
+          recipientName: deliveryInfo.fullName,
+          recipientPhone: deliveryInfo.phone,
+          addressText: `${deliveryInfo.address}, ${deliveryInfo.district}, ${deliveryInfo.city}`,
+          notes: deliveryInfo.notes
+        };
+
         const orderData = {
-          deliveryInfo,
+          deliveryInfo: mappedDeliveryInfo,
           paymentInfo,
           cartItems: mappedCartItems,
           totalAmount: Math.round(getFinalTotal()), // Đảm bảo là số nguyên

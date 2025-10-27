@@ -2,6 +2,8 @@ package com.example.demo.Orders;
 
 import com.example.demo.dto.OrderDTO;
 import com.example.demo.dto.OrderItemDTO;
+import com.example.demo.products.ProductService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -17,11 +19,15 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final OrderHistoryRepository orderHistoryRepository;
+    private final ProductService productService;
+    private final OrderAssignmentService orderAssignmentService;
 
-    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository, OrderHistoryRepository orderHistoryRepository) {
+    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository, OrderHistoryRepository orderHistoryRepository, ProductService productService, OrderAssignmentService orderAssignmentService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.orderHistoryRepository = orderHistoryRepository;
+        this.productService = productService;
+        this.orderAssignmentService = orderAssignmentService;
     }
 
     public List<OrderDTO> getAllOrders() {
@@ -89,9 +95,19 @@ public class OrderService {
             
             // Set delivery information
             if (deliveryInfo != null) {
-                order.setRecipientName((String) deliveryInfo.get("recipientName"));
-                order.setRecipientPhone((String) deliveryInfo.get("recipientPhone"));
-                order.setAddressText((String) deliveryInfo.get("addressText"));
+                System.out.println("🔍 DEBUG: deliveryInfo received: " + deliveryInfo);
+                String recipientName = (String) deliveryInfo.get("recipientName");
+                String recipientPhone = (String) deliveryInfo.get("recipientPhone");
+                String addressText = (String) deliveryInfo.get("addressText");
+                System.out.println("🔍 DEBUG: recipientName: " + recipientName);
+                System.out.println("🔍 DEBUG: recipientPhone: " + recipientPhone);
+                System.out.println("🔍 DEBUG: addressText: " + addressText);
+                
+                order.setRecipientName(recipientName);
+                order.setRecipientPhone(recipientPhone);
+                order.setAddressText(addressText);
+            } else {
+                System.out.println("🔍 DEBUG: deliveryInfo is NULL!");
             }
             
             // Set PayOS order code
@@ -152,6 +168,10 @@ public class OrderService {
                 }
                 System.out.println("✅ Created " + cartItems.size() + " order items");
             }
+            
+            // Tự động phân phối đơn hàng cho seller và shipper
+            System.out.println("🔄 Auto-assigning order " + savedOrder.getId() + " to seller and shipper...");
+            orderAssignmentService.autoAssignNewOrder(savedOrder.getId());
             
             // Return success response
             Map<String, Object> result = new HashMap<>();
@@ -288,6 +308,27 @@ public class OrderService {
         dto.setQuantity(orderItem.getQuantity());
         dto.setUnitPrice(orderItem.getUnitPrice());
         dto.setTotalPrice(orderItem.getTotalPrice());
+        
+        // Lấy thông tin sản phẩm từ ProductService
+        try {
+            System.out.println("🔍 DEBUG: Looking for product ID: " + orderItem.getProductId());
+            var product = productService.getProductById(orderItem.getProductId());
+            if (product.isPresent()) {
+                var productData = product.get();
+                String productName = productData.getName();
+                String productImage = productData.getImageUrl();
+                System.out.println("🔍 DEBUG: Found product: " + productName + ", Image: " + productImage);
+                dto.setProductName(productName);
+                dto.setProductImage(productImage);
+            } else {
+                System.out.println("🔍 DEBUG: Product not found for ID: " + orderItem.getProductId());
+                dto.setProductName("Sản phẩm không tồn tại (ID: " + orderItem.getProductId() + ")");
+            }
+        } catch (Exception e) {
+            System.out.println("🔍 DEBUG: Error getting product: " + e.getMessage());
+            dto.setProductName("Không thể lấy tên sản phẩm: " + e.getMessage());
+        }
+        
         return dto;
     }
     

@@ -57,8 +57,9 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
 
   // Hàm chuyển trang
   const handlePageChange = (page) => {
+    // guard: only change to a valid page
+    if (page < 1 || page > totalPages) return
     setCurrentPage(page)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handleAddToCart = (product, e) => {
@@ -221,6 +222,7 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
       {totalPages > 1 && (
         <div className="pagination">
           <button 
+            type="button"
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
           >
@@ -230,6 +232,7 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
           {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
             <button
               key={page}
+              type="button"
               onClick={() => handlePageChange(page)}
               className={currentPage === page ? 'active' : ''}
             >
@@ -238,6 +241,7 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
           ))}
           
           <button 
+            type="button"
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
           >

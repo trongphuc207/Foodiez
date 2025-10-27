@@ -12,6 +12,7 @@ const Header = ({ toggleSidebar }) => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showCart, setShowCart] = useState(false);
+  const [showContactDropdown, setShowContactDropdown] = useState(false);
   const [showNavbar] = useState(false);
 
   // NEW: state mở modal và mode (login/signup)
@@ -130,7 +131,25 @@ const Header = ({ toggleSidebar }) => {
             🔔<span className="notification-badge">3</span>
           </button>
 
-          <button className="action-btn contact-btn">📞 Liên hệ</button>
+          <div className="contact-wrapper">
+            <button
+              type="button"
+              className="action-btn contact-btn"
+              onClick={() => {
+                setShowContactDropdown(!showContactDropdown)
+                setShowUserDropdown(false)
+              }}
+            >
+              📞 Liên hệ
+            </button>
+
+            {showContactDropdown && (
+              <div className="contact-dropdown">
+                {/* phone link*/}
+                <a className="contact-item" href="tel:0978126731">📞 0978126731</a>
+              </div>
+            )}
+          </div>
 
           <button 
             className="action-btn voucher-btn"
@@ -146,7 +165,16 @@ const Header = ({ toggleSidebar }) => {
             🛒 Giỏ hàng ({getTotalItems()})
           </button>
 
-          <button className="order-btn">Đặt hàng ngay</button>
+          {user ? (
+            <button 
+              className="order-btn"
+              onClick={() => navigate('/orders')}
+            >
+              📦 Đơn hàng của tôi
+            </button>
+          ) : (
+            <button className="order-btn">Đặt hàng ngay</button>
+          )}
 
           <div className="user-dropdown">
             <button
@@ -187,6 +215,17 @@ const Header = ({ toggleSidebar }) => {
                     >
                       👤 Thông tin cá nhân
                     </button>
+                    {(user?.role === 'seller' || user?.role === 'shipper' || user?.role === 'buyer') && (
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          navigate('/orders');
+                          setShowUserDropdown(false);
+                        }}
+                      >
+                        📦 Đơn hàng của tôi
+                      </button>
+                    )}
                     {user?.role === 'seller' && (
                       <button
                         className="dropdown-item"

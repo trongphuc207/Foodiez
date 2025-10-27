@@ -152,8 +152,8 @@ const SidebarComponent = ({ isOpen, onClose }) => {
           ))}
         </nav>
 
-        {/* Role Switching - hiển thị nếu là admin hoặc có nhiều role */}
-        {(user?.role?.toLowerCase() === 'admin' || user?.roles?.length > 1) && (
+        {/* Role Switching - chỉ hiển thị nếu người dùng có nhiều role và KHÔNG phải admin */}
+        {(user?.roles?.length > 1 && user?.role?.toLowerCase() !== 'admin') && (
           <div className="role-switching">
             <h3 className="role-switching-title">CHUYỂN ĐỔI VAI TRÒ</h3>
             <div className="role-buttons">

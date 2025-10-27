@@ -66,31 +66,45 @@ export const CartProvider = ({ children }) => {
   // Load cart from localStorage on mount
   useEffect(() => {
     const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
+    console.log('🛒 Loading cart from localStorage:', savedCart);
+    if (savedCart && savedCart !== '[]') {
       try {
         const cartData = JSON.parse(savedCart);
-        dispatch({ type: 'LOAD_CART', payload: cartData });
+        console.log('🛒 Parsed cart data:', cartData);
+        if (Array.isArray(cartData) && cartData.length > 0) {
+          dispatch({ type: 'LOAD_CART', payload: cartData });
+        }
       } catch (error) {
         console.error('Error loading cart from localStorage:', error);
+        // Clear corrupted data
+        localStorage.removeItem('cart');
       }
     }
   }, []);
 
   // Save cart to localStorage whenever cart changes
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(state.items));
+    console.log('🛒 Saving cart to localStorage:', state.items);
+    if (state.items && state.items.length > 0) {
+      localStorage.setItem('cart', JSON.stringify(state.items));
+    } else {
+      localStorage.removeItem('cart');
+    }
   }, [state.items]);
 
   // Cart actions
   const addToCart = (product) => {
+    console.log('🛒 Adding to cart:', product);
     dispatch({ type: 'ADD_TO_CART', payload: product });
   };
 
   const removeFromCart = (productId) => {
+    console.log('🛒 Removing from cart:', productId);
     dispatch({ type: 'REMOVE_FROM_CART', payload: productId });
   };
 
   const updateQuantity = (productId, quantity) => {
+    console.log('🛒 Updating quantity:', productId, quantity);
     if (quantity < 1) {
       removeFromCart(productId);
       return;
@@ -99,6 +113,7 @@ export const CartProvider = ({ children }) => {
   };
 
   const clearCart = () => {
+    console.log('🛒 Clearing cart');
     dispatch({ type: 'CLEAR_CART' });
   };
 
