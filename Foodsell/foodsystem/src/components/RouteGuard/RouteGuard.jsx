@@ -1,49 +1,62 @@
-import React from 'react'
-import { Navigate } from 'react-router-dom'
-import { useAuth } from '../../hooks/useAuth'
-import './RouteGuard.css'
+// Foodsell/foodsystem/src/components/RouteGuard/RouteGuard.jsx
+import React from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import './RouteGuard.css';
 
-const RouteGuard = ({ 
-  children, 
-  requiredRole = null, 
+/**
+ * RouteGuard: bảo vệ route theo role.
+ * - requiredRole: chuỗi role duy nhất (vd: 'admin' | 'seller' | 'shipper')
+ * - requiredRoles: mảng role cho phép (vd: ['seller','shipper'])
+ * - allowAdminBypass: cho phép tài khoản admin đi qua mọi route (mặc định: true)
+ * - redirectTo: trang điều hướng khi không đủ quyền (mặc định: '/')
+ * - showLoading: có hiển thị trạng thái loading khi đang load profile
+ */
+const RouteGuard = ({
+  children,
+  requiredRole = null,
   requiredRoles = [],
+  allowAdminBypass = true,
   redirectTo = '/',
-  showLoading = true 
+  showLoading = true,
 }) => {
-  const { user, loading, isAuthenticated } = useAuth()
+  const { user, loading, isAuthenticated } = useAuth();
 
-  // Hiển thị loading nếu đang kiểm tra authentication
+  // Đang kiểm tra đăng nhập
   if (loading && showLoading) {
     return (
       <div className="route-guard-loading">
-        <div className="loading-spinner"></div>
-        <div className="loading-text">Đang kiểm tra quyền truy cập...</div>
+        <div className="spinner" />
+        <div>Đang kiểm tra quyền truy cập…</div>
       </div>
-    )
+    );
   }
 
   // Chưa đăng nhập
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" replace />;
   }
 
-  // Không yêu cầu role cụ thể
-  if (!requiredRole && requiredRoles.length === 0) {
-    return children
+  const role = (user?.role || '').toLowerCase();
+
+  // ---- ADMIN BYPASS: admin đi qua tất cả các guard ----
+  if (allowAdminBypass && role === 'admin') {
+    return children;
   }
 
-  // Kiểm tra role đơn
-  if (requiredRole && user?.role !== requiredRole) {
-    return <Navigate to={redirectTo} replace />
+  // Yêu cầu 1 role duy nhất
+  if (requiredRole && role !== requiredRole.toLowerCase()) {
+    return <Navigate to={redirectTo} replace />;
   }
 
-  // Kiểm tra multiple roles
-  if (requiredRoles.length > 0 && !requiredRoles.includes(user?.role)) {
-    return <Navigate to={redirectTo} replace />
+  // Yêu cầu 1 trong nhiều role
+  if (requiredRoles.length > 0) {
+    const ok = requiredRoles.map(r => r.toLowerCase()).includes(role);
+    if (!ok) return <Navigate to={redirectTo} replace />;
   }
 
-  // Có quyền truy cập
-  return children
-}
+  // Đủ quyền
+  return children;
+};
 
-export default RouteGuard
+export default RouteGuard;
