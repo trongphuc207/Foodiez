@@ -268,9 +268,9 @@ const ShopDetail = () => {
                         {!product.available ? (
                           <span className="out-of-stock">✗ Không có sẵn</span>
                         ) : product.status === 'out_of_stock' ? (
-                          <span className="out-of-stock">✗ Hết hàng</span>
+                          <span className="out-of-stock">✗ Hết nguyên liệu</span>
                         ) : (
-                          <span className="in-stock">✓ Còn hàng</span>
+                          <span className="in-stock">✓ Có thể đặt</span>
                         )}
                       </div>
                       

@@ -100,7 +100,7 @@ const ProductDetail = ({ product, onClose }) => {
                 <span className={`status ${product.status}`}>
                   {product.status === 'active' ? 'Còn hàng' : 
                    product.status === 'inactive' ? 'Tạm ngừng' : 
-                   product.status === 'out_of_stock' ? 'Hết hàng' : product.status}
+                   product.status === 'out_of_stock' ? 'Hết nguyên liệu' : product.status}
                 </span>
               </div>
               

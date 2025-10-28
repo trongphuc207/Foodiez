@@ -384,6 +384,22 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - Customer stats only include completed orders
 - Best selling products are sorted by quantity sold, not revenue
 
+### ⚠️ Important: Food Delivery Model
+
+**This is a FOOD DELIVERY app, NOT inventory management:**
+
+- ❌ NO stock/inventory tracking
+- ✅ Products have `is_available` (có thể nấu) and `status` (trạng thái)
+- ✅ Orders are prepared AFTER customer places order
+- ✅ Status `out_of_stock` means "hết nguyên liệu" (out of ingredients), not inventory
+
+**Product Status:**
+- `active` - Đang bán (available to order)
+- `inactive` - Tạm ngừng (temporarily stopped)
+- `out_of_stock` - Hết nguyên liệu (out of ingredients)
+
+See `FOOD_DELIVERY_MODEL.md` for detailed explanation.
+
 ---
 
 ## Frontend Integration

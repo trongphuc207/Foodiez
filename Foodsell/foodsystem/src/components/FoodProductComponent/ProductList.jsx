@@ -167,7 +167,7 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
                   <span>Không có sẵn</span>
                 </div>
               )}
-              {product.available && product.status === 'out_of_stock' && (
+              {product.status === 'out_of_stock' && (
                 <div className="unavailable-overlay">
                   <span>Hết hàng</span>
                 </div>
@@ -185,7 +185,7 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
                   <span className={`status ${product.status}`}>
                     {product.status === 'active' ? '✅ Còn hàng' : 
                      product.status === 'inactive' ? '⏸️ Tạm ngừng' : 
-                     product.status === 'out_of_stock' ? '❌ Hết hàng' : product.status}
+                     product.status === 'out_of_stock' ? '🚫 Hết nguyên liệu' : product.status}
                   </span>
                 </div>
               </div>

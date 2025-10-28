@@ -3,7 +3,7 @@ import { adminAPI } from '../../api/admin';
 
 export default function ProductManagement() {
   const [products, setProducts] = useState([]);
-  const [form, setForm] = useState({ id: null, name: '', price: '', category: '', stock: '', image: '' });
+  const [form, setForm] = useState({ id: null, name: '', price: '', category: '', status: 'active', image: '' });
   const [isEdit, setIsEdit] = useState(false);
 
   const loadProducts = async () => {
@@ -22,7 +22,7 @@ export default function ProductManagement() {
         await adminAPI.addProduct(form);
       }
       await loadProducts();
-      setForm({ id: null, name: '', price: '', category: '', stock: '', image: '' });
+      setForm({ id: null, name: '', price: '', category: '', status: 'active', image: '' });
       setIsEdit(false);
     } catch (err) {
       alert(err.message);
@@ -76,13 +76,15 @@ export default function ProductManagement() {
             />
           </div>
           <div className="col-md-2">
-            <input
-              type="number"
-              placeholder="Tồn kho"
+            <select
               className="form-control"
-              value={form.stock}
-              onChange={(e) => setForm({ ...form, stock: e.target.value })}
-            />
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value })}
+            >
+              <option value="active">✅ Đang bán</option>
+              <option value="inactive">⏸️ Tạm ngừng</option>
+              <option value="out_of_stock">🚫 Hết nguyên liệu</option>
+            </select>
           </div>
           <div className="col-md-3">
             <input
@@ -103,7 +105,7 @@ export default function ProductManagement() {
               type="button"
               className="btn btn-secondary ms-2 px-4"
               onClick={() => {
-                setForm({ id: null, name: '', price: '', category: '', stock: '', image: '' });
+                setForm({ id: null, name: '', price: '', category: '', status: 'active', image: '' });
                 setIsEdit(false);
               }}
             >
@@ -121,7 +123,7 @@ export default function ProductManagement() {
             <th>Tên sản phẩm</th>
             <th>Danh mục</th>
             <th>Giá (VNĐ)</th>
-            <th>Tồn kho</th>
+            <th>Trạng thái</th>
             <th>Hành động</th>
           </tr>
         </thead>
@@ -136,7 +138,11 @@ export default function ProductManagement() {
                 <td>{p.name}</td>
                 <td>{p.category}</td>
                 <td>{p.price.toLocaleString()}</td>
-                <td>{p.stock}</td>
+                <td>
+                  {p.status === 'active' ? '✅ Đang bán' : 
+                   p.status === 'inactive' ? '⏸️ Tạm ngừng' : 
+                   p.status === 'out_of_stock' ? '🚫 Hết NL' : p.status}
+                </td>
                 <td>
                   <button className="btn btn-warning btn-sm me-2" onClick={() => handleEdit(p)}>Sửa</button>
                   <button className="btn btn-danger btn-sm" onClick={() => handleDelete(p.id)}>Xóa</button>

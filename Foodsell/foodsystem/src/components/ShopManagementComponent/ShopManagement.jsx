@@ -644,7 +644,7 @@ const ShopManagement = () => {
                     >
                       <option value="active">✅ Đang bán</option>
                       <option value="inactive">⏸️ Tạm ngừng bán</option>
-                      <option value="out_of_stock">❌ Hết hàng</option>
+                      <option value="out_of_stock">🚫 Hết nguyên liệu</option>
                     </select>
                   </div>
                   <div className="form-actions">
@@ -706,7 +706,7 @@ const ShopManagement = () => {
                       <span className={`status ${product.status === 'active' ? 'available' : 'unavailable'}`}>
                         {product.status === 'active' ? '✅ Còn hàng' : 
                          product.status === 'inactive' ? '⏸️ Tạm ngừng' : 
-                         product.status === 'out_of_stock' ? '❌ Hết hàng' : '❌ Không xác định'}
+                         product.status === 'out_of_stock' ? '🚫 Hết nguyên liệu' : '❌ Không xác định'}
                       </span>
                     </div>
                   </div>
