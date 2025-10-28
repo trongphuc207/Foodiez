@@ -303,13 +303,11 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
   z-index: 1000;
   overflow-y: auto;
-  padding: 20px 0;
-  scroll-behavior: smooth;
+  overflow-x: hidden;
+  padding: 0;
+  display: block;
 }
 
 .modal-content {
@@ -318,20 +316,19 @@
   padding: 30px;
   max-width: 600px;
   width: 90%;
-  margin: 0 auto;
+  margin: 20px auto;
   position: relative;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   animation: modalFadeIn 0.3s ease-out;
+  min-height: 200px;
 }
 
 @keyframes modalFadeIn {
   from {
     opacity: 0;
-    transform: translateY(-20px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -640,12 +637,12 @@
   }
 
   .modal-overlay {
-    padding: 10px 0;
+    padding: 0;
   }
   
   .modal-content {
     padding: 20px;
-    margin: 0 auto;
+    margin: 10px auto;
     width: 95%;
   }
   

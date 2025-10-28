@@ -81,4 +81,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     
     // Find by orderCode (PayOS order code)
     Optional<Order> findByOrderCode(Integer orderCode);
+    
+    // Count orders by shop ID and status
+    long countByShopIdAndStatus(Integer shopId, String status);
 }

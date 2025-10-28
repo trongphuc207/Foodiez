@@ -44,7 +44,17 @@ const ShopManagement = () => {
       // Prevent body scroll
       document.body.style.overflow = 'hidden';
       
-      // Scroll modal overlay to top
+      // Force scroll to top immediately
+      requestAnimationFrame(() => {
+        const modalOverlay = document.querySelector('.modal-overlay');
+        if (modalOverlay) {
+          modalOverlay.scrollTop = 0;
+          modalOverlay.scrollTo({ top: 0, behavior: 'instant' });
+        }
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      });
+      
+      // Additional safety scroll after render
       setTimeout(() => {
         const modalOverlay = document.querySelector('.modal-overlay');
         if (modalOverlay) {
@@ -126,11 +136,9 @@ const ShopManagement = () => {
   // Mutations
   const createProductMutation = useMutation({
     mutationFn: productAPI.createProduct,
-    onSuccess: () => {
+    onSuccess: (result) => {
+      console.log('✅ Product created successfully:', result);
       queryClient.invalidateQueries(['products']);
-      setShowProductForm(false);
-      setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, is_available: true, status: 'active' });
-      alert('✅ Thêm món ăn thành công!');
     },
     onError: (error) => {
       console.error('❌ Create product error:', error);
@@ -202,12 +210,9 @@ const ShopManagement = () => {
       // All attempts failed
       throw lastError;
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      console.log('✅ Product updated successfully:', result);
       queryClient.invalidateQueries(['products']);
-      setShowProductForm(false);
-      setEditingProduct(null);
-      setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, is_available: true, status: 'active' });
-      alert('✅ Cập nhật món ăn thành công!');
     },
     onError: (error) => {
       console.error('❌ Update product error:', error);
@@ -296,45 +301,56 @@ const ShopManagement = () => {
 
     console.log('📤 Sending product data:', productData);
 
-    try {
-      let productResult;
-      
-      if (editingProduct) {
-        // Update existing product
-        productResult = await productAPI.updateProduct(editingProduct.id, productData);
-      } else {
-        // Create new product
-        productResult = await productAPI.createProduct(productData);
-      }
-      
-      // Upload image if provided
-      if (productForm.image && productResult?.data?.id) {
-        console.log('📤 Uploading image for product:', productResult.data.id);
+    // Upload image after product creation/update if image is provided
+    const uploadImageIfNeeded = async (productId) => {
+      if (productForm.image && productId) {
+        console.log('📤 Uploading image for product:', productId);
         setIsUploadingImage(true);
         try {
-          const uploadResult = await productAPI.uploadProductImage(productResult.data.id, productForm.image);
+          const uploadResult = await productAPI.uploadProductImage(productId, productForm.image);
           console.log('✅ Image uploaded successfully:', uploadResult);
-          setProductImageUrl(uploadResult.data?.imageUrl);
+          queryClient.invalidateQueries(['products']);
         } catch (imageError) {
           console.error('❌ Image upload failed:', imageError);
-          alert('⚠️ Sản phẩm đã được tạo/cập nhật nhưng không thể tải ảnh lên. Vui lòng thử lại sau.');
+          alert('⚠️ Sản phẩm đã được ' + (editingProduct ? 'cập nhật' : 'tạo') + ' nhưng không thể tải ảnh lên. Vui lòng thử lại sau.');
         } finally {
           setIsUploadingImage(false);
         }
       }
-      
-      // Success
-      queryClient.invalidateQueries(['products']);
+    };
+
+    // Cleanup and close modal after success
+    const cleanupAndClose = () => {
       setShowProductForm(false);
       setEditingProduct(null);
       setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, is_available: true, status: 'active' });
       setProductImageUrl(null);
       setIsUploadingImage(false);
-      alert('✅ ' + (editingProduct ? 'Cập nhật' : 'Thêm') + ' món ăn thành công!');
-      
-    } catch (error) {
-      console.error('❌ Product operation failed:', error);
-      alert('❌ Lỗi khi ' + (editingProduct ? 'cập nhật' : 'thêm') + ' món ăn: ' + error.message);
+    };
+
+    // Use mutations to handle create/update
+    if (editingProduct) {
+      // Update existing product
+      updateProductMutation.mutate(
+        { id: editingProduct.id, data: productData },
+        {
+          onSuccess: async (result) => {
+            await uploadImageIfNeeded(editingProduct.id);
+            alert('✅ Cập nhật món ăn thành công!');
+            cleanupAndClose();
+          }
+        }
+      );
+    } else {
+      // Create new product
+      createProductMutation.mutate(productData, {
+        onSuccess: async (result) => {
+          const newProductId = result?.data?.id;
+          await uploadImageIfNeeded(newProductId);
+          alert('✅ Thêm món ăn thành công!');
+          cleanupAndClose();
+        }
+      });
     }
   };
 
@@ -408,8 +424,10 @@ const ShopManagement = () => {
         price: product.price.toString(),
         categoryId: product.categoryId,
         image: null,
+        is_available: product.is_available !== undefined ? product.is_available : product.available !== undefined ? product.available : true,
         status: product.status || 'active'
       });
+      setProductImageUrl(product.imageUrl || product.image_url);
       setShowProductForm(true);
     }
   };
@@ -505,7 +523,8 @@ const ShopManagement = () => {
               className="btn btn-primary"
               onClick={() => {
                 setEditingProduct(null);
-                setProductForm({ name: '', description: '', price: '', categoryId: '', image: null });
+                setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, is_available: true, status: 'active' });
+                setProductImageUrl(null);
                 setShowProductForm(true);
               }}
             >
