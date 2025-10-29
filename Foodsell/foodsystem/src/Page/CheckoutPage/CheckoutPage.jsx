@@ -19,6 +19,7 @@ const CheckoutPage = () => {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [appliedVoucher, setAppliedVoucher] = useState(null);
   const [voucherDiscount, setVoucherDiscount] = useState(0);
+  const [selectedShippingFee, setSelectedShippingFee] = useState(15000); // Default base fee
 
   // Kiểm tra authentication - chờ load xong trạng thái đăng nhập rồi mới quyết định
   useEffect(() => {
@@ -90,8 +91,6 @@ const CheckoutPage = () => {
       active: currentStep === 3
     }
   ];
-
-  const [selectedShippingFee, setSelectedShippingFee] = useState(15000); // Default base fee
 
   const handleDeliverySubmit = (data) => {
     const { shippingDetails, ...deliveryData } = data;
