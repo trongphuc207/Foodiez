@@ -56,7 +56,6 @@ public class AdminRepository {
     public List<AdminUserDTO> findAllUsers() {
         String sql = """
             SELECT id, full_name, email, phone, address, role,
-            SELECT id, full_name, email, role,
                    CAST(ISNULL(is_banned, 0) AS BIT) AS banned
             FROM users
         """;
@@ -72,7 +71,6 @@ public class AdminRepository {
             rs.getBoolean("banned"),
             rs.getString("phone"),
             rs.getString("address")
-            rs.getBoolean("banned")
         );
     }
 
@@ -206,10 +204,6 @@ public class AdminRepository {
                 created_at
             FROM vouchers
             ORDER BY expiry_date DESC, id DESC
-        String sql = """
-            SELECT id, code, discount, expiry_date
-            FROM vouchers
-            ORDER BY expiry_date DESC
         """;
         return jdbc.queryForList(sql);
     }
