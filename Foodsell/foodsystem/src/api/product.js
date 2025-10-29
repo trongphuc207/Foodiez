@@ -49,7 +49,12 @@ export const getAllProducts = async () => {
   if (!response.ok) {
     throw new Error('Failed to fetch products');
   }
-  return response.json();
+  const json = await response.json();
+  const arr = Array.isArray(json) ? json : json?.data ?? [];
+  return arr.filter(p => {
+    const status = (p.status || 'active').toString().toLowerCase();
+    return p.available !== false && status === 'active';
+  });
 };
 
 export const searchProducts = async (keyword) => {
@@ -57,7 +62,12 @@ export const searchProducts = async (keyword) => {
   if (!response.ok) {
     throw new Error('Failed to search products');
   }
-  return response.json();
+  const json = await response.json();
+  const arr = Array.isArray(json) ? json : json?.data ?? [];
+  return arr.filter(p => {
+    const status = (p.status || 'active').toString().toLowerCase();
+    return p.available !== false && status === 'active';
+  });
 };
 
 export const createProduct = async (productData) => {
@@ -82,7 +92,12 @@ export const productAPI = {
     if (!response.ok) {
       throw new Error('Failed to fetch products');
     }
-    return response.json();
+    const json = await response.json();
+    const arr = Array.isArray(json) ? json : json?.data ?? [];
+    return arr.filter(p => {
+      const status = (p.status || 'active').toString().toLowerCase();
+      return p.available !== false && status === 'active';
+    });
   },
 
   // Tìm kiếm sản phẩm
@@ -91,7 +106,12 @@ export const productAPI = {
     if (!response.ok) {
       throw new Error('Failed to search products');
     }
-    return response.json();
+    const json = await response.json();
+    const arr = Array.isArray(json) ? json : json?.data ?? [];
+    return arr.filter(p => {
+      const status = (p.status || 'active').toString().toLowerCase();
+      return p.available !== false && status === 'active';
+    });
   },
 
   // Lấy sản phẩm theo shop ID
@@ -101,7 +121,7 @@ export const productAPI = {
     if (!response.ok) {
       throw new Error('Failed to fetch products by shop');
     }
-    const data = await response.json();
+  const data = await response.json();
     console.log('📥 API: Products data:', data);
     if (data.data && data.data.length > 0) {
       console.log('📦 First product details:', data.data[0]);
@@ -111,7 +131,12 @@ export const productAPI = {
         image: data.data[0].image
       });
     }
-    return data;
+    const arr = data?.data ?? data ?? [];
+    const filtered = arr.filter(p => {
+      const status = (p.status || 'active').toString().toLowerCase();
+      return p.available !== false && status === 'active';
+    });
+    return { ...data, data: filtered };
   },
 
   // Lấy sản phẩm theo ID

@@ -43,6 +43,10 @@ public class ProductService {
     public Product updateProduct(Product product) {
         return repo.save(product);
     }
+
+    public void deleteProductById(int id) {
+        repo.deleteById(id);
+    }
     
     public String seedData() {
         try {
