@@ -7,6 +7,7 @@ import Users from "./Users";
 import Orders from "./Orders";
 import Vouchers from "./Vouchers";
 import Reports from "./Reports";
+import Product from "./ProductManagement";
 import "./admin.css";
 import ProductManagement from "./ProductManagement";
 

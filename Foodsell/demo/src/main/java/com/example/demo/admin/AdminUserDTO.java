@@ -12,6 +12,7 @@ public class AdminUserDTO {
     public AdminUserDTO() {}
 
     public AdminUserDTO(int id, String name, String email, String role, boolean banned, String phone, String address) {
+    public AdminUserDTO(int id, String name, String email, String role, boolean banned) {
         this.id = id;
         this.name = name;
         this.email = email;

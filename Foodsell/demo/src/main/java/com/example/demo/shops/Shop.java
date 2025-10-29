@@ -31,8 +31,8 @@ public class Shop {
     @Column(name = "opening_hours")
     private String openingHours;
 
-    @Column(name = "rating")
-    private Double rating;
+    @Column(name = "rating", columnDefinition = "float")
+    private Float rating;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

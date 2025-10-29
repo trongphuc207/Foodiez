@@ -23,6 +23,11 @@ const normalizeDashboard = (raw) => {
     vouchers: Number(dto.totalVouchers ?? 0),
     revenue: Number(dto.totalRevenue ?? dto.monthlyRevenue ?? 0),
     totalStock: Number(dto.totalStock ?? dto.sumProductStock ?? 0),
+    users: dto.totalUsers ?? 0,
+    orders: dto.totalOrders ?? 0,
+    products: dto.totalProducts ?? 0,
+    vouchers: dto.totalVouchers ?? 0,
+    revenue: dto.totalRevenue ?? 0,
   };
 };
 
@@ -306,6 +311,21 @@ export const adminAPI = {
       } catch (e) { lastErr = e; }
     }
     throw lastErr || new Error('Không thể xóa người dùng');
+
+  // ===== Users =====
+  getUsers: async () => {
+    const res = await fetch(`${API_BASE_URL}/users`, { headers: getHeaders() });
+    if (!res.ok) throw new Error('Không thể tải danh sách người dùng');
+    const data = await res.json();
+    const arr = Array.isArray(data) ? data : data?.data ?? [];
+    return arr.map((u) => ({
+      id: u.id ?? u.userId ?? u.ID,
+      name: u.name ?? u.full_name ?? u.username ?? 'N/A',
+      email: u.email ?? 'N/A',
+      role: u.role ?? 'customer',
+      banned: u.banned ?? u.isBanned ?? u.is_banned ?? false,
+      status: (u.banned || u.isBanned || u.is_banned) ? 'BANNED' : 'ACTIVE',
+    }));
   },
 
  // ...existing code...
@@ -355,6 +375,42 @@ export const adminAPI = {
       } catch (e) { lastErr = e; }
     }
     throw new Error(`Không thể unban người dùng (${lastStatus || 'unknown'}): ${lastBody || (lastErr?.message || '')}`);
+    const res = await fetch(`${API_BASE_URL}/users/${userId}/ban`, {
+      method: 'POST',
+      headers: { ...getHeaders(), Accept: 'application/json' },
+      // một số API backend cần body even for POST:
+      body: JSON.stringify({}),
+    });
+    if (res.ok) {
+      try { return await res.json(); } catch { return {}; }
+    }
+    let bodyText;
+    try {
+      const txt = await res.text();
+      try { bodyText = JSON.parse(txt); } catch { bodyText = txt; }
+    } catch (e) {
+      bodyText = 'Không đọc được body';
+    }
+    throw new Error(`Không thể ban người dùng (status ${res.status}): ${JSON.stringify(bodyText)}`);
+  },
+
+  unbanUser: async (userId) => {
+    const res = await fetch(`${API_BASE_URL}/users/${userId}/unban`, {
+      method: 'POST',
+      headers: { ...getHeaders(), Accept: 'application/json' },
+      body: JSON.stringify({}),
+    });
+    if (res.ok) {
+      try { return await res.json(); } catch { return {}; }
+    }
+    let bodyText;
+    try {
+      const txt = await res.text();
+      try { bodyText = JSON.parse(txt); } catch { bodyText = txt; }
+    } catch (e) {
+      bodyText = 'Không đọc được body';
+    }
+    throw new Error(`Không thể unban người dùng (status ${res.status}): ${JSON.stringify(bodyText)}`);
   },
 // ...existing code...
 
@@ -386,6 +442,9 @@ export const adminAPI = {
       } catch (e) { lastErr = e; }
     }
     throw lastErr || new Error('Không thể tải danh sách đơn hàng');
+    const res = await fetch(`${API_BASE_URL}/orders`, { headers: getHeaders() });
+    if (!res.ok) throw new Error('Không thể tải danh sách đơn hàng');
+    return res.json();
   },
 
   // ===== Vouchers =====
@@ -495,6 +554,9 @@ export const adminAPI = {
       } catch (e) { lastErr = e; }
     }
     throw lastErr || new Error('Không thể xóa voucher');
+    const res = await fetch(`${API_BASE_URL}/vouchers`, { headers: getHeaders() });
+    if (!res.ok) throw new Error('Không thể tải danh sách voucher');
+    return res.json();
   },
 
   // ===== Reports =====
@@ -655,6 +717,46 @@ export const adminAPI = {
       } catch (e) { lastErr = e; }
     }
     throw lastErr || new Error('Không thể upload ảnh sản phẩm');
+    const res = await fetch(`${API_BASE_URL}/products`, { headers: getHeaders() });
+    if (!res.ok) throw new Error('Không thể tải danh sách sản phẩm');
+    const json = await res.json();
+    const arr = Array.isArray(json) ? json : json?.data ?? [];
+    return arr.map((p) => ({
+      id: p.id ?? 0,
+      name: p.name ?? 'N/A',
+      price: p.price ?? 0,
+      category: p.category ?? 'Chưa phân loại',
+      stock: p.stock_quantity ?? 0,
+    }));
+  },    
+  // ===== PRODUCTS CRUD =====
+  addProduct: async (product) => {
+    const res = await fetch(`${API_BASE_URL}/products`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(product),
+    });
+    if (!res.ok) throw new Error('Không thể thêm sản phẩm');
+    return res.json();
+  },
+
+  updateProduct: async (id, product) => {
+    const res = await fetch(`${API_BASE_URL}/products/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(product),
+    });
+    if (!res.ok) throw new Error('Không thể cập nhật sản phẩm');
+    return res.json();
+  },
+
+  deleteProduct: async (id) => {
+    const res = await fetch(`${API_BASE_URL}/products/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error('Không thể xóa sản phẩm');
+    return res.json();
   },
 
 

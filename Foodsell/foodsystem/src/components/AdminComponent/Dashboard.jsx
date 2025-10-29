@@ -74,6 +74,16 @@ export default function Dashboard() {
         <StatCard title="Sản phẩm có sẵn" value={fmtNumber(availableProductCount)} icon="📦" onClick={()=>navigate('products')} />
         <StatCard title="Tổng doanh thu" value={fmtMoney(totalRevenue)} icon="💰" onClick={()=>navigate('reports')} />
         <StatCard title="Voucher" value={fmtNumber(stats.vouchers)} icon="🎟️" onClick={()=>navigate('vouchers')} />
+  return (
+    <div className="container mt-4">
+      <h2 className="text-center mb-4">📊 Bảng điều khiển Admin</h2>
+      <div className="row g-3">
+        <StatCard title="👥 Người dùng" value={stats.users} color="primary" />
+        <StatCard title="🛍️ Đơn hàng" value={stats.orders} color="success" />
+        <StatCard title="📦 Sản phẩm" value={stats.products} color="warning" />
+        <StatCard title="💰 Doanh thu tháng" value={stats.revenue.toLocaleString() + ' VNĐ'} color="info" />
+        <StatCard title="🎟️ Voucher" value={stats.vouchers} color="secondary" />
+        <StatCard title="📦 Tồn kho tổng" value={stats.totalStock} color="danger" />
       </div>
 
       <div className="mt-5 text-center">
@@ -88,3 +98,16 @@ export default function Dashboard() {
   );
 }
  
+
+function StatCard({ title, value, color }) {
+  return (
+    <div className="col-md-4">
+      <div className={`card border-${color} shadow-sm`}>
+        <div className={`card-body text-${color}`}>
+          <h5 className="card-title">{title}</h5>
+          <h3 className="fw-bold">{value}</h3>
+        </div>
+      </div>
+    </div>
+  );
+}
