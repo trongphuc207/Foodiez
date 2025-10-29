@@ -32,6 +32,7 @@ export default function AdminApp() {
             <Route path="vouchers" element={<Vouchers />} />
             <Route path="reports" element={<Reports />} />
             <Route path="products" element={<ProductManagement />} />
+
             {/* fallback */}
             <Route path="*" element={<Dashboard />} />
           </Routes>

@@ -18,7 +18,7 @@ export default function Sidebar() {
 
   return (
     <aside className="admin-sidebar">
-      <div className="admin-logo">Foodiez Admin</div>
+      <div className="admin-logo">🍽️Foodiez Admin</div>
       <ul className="admin-nav">
         {navs.map((n) => (
           <li key={n.path}>
