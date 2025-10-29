@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import com.example.demo.ApiResponse;
+import com.example.demo.dto.ApiResponse;
 
 @RestController
 @RequestMapping("/api/seller")
@@ -37,10 +37,10 @@ public class SellerController {
             } else {
                 orders = orderService.getAllOrders();
             }
-            return ResponseEntity.ok(new ApiResponse(true, "Orders fetched successfully", orders));
+            return ResponseEntity.ok(new ApiResponse<>(true, "Orders fetched successfully", orders));
         } catch (Exception e) {
-            return ResponseEntity.status(500)
-                    .body(new ApiResponse(false, "Failed to fetch orders: " + e.getMessage()));
+        return ResponseEntity.status(500)
+            .body(new ApiResponse<>(false, "Failed to fetch orders: " + e.getMessage(), null));
         }
     }
 
@@ -53,14 +53,14 @@ public class SellerController {
         try {
             String newStatus = request.get("status");
             if (newStatus == null) {
-                return ResponseEntity.badRequest()
-                        .body(new ApiResponse(false, "Status is required"));
+        return ResponseEntity.badRequest()
+            .body(new ApiResponse<>(false, "Status is required", null));
             }
             OrderDTO updatedOrder = orderService.updateOrderStatus(orderId, newStatus);
-            return ResponseEntity.ok(new ApiResponse(true, "Order status updated successfully", updatedOrder));
+            return ResponseEntity.ok(new ApiResponse<>(true, "Order status updated successfully", updatedOrder));
         } catch (Exception e) {
             return ResponseEntity.status(500)
-                    .body(new ApiResponse(false, "Failed to update order status: " + e.getMessage()));
+                    .body(new ApiResponse<>(false, "Failed to update order status: " + e.getMessage(), null));
         }
     }
 
@@ -70,10 +70,10 @@ public class SellerController {
     public ResponseEntity<?> getOrderDetails(@PathVariable Integer orderId) {
         try {
             OrderDTO order = orderService.getOrderById(orderId);
-            return ResponseEntity.ok(new ApiResponse(true, "Order details fetched successfully", order));
+            return ResponseEntity.ok(new ApiResponse<>(true, "Order details fetched successfully", order));
         } catch (Exception e) {
-            return ResponseEntity.status(500)
-                    .body(new ApiResponse(false, "Failed to fetch order details: " + e.getMessage()));
+        return ResponseEntity.status(500)
+            .body(new ApiResponse<>(false, "Failed to fetch order details: " + e.getMessage(), null));
         }
     }
     
