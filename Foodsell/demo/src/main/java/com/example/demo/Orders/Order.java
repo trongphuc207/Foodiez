@@ -27,7 +27,7 @@ public class Order {
     @Column(name = "delivery_address_id", nullable = false)
     private Integer deliveryAddressId;
 
-    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
+    @Column(name = "total_amount", nullable = false, precision = 19, scale = 4)
     private BigDecimal totalAmount;
 
     @Column(name = "status", nullable = false)

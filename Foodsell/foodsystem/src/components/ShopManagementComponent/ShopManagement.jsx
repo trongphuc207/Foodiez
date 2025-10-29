@@ -5,6 +5,7 @@ import { productAPI, testServerConnection } from '../../api/product';
 import { shopAPI } from '../../api/shop';
 import categoryAPI from '../../api/category';
 import ImageUpload from '../AdminComponent/ImageUpload';
+import OrdersList from './OrdersList';
 import './ShopManagement.css';
 
 const ShopManagement = () => {
@@ -14,7 +15,7 @@ const ShopManagement = () => {
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [showShopForm, setShowShopForm] = useState(false);
-  const [showRatings, setShowRatings] = useState(false);
+  const [orderStatus, setOrderStatus] = useState('all'); // Filter orders by status
 
   // Form states
   const [productForm, setProductForm] = useState({
@@ -46,7 +47,7 @@ const ShopManagement = () => {
   });
 
   // Fetch products
-  const { data: productsData, isLoading: productsLoading } = useQuery({
+  const { data: productsData, isLoading: productsLoading, error: productsError } = useQuery({
     queryKey: ['products', shopData?.data?.id],
     queryFn: () => productAPI.getProductsByShopId(shopData?.data?.id),
     enabled: !!shopData?.data?.id
@@ -460,6 +461,12 @@ const ShopManagement = () => {
           🍽️ Quản lý món ăn
         </button>
         <button 
+          className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
+          onClick={() => setActiveTab('orders')}
+        >
+          📦 Quản lý đơn hàng
+        </button>
+        <button 
           className={`tab-btn ${activeTab === 'shop' ? 'active' : ''}`}
           onClick={() => setActiveTab('shop')}
         >
@@ -616,6 +623,13 @@ const ShopManagement = () => {
           <div className="products-list">
             {productsLoading ? (
               <div className="loading">Đang tải danh sách món ăn...</div>
+            ) : productsError ? (
+              <div className="error-fetch-products">
+                <h4>Không thể tải danh sách món ăn</h4>
+                <p>Nguyên nhân: {productsError.message || 'Lỗi khi kết nối tới server'}</p>
+                <p>Hành động gợi ý: hãy đăng nhập lại (nếu bạn là chủ cửa hàng) hoặc kiểm tra kết nối server.</p>
+                <button className="btn" onClick={() => window.location.reload()}>Thử tải lại</button>
+              </div>
             ) : productsData?.data?.length > 0 ? (
               productsData.data.map(product => (
                 <div 
@@ -780,6 +794,19 @@ const ShopManagement = () => {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {activeTab === 'orders' && (
+        <div className="orders-section">
+          <div className="section-header">
+            <h2>Quản lý đơn hàng</h2>
+          </div>
+          <OrdersList 
+            shopId={shopData.data.id} 
+            status={orderStatus} 
+            onStatusChange={setOrderStatus} 
+          />
         </div>
       )}
 

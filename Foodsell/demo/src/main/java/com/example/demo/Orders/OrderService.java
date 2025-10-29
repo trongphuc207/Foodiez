@@ -3,6 +3,7 @@ package com.example.demo.Orders;
 import com.example.demo.dto.OrderDTO;
 import com.example.demo.dto.OrderItemDTO;
 import com.example.demo.products.ProductService;
+import com.example.demo.products.ProductBasicDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,7 +42,7 @@ public class OrderService {
                 .map(this::convertToOrderDTO)
                 .collect(Collectors.toList());
     }
-    
+
     public OrderDTO getOrderById(Integer id) {
         Order order = orderRepository.findById(id).orElse(null);
         if (order != null) {
@@ -49,6 +50,40 @@ public class OrderService {
             return convertToOrderDTO(order);
         }
         return null;
+    }
+
+    @Transactional
+    public OrderDTO updateOrderStatus(Integer orderId, String newStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (!isValidStatusTransition(order.getStatus(), newStatus)) {
+            throw new IllegalStateException("Invalid status transition from " + order.getStatus() + " to " + newStatus);
+        }
+
+        order.setStatus(newStatus);
+        order.setUpdatedAt(LocalDateTime.now());
+
+        // Save order history
+        OrderHistory history = new OrderHistory(
+            orderId,
+            order.getStatus(),  // statusFrom
+            newStatus,         // statusTo
+            "status_updated",  // action
+            "Order status updated from " + order.getStatus() + " to " + newStatus,
+            "system"          // createdBy
+        );
+        orderHistoryRepository.save(history);
+
+        Order savedOrder = orderRepository.save(order);
+        savedOrder.setOrderItems(orderItemRepository.findByOrderId(savedOrder.getId()));
+        return convertToOrderDTO(savedOrder);
+    }
+
+    private boolean isValidStatusTransition(String currentStatus, String newStatus) {
+        // Add your status transition validation logic here
+        // Example: pending -> confirmed -> preparing -> ready -> delivering -> completed
+        return true; // Temporary implementation, add your logic
     }
     
     public List<OrderDTO> getOrdersByBuyerId(Integer buyerId) {
@@ -83,6 +118,14 @@ public class OrderService {
                                           List<Map<String, Object>> cartItems, Integer payosOrderCode, 
                                           Integer totalAmount, String status) {
         try {
+            // Validate inputs
+            if (totalAmount == null || totalAmount <= 0) {
+                throw new IllegalArgumentException("Total amount must be greater than 0");
+            }
+            if (cartItems == null || cartItems.isEmpty()) {
+                throw new IllegalArgumentException("Cart items cannot be empty");
+            }
+            
             System.out.println("Creating order with PayOS order code: " + payosOrderCode);
             
             // Create new order
@@ -148,14 +191,27 @@ public class OrderService {
                     
                     // Convert price to BigDecimal safely
                     BigDecimal unitPrice;
-                    if (priceObj instanceof Integer) {
-                        unitPrice = new BigDecimal((Integer) priceObj);
-                    } else if (priceObj instanceof Double) {
-                        unitPrice = new BigDecimal((Double) priceObj);
-                    } else if (priceObj instanceof String) {
-                        unitPrice = new BigDecimal((String) priceObj);
-                    } else {
-                        System.err.println("❌ Invalid price type: " + priceObj.getClass());
+                    try {
+                        if (priceObj instanceof Integer) {
+                            unitPrice = new BigDecimal((Integer) priceObj);
+                        } else if (priceObj instanceof Double) {
+                            unitPrice = new BigDecimal((Double) priceObj);
+                        } else if (priceObj instanceof String) {
+                            unitPrice = new BigDecimal((String) priceObj);
+                        } else {
+                            System.err.println("❌ Invalid price type: " + priceObj.getClass());
+                            continue;
+                        }
+                        
+                        // Validate unit price
+                        if (unitPrice.compareTo(BigDecimal.ZERO) <= 0) {
+                            throw new IllegalArgumentException("Unit price must be greater than 0");
+                        }
+                        if (unitPrice.precision() > 19) {
+                            throw new IllegalArgumentException("Unit price has too many digits");
+                        }
+                    } catch (NumberFormatException e) {
+                        System.err.println("❌ Invalid price format: " + priceObj);
                         continue;
                     }
                     
@@ -299,7 +355,7 @@ public class OrderService {
         return dto;
     }
     
-    // Convert OrderItem entity to OrderItemDTO
+    // Convert OrderItem entity to OrderItemDTO efficiently using cached basic info
     private OrderItemDTO convertToOrderItemDTO(OrderItem orderItem) {
         OrderItemDTO dto = new OrderItemDTO();
         dto.setId(orderItem.getId());
@@ -309,24 +365,18 @@ public class OrderService {
         dto.setUnitPrice(orderItem.getUnitPrice());
         dto.setTotalPrice(orderItem.getTotalPrice());
         
-        // Lấy thông tin sản phẩm từ ProductService
+        // Use cached basic product info to avoid full product loading
         try {
-            System.out.println("🔍 DEBUG: Looking for product ID: " + orderItem.getProductId());
-            var product = productService.getProductById(orderItem.getProductId());
-            if (product.isPresent()) {
-                var productData = product.get();
-                String productName = productData.getName();
-                String productImage = productData.getImageUrl();
-                System.out.println("🔍 DEBUG: Found product: " + productName + ", Image: " + productImage);
-                dto.setProductName(productName);
-                dto.setProductImage(productImage);
+            ProductBasicDTO basicInfo = productService.getProductBasicInfo(orderItem.getProductId());
+            if (basicInfo != null) {
+                dto.setProductName(basicInfo.getName());
+                dto.setProductImage(basicInfo.getImageUrl());
             } else {
-                System.out.println("🔍 DEBUG: Product not found for ID: " + orderItem.getProductId());
-                dto.setProductName("Sản phẩm không tồn tại (ID: " + orderItem.getProductId() + ")");
+                dto.setProductName("Sản phẩm #" + orderItem.getProductId());
             }
         } catch (Exception e) {
-            System.out.println("🔍 DEBUG: Error getting product: " + e.getMessage());
-            dto.setProductName("Không thể lấy tên sản phẩm: " + e.getMessage());
+            dto.setProductName("Sản phẩm #" + orderItem.getProductId());
+            System.out.println("Warning: Could not load product basic info for ID " + orderItem.getProductId() + ": " + e.getMessage());
         }
         
         return dto;

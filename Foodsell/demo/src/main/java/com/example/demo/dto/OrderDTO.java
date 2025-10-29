@@ -19,11 +19,13 @@ public class OrderDTO {
     private String status;
     private Integer voucherId;
     private String notes;
+    private Integer orderCode;
     private String recipientName;
     private String recipientPhone;
     private String addressText;
     private BigDecimal latitude;
     private BigDecimal longitude;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private List<OrderItemDTO> orderItems;
 }

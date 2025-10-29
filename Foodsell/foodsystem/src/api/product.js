@@ -97,7 +97,10 @@ export const productAPI = {
   // Lấy sản phẩm theo shop ID
   getProductsByShopId: async (shopId) => {
     console.log('📤 API: Fetching products for shop:', shopId);
-    const response = await fetch(`${API_BASE_URL}/products/shop/${shopId}`);
+    // Include auth headers when available so owner-only endpoints can be accessed
+    const response = await fetch(`${API_BASE_URL}/products/shop/${shopId}`, {
+      headers: getAuthHeaders()
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch products by shop');
     }

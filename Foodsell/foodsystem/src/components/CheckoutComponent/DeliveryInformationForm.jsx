@@ -74,7 +74,8 @@ const districts = {
   const mainStreetList = [
     'lê duẩn','le duan','trần phú','tran phu','nguyễn văn linh','nguyen van linh','nguyễn chí thanh','nguyen chi thanh',
     'phạm văn đồng','pham van dong','hùng vương','hung vuong','hoàng diệu','hoang dieu','ngô quyền','ngo quyen',
-    'nguyễn văn thọ','nguyen van thoai','đặng thị nho','dang thi nho','quang trung','quang trung','phan đình phùng','phan dinh phung'
+    'nguyễn văn thọ','nguyen van thoai','đặng thị nho','dang thi nho','quang trung','quang trung','phan đình phùng','phan dinh phung',
+    'lý tự trọng','ly tu trong','lê văn hiến','le van hien','nguyễn hữu thọ','nguyen huu tho','trường chinh','truong chinh'
   ];
 
   const isValidAddress = (address) => {

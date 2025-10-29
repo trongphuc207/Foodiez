@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.example.demo.ApiResponse;
 
 @RestController
 @RequestMapping("/api/seller")
@@ -28,10 +29,52 @@ public class SellerController {
     // GET: Lấy đơn hàng của seller
     @GetMapping("/orders")
     @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
-    public List<OrderDTO> getSellerOrders() {
-        // Logic để lấy đơn hàng của seller hiện tại
-        // Có thể cần thêm sellerId vào Order entity
-        return orderService.getAllOrders();
+    public ResponseEntity<?> getSellerOrders(@RequestParam(required = false) Integer shopId) {
+        try {
+            List<OrderDTO> orders;
+            if (shopId != null) {
+                orders = orderService.getOrdersByShopId(shopId);
+            } else {
+                orders = orderService.getAllOrders();
+            }
+            return ResponseEntity.ok(new ApiResponse(true, "Orders fetched successfully", orders));
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body(new ApiResponse(false, "Failed to fetch orders: " + e.getMessage()));
+        }
+    }
+
+    // PUT: Cập nhật trạng thái đơn hàng
+    @PutMapping("/orders/{orderId}/status")
+    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
+    public ResponseEntity<?> updateOrderStatus(
+            @PathVariable Integer orderId,
+            @RequestBody Map<String, String> request) {
+        try {
+            String newStatus = request.get("status");
+            if (newStatus == null) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Status is required"));
+            }
+            OrderDTO updatedOrder = orderService.updateOrderStatus(orderId, newStatus);
+            return ResponseEntity.ok(new ApiResponse(true, "Order status updated successfully", updatedOrder));
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body(new ApiResponse(false, "Failed to update order status: " + e.getMessage()));
+        }
+    }
+
+    // GET: Lấy chi tiết một đơn hàng
+    @GetMapping("/orders/{orderId}")
+    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
+    public ResponseEntity<?> getOrderDetails(@PathVariable Integer orderId) {
+        try {
+            OrderDTO order = orderService.getOrderById(orderId);
+            return ResponseEntity.ok(new ApiResponse(true, "Order details fetched successfully", order));
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body(new ApiResponse(false, "Failed to fetch order details: " + e.getMessage()));
+        }
     }
     
     // GET: Dashboard thống kê seller
@@ -50,10 +93,10 @@ public class SellerController {
         return ResponseEntity.ok(dashboard);
     }
     
-    // POST: Cập nhật trạng thái đơn hàng
-    @PostMapping("/orders/{orderId}/status")
+    // POST: Cập nhật trạng thái đơn hàng theo yêu cầu đặc biệt
+    @PostMapping("/orders/{orderId}/status/special")
     @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
-    public ResponseEntity<Map<String, Object>> updateOrderStatus(
+    public ResponseEntity<Map<String, Object>> updateOrderStatusSpecial(
             @PathVariable Integer orderId,
             @RequestBody Map<String, String> statusUpdate) {
         

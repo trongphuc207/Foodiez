@@ -29,13 +29,15 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/products/**").permitAll()
-                .requestMatchers("/api/categories/**").permitAll()
-                .requestMatchers("/api/shops/**").permitAll()
-                .requestMatchers("/api/orders/debug/**").permitAll()
-                .requestMatchers("/api/payos/**").permitAll()
-                .requestMatchers("/test/**").permitAll()
+                .requestMatchers("/api/auth/login").permitAll()
+                .requestMatchers("/api/auth/register").permitAll()
+                .requestMatchers("/api/auth/verify").permitAll()
+                .requestMatchers("/api/auth/forgot-password").permitAll()
+                .requestMatchers("/api/auth/reset-password").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/products").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/shops/**").permitAll()
+                .requestMatchers("/api/payos/webhook").permitAll()
                 .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/login/oauth2/code/**").permitAll()
                 
@@ -50,6 +52,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/cart/test-cart").authenticated()  // Test CartService endpoint
                 .requestMatchers("/api/cart/**").authenticated()
                 .requestMatchers("/api/favorites/**").authenticated()
+                .requestMatchers("/api/auth/test-auth").authenticated()
+                .requestMatchers("/api/shops/*/orders").authenticated()
                 
                 // Seller endpoints
                 .requestMatchers("/api/seller/**").hasAnyRole("SELLER", "ADMIN")

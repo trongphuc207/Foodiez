@@ -39,13 +39,23 @@ public class JwtUtil {
     }
 
     public String getEmailFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-
-        return claims.getSubject();
+        try {
+            System.out.println("🔑 Attempting to parse JWT token...");
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            
+            String email = claims.getSubject();
+            System.out.println("✅ JWT token parsed successfully. Email: " + email);
+            System.out.println("📅 Token details - Issued: " + claims.getIssuedAt() + ", Expires: " + claims.getExpiration());
+            return email;
+        } catch (Exception e) {
+            System.err.println("❌ Error parsing JWT token: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     public boolean validateToken(String token) {

@@ -28,63 +28,116 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private UserRepository userRepository;
     
+    private boolean isPublicEndpoint(String uri, String method) {
+        return uri.startsWith("/api/auth/login") ||
+               uri.startsWith("/api/auth/register") ||
+               uri.startsWith("/api/auth/verify") ||
+               uri.startsWith("/api/auth/forgot-password") ||
+               uri.startsWith("/api/auth/reset-password") ||
+               (uri.startsWith("/api/products") && method.equals("GET")) ||
+               (uri.startsWith("/api/categories") && method.equals("GET")) ||
+               (uri.startsWith("/api/shops") && method.equals("GET")) ||
+               uri.startsWith("/api/payos/webhook") ||
+               uri.startsWith("/uploads/") ||
+               uri.startsWith("/login/oauth2/code/");
+    };
+    
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         
         String requestURI = request.getRequestURI();
-        System.out.println("🔍 JWT Filter processing request: " + requestURI);
+        String method = request.getMethod();
         
-        // 1. Extract token từ request
-        String token = extractTokenFromRequest(request);
-        System.out.println("🔑 Token extracted: " + (token != null ? "YES" : "NO"));
-        
-        if (token != null && jwtUtil.validateToken(token)) {
-            try {
-                // 2. Lấy email từ token
-                String email = jwtUtil.getEmailFromToken(token);
-                
-                // 3. Load user từ database
-                Optional<User> userOpt = userRepository.findByEmail(email);
-                
-                if (userOpt.isPresent()) {
-                    User user = userOpt.get();
-                    
-                    // 4. Tạo authorities từ role
-                    List<GrantedAuthority> authorities = new ArrayList<>();
-                    if (user.getRole() != null) {
-                        authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().toUpperCase()));
-                    }
-                    
-                    // 5. Tạo Authentication object với authorities
-                    UsernamePasswordAuthenticationToken authentication = 
-                        new UsernamePasswordAuthenticationToken(
-                            user, 
-                            null, 
-                            authorities
-                        );
-                    
-                    // 6. Set authentication vào SecurityContext
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                    
-                    System.out.println("✅ JWT Authentication successful for user: " + email + " with role: " + user.getRole());
-                }
-            } catch (Exception e) {
-                // Log error nhưng không throw exception
-                System.err.println("❌ JWT authentication failed: " + e.getMessage());
-                // Clear security context if authentication fails
-                SecurityContextHolder.clearContext();
-            }
+        // Kiểm tra nếu request là cho public endpoint
+        if (isPublicEndpoint(requestURI, method)) {
+            filterChain.doFilter(request, response);
+            return;
         }
         
-        // 6. Continue với filter chain
-        filterChain.doFilter(request, response);
+        System.out.println("\n🔍 JWT Filter - Processing protected endpoint: " + method + " " + requestURI);
+        
+        // Extract và validate token
+        String token = extractTokenFromRequest(request);
+        if (token == null) {
+            System.out.println("❌ No token found for protected endpoint");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Unauthorized: No token provided");
+            return;
+        }
+        
+        try {
+            if (!jwtUtil.validateToken(token)) {
+                System.out.println("❌ Invalid token");
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Unauthorized: Invalid token");
+                return;
+            }
+
+            // Lấy email từ token
+            String email = jwtUtil.getEmailFromToken(token);
+            
+            // Load user từ database
+            Optional<User> userOpt = userRepository.findByEmail(email);
+            
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                
+                // Tạo authorities từ role
+                List<GrantedAuthority> authorities = new ArrayList<>();
+                if (user.getRole() != null) {
+                    authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().toUpperCase()));
+                }
+                
+                // Tạo Authentication object với authorities
+                UsernamePasswordAuthenticationToken authentication = 
+                    new UsernamePasswordAuthenticationToken(
+                        user, 
+                        null, 
+                        authorities
+                    );
+                
+                // Set authentication vào SecurityContext
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                
+                System.out.println("✅ JWT Authentication successful for user: " + email);
+                System.out.println("👤 User details - ID: " + user.getId() + ", Role: " + user.getRole());
+                System.out.println("🔒 Authorities granted: " + authorities);
+            } else {
+                System.out.println("❌ User not found for email: " + email);
+                throw new ServletException("User not found");
+            }
+            
+            // Continue với filter chain
+            filterChain.doFilter(request, response);
+        } catch (Exception e) {
+            System.err.println("❌ JWT authentication failed: " + e.getMessage());
+            e.printStackTrace(); // Print stack trace for debugging
+            
+            // Clear security context if authentication fails
+            SecurityContextHolder.clearContext();
+            
+            // Set error response
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"" + e.getMessage() + "\"}");
+        }
     }
     
     private String extractTokenFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+        System.out.println("🔑 Authorization header: " + (bearerToken != null ? "Present" : "Not present"));
+        
+        if (bearerToken == null) {
+            return null;
         }
-        return null;
+        
+        if (!bearerToken.startsWith("Bearer ")) {
+            System.out.println("❌ Invalid token format - Missing 'Bearer ' prefix");
+            return null;
+        }
+        
+        String token = bearerToken.substring(7);
+        System.out.println("🔑 Token format validation: OK");
+        return token;
     }
 }

@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor//để không cần tạo class để sử dụng this.orderId = orderID...
 public class OrderSummaryDTO {
-    private Integer orderId;
+    private Integer id;
     private BigDecimal totalAmount;
     private String status;
     private Long itemCount;

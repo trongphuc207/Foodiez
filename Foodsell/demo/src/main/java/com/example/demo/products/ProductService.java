@@ -3,13 +3,33 @@ package com.example.demo.products;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class ProductService {
     private final ProductRepository repo;
+    private final Map<Integer, ProductBasicDTO> productBasicInfoCache = new ConcurrentHashMap<>();
 
     public ProductService(ProductRepository repo) {
         this.repo = repo;
+    }
+
+    public ProductBasicDTO getProductBasicInfo(Integer productId) {
+        // Try cache first
+        ProductBasicDTO cached = productBasicInfoCache.get(productId);
+        if (cached != null) {
+            return cached;
+        }
+
+        // Cache miss - load from DB
+        Optional<Product> product = repo.findById(productId);
+        if (product.isPresent()) {
+            ProductBasicDTO basicInfo = ProductBasicDTO.fromProduct(product.get());
+            productBasicInfoCache.put(productId, basicInfo);
+            return basicInfo;
+        }
+        return null;
     }
 
     public List<Product> getAllProducts() {
