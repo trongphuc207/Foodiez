@@ -12,7 +12,7 @@ import './CheckoutPage.css';
 const CheckoutPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated, loading } = useAuth();
-  const { items: cartItems, getTotalAmount, getShippingFee, getGrandTotal, clearCart } = useCart();
+  const { items: cartItems, getTotalAmount, getGrandTotal, clearCart } = useCart();
   const [currentStep, setCurrentStep] = useState(1);
   const [deliveryInfo, setDeliveryInfo] = useState({});
   const [paymentInfo, setPaymentInfo] = useState({});
@@ -91,8 +91,12 @@ const CheckoutPage = () => {
     }
   ];
 
+  const [selectedShippingFee, setSelectedShippingFee] = useState(15000); // Default base fee
+
   const handleDeliverySubmit = (data) => {
-    setDeliveryInfo(data);
+    const { shippingDetails, ...deliveryData } = data;
+    setDeliveryInfo(deliveryData);
+    setSelectedShippingFee(shippingDetails.fee || 15000);
     setCurrentStep(2);
   };
 
@@ -115,8 +119,8 @@ const CheckoutPage = () => {
 
   // Tính tổng tiền sau khi áp dụng voucher
   const getFinalTotal = () => {
-    const grandTotal = getGrandTotal();
-    return Math.max(0, grandTotal - voucherDiscount);
+    const baseTotal = getTotalAmount() + selectedShippingFee;
+    return Math.max(0, baseTotal - voucherDiscount);
   };
 
   // Helper function để kiểm tra authentication
@@ -396,11 +400,11 @@ const CheckoutPage = () => {
             paymentInfo={paymentInfo}
             cartItems={cartItems}
             totalAmount={getTotalAmount()}
-            shippingFee={getShippingFee()}
-            grandTotal={getGrandTotal()}
+            shippingFee={selectedShippingFee}
+            grandTotal={getTotalAmount() + selectedShippingFee}
             voucherDiscount={voucherDiscount}
             appliedVoucher={appliedVoucher}
-            finalTotal={getFinalTotal()}
+            finalTotal={Math.max(0, (getTotalAmount() + selectedShippingFee) - voucherDiscount)}
             onComplete={handleOrderComplete}
             onBack={() => setCurrentStep(2)}
             isProcessingPayment={isProcessingPayment}

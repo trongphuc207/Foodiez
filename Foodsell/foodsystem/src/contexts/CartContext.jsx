@@ -127,11 +127,12 @@ export const CartProvider = ({ children }) => {
   };
 
   const getShippingFee = () => {
-    return 15000; // Fixed shipping fee
+    // This is just a base fee, actual fee will be calculated in DeliveryInformationForm
+    return 15000;
   };
 
-  const getGrandTotal = () => {
-    return getTotalAmount() + getShippingFee();
+  const getGrandTotal = (customShippingFee) => {
+    return getTotalAmount() + (customShippingFee !== undefined ? customShippingFee : getShippingFee());
   };
 
   const value = {
