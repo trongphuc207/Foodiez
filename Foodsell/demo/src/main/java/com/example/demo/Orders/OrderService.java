@@ -131,7 +131,38 @@ public class OrderService {
             // Create new order
             Order order = new Order();
             order.setBuyerId(buyerId); // Use the actual buyer ID from authentication
-            order.setShopId(1); // Default shop ID - you might want to get this from cart items
+
+            // Determine shopId from cart items (assume single-shop order).
+            // If unable to determine, fallback to 1 (legacy/default) but log a warning.
+            Integer determinedShopId = null;
+            if (cartItems != null && !cartItems.isEmpty()) {
+                for (Map<String, Object> item : cartItems) {
+                    try {
+                        Integer productId = (Integer) item.get("productId");
+                        if (productId == null) continue;
+                        var basic = productService.getProductBasicInfo(productId);
+                        if (basic != null && basic.getShopId() != null) {
+                            if (determinedShopId == null) {
+                                determinedShopId = basic.getShopId();
+                            } else if (!determinedShopId.equals(basic.getShopId())) {
+                                System.out.println("⚠️ Warning: Order contains items from multiple shops. Using first shopId: " + determinedShopId);
+                                // If multi-shop orders are not supported, you could throw here instead.
+                                break;
+                            }
+                        }
+                    } catch (Exception ex) {
+                        System.out.println("Warning: could not determine product info for shopId resolution: " + ex.getMessage());
+                    }
+                }
+            }
+
+            if (determinedShopId != null) {
+                order.setShopId(determinedShopId);
+            } else {
+                System.out.println("⚠️ Could not determine shopId from cart items - falling back to default shopId=1");
+                order.setShopId(1); // Fallback
+            }
+
             order.setDeliveryAddressId(1); // Default address ID
             order.setTotalAmount(new BigDecimal(totalAmount));
             order.setStatus(status);
