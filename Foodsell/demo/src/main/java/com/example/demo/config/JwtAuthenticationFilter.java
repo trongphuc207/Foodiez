@@ -74,7 +74,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (!jwtUtil.validateToken(token)) {
                 System.out.println("❌ Invalid token");
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Unauthorized: Invalid token");
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\": \"Unauthorized: Invalid token\"}");
                 return;
             }
 

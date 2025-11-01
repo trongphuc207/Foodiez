@@ -8,7 +8,6 @@ import {
   loadFavoritesForUser,
   saveFavoritesForUser,
   toggleFavoriteForUser,
-  isProductFavoritedForUser,
   fetchServerFavorites,
 } from "../../utils/favorites"
 // import { useCart } from "../../contexts/CartContext" // Không sử dụng vì chỉ mở ProductDetail modal

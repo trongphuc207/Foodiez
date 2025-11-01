@@ -1,14 +1,23 @@
 const API_BASE_URL = 'http://localhost:8080/api';
 
+// Utility functions
+const getAuthToken = () => {
+  return localStorage.getItem('authToken');
+};
+
 export const shipperAPI = {
   // Lấy danh sách đơn hàng cần giao
-  getOrders: async () => {
+  getOrders: async (status) => {
     const token = getAuthToken();
     if (!token) {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${API_BASE_URL}/shipper/orders`, {
+    const url = status 
+      ? `${API_BASE_URL}/shipper/orders?status=${status}`
+      : `${API_BASE_URL}/shipper/orders`;
+
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -24,6 +33,33 @@ export const shipperAPI = {
     return response.json();
   },
 
+  // Cập nhật trạng thái đơn hàng
+  updateOrderStatus: async (orderId, status, note) => {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/shipper/orders/${orderId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        status,
+        note
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update order status');
+    }
+
+    return response.json();
+  },
+
   // Lấy dashboard thống kê shipper
   getDashboard: async () => {
     const token = getAuthToken();
@@ -32,6 +68,29 @@ export const shipperAPI = {
     }
 
     const response = await fetch(`${API_BASE_URL}/shipper/dashboard`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to get dashboard data');
+    }
+
+    return response.json();
+  },
+
+  // Lấy chi tiết đơn hàng
+  getOrderDetail: async (orderId) => {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/shipper/orders/${orderId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -283,9 +342,4 @@ export const shipperAPI = {
     
     return response.json();
   }
-};
-
-// Utility functions
-const getAuthToken = () => {
-  return localStorage.getItem('authToken');
 };

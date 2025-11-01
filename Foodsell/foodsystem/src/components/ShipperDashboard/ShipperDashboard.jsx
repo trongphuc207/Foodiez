@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 // import { useNavigate } from 'react-router-dom' // Commented out - not used yet
 import './ShipperDashboard.css'
 import AddressDetailModal from './AddressDetailModal'
@@ -26,96 +26,63 @@ export default function ShipperDashboard() {
   const [error, setError] = useState(null)
 
   // Load data from API
+  // Load data from API
   useEffect(() => {
     loadShipperData()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadShipperData]) // Reload when loadShipperData changes
 
-  const loadShipperData = async () => {
+  const loadShipperData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
       
-      // Load orders and dashboard data in parallel
+      // Load orders based on active tab and dashboard data in parallel
       const [ordersResponse, dashboardResponse] = await Promise.all([
-        shipperAPI.getOrders(),
+        shipperAPI.getOrders(activeTab !== 'all' ? activeTab : null),
         shipperAPI.getDashboard()
       ])
       
-      setOrders(ordersResponse || [])
-      setDashboardData(dashboardResponse)
-      
-      // Debug log
-      console.log('Shipper data loaded:', { ordersResponse, dashboardResponse })
+      if (ordersResponse.success) {
+        setOrders(ordersResponse.data || [])
+      } else {
+        setError(ordersResponse.message || 'Không thể tải danh sách đơn hàng')
+      }
+
+      if (dashboardResponse.success) {
+        setDashboardData(dashboardResponse.data)
+      } else {
+        console.error('Error loading dashboard:', dashboardResponse.message)
+      }
     } catch (err) {
       console.error('Error loading shipper data:', err)
-      setError(err.message)
-      // Fallback to mock data if API fails
-      setOrders(getMockOrders())
-      setDashboardData(getMockDashboardData())
     } finally {
       setLoading(false)
     }
+  }, [activeTab])
+
+  // Render loading state
+  if (loading) {
+    return (
+      <div className="shipper-dashboard loading">
+        <div className="loading-spinner">
+          <p>Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    )
   }
 
-  // Mock data fallback
-  const getMockOrders = () => [
-    {
-      id: "DH001",
-      customer: "Nguyễn Văn A",
-      phone: "0901234567",
-      status: "waiting_pickup",
-      time: "10:30",
-      pickupAddress: "123 Nguyễn Huệ, Q.1, TP.HCM",
-      deliveryAddress: "456 Lê Lợi, Q.3, TP.HCM",
-      items: 2,
-      distance: "3.5 km",
-      price: "25.000₫"
-    },
-    {
-      id: "DH002",
-      customer: "Trần Thị B", 
-      phone: "0912345678",
-      status: "picked_up",
-      time: "11:00",
-      pickupAddress: "789 Trần Hưng Đạo, Q.5, TP.HCM",
-      deliveryAddress: "321 Võ Văn Tân, Q.3, TP.HCM",
-      items: 1,
-      distance: "2.8 km",
-      price: "20.000₫",
-      note: "Gọi trước khi đến"
-    },
-    {
-      id: "DH003",
-      customer: "Lê Văn C",
-      phone: "0923456789", 
-      status: "delivering",
-      time: "11:30",
-      pickupAddress: "555 Hai Bà Trưng, Q.1, TP.HCM",
-      deliveryAddress: "888 Điện Biên Phủ, Q.Bình Thạnh, TP.HCM",
-      items: 3,
-      distance: "5.2 km",
-      price: "35.000₫"
-    },
-    {
-      id: "DH004",
-      customer: "Phạm Thị D",
-      phone: "0934567890",
-      status: "delivered", 
-      time: "09:45",
-      pickupAddress: "222 Pasteur, Q.1, TP.HCM",
-      deliveryAddress: "111 Cách Mạng Tháng 8, Q.10, TP.HCM",
-      items: 1,
-      distance: "4.1 km",
-      price: "30.000₫"
-    }
-  ]
+  // Render error state
+  if (error) {
+    return (
+      <div className="shipper-dashboard error">
+        <div className="error-message">
+          <p>{error}</p>
+          <button onClick={loadShipperData}>Thử lại</button>
+        </div>
+      </div>
+    )
+  }
 
-  const getMockDashboardData = () => ({
-    totalOrders: 4,
-    deliveredOrders: 1,
-    deliveringOrders: 2,
-    totalEarnings: "30.000₫"
-  })
 
   // Handle order actions
   const handleAcceptOrder = async (orderId) => {
@@ -184,30 +151,7 @@ export default function ShipperDashboard() {
     setSelectedAddress(null)
   }
 
-  if (loading) {
-    return (
-      <div className="shipper-dashboard">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Đang tải dữ liệu...</p>
-        </div>
-      </div>
-    )
-  }
 
-  if (error) {
-    return (
-      <div className="shipper-dashboard">
-        <div className="error-container">
-          <h3>Lỗi tải dữ liệu</h3>
-          <p>{error}</p>
-          <button onClick={loadShipperData} className="retry-btn">
-            Thử lại
-          </button>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="shipper-dashboard">
@@ -237,7 +181,7 @@ export default function ShipperDashboard() {
           </div>
           <div className="card-content">
             <div className="card-number">
-              {loading ? '...' : (dashboardData?.totalOrders || orders.length)}
+              {loading ? '...' : dashboardData?.totalOrders}
             </div>
             <div className="card-label">Tổng đơn</div>
           </div>
@@ -248,7 +192,7 @@ export default function ShipperDashboard() {
           </div>
           <div className="card-content">
             <div className="card-number">
-              {loading ? '...' : orders.filter(o => o.status === 'delivered').length}
+              {loading ? '...' : dashboardData?.deliveredOrders}
             </div>
             <div className="card-label">Đã giao</div>
           </div>
@@ -259,7 +203,7 @@ export default function ShipperDashboard() {
           </div>
           <div className="card-content">
             <div className="card-number">
-              {loading ? '...' : orders.filter(o => o.status === 'delivering').length}
+              {loading ? '...' : dashboardData?.deliveringOrders}
             </div>
             <div className="card-label">Đang giao</div>
           </div>
@@ -270,7 +214,7 @@ export default function ShipperDashboard() {
           </div>
           <div className="card-content">
             <div className="card-number">
-              {loading ? '...' : (dashboardData?.totalEarnings || '0₫')}
+              {loading ? '...' : dashboardData?.totalEarnings}
             </div>
             <div className="card-label">Thu nhập</div>
           </div>

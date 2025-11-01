@@ -39,42 +39,8 @@ public class AuthService {
         return savedUser;
     }
 
-    public User handleGoogleLogin(String idToken) {
-        try {
-            // In a real implementation, verify the Google ID token
-            // For now, we'll just extract the email from the token
-            String email = extractEmailFromGoogleToken(idToken);
-            
-            Optional<User> existingUser = userRepository.findByEmail(email);
-            if (existingUser.isPresent()) {
-                return existingUser.get();
-            }
-            
-            // Create new user if not exists
-            User newUser = new User();
-            newUser.setEmail(email);
-            newUser.setFullName("Google User"); // You should extract this from the token
-            newUser.setRole("buyer");
-            newUser.setIsVerified(true);
-            return userRepository.save(newUser);
-            
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to process Google login: " + e.getMessage());
-        }
-    }
-    
-    private String extractEmailFromGoogleToken(String idToken) {
-        // In a real implementation, verify the token with Google's API
-        // For now, we'll just decode the JWT and extract the email
-        try {
-            String[] parts = idToken.split("\\.");
-            String payload = new String(java.util.Base64.getDecoder().decode(parts[1]));
-            // Use a proper JSON parser in production
-            return payload.split("\"email\":\"")[1].split("\"")[0];
-        } catch (Exception e) {
-            throw new RuntimeException("Invalid Google ID token");
-        }
-    }
+    // Google login is handled in the controller (decoding/verifying the credential there),
+    // so service-level helpers were removed to avoid duplication.
 
     public User login(String email, String rawPassword) {
         User user = userRepository.findByEmail(email)

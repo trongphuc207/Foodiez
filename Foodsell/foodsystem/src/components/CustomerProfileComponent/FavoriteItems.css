@@ -1,0 +1,125 @@
+.favorite-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.favorite-item-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+
+.favorite-item-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.favorite-item-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.favorite-item-info {
+  padding: 16px;
+}
+
+.favorite-item-name {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #333;
+}
+
+.favorite-item-price {
+  font-size: 16px;
+  color: #ff6b35;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.favorite-item-description {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 12px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.favorite-item-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.add-to-cart-btn {
+  flex: 1;
+  background: #ff6b35;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.add-to-cart-btn:hover {
+  background: #ff8c42;
+}
+
+.remove-favorite-btn {
+  background: transparent;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: #ff6b35;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.remove-favorite-btn:hover {
+  background: rgba(255, 107, 53, 0.1);
+}
+
+.favorite-item-shop {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.favorite-item-shop svg {
+  width: 16px;
+  height: 16px;
+  color: #666;
+}
+
+.favorite-item-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 12px 0;
+}
+
+.favorite-item-rating svg {
+  color: #ffc107;
+}
+
+.rating-count {
+  font-size: 14px;
+  color: #666;
+}

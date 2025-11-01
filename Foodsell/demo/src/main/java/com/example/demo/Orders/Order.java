@@ -2,17 +2,14 @@ package com.example.demo.Orders;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.example.demo.shop.Shop;
 
 @Entity
 @Table(name = "orders")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,15 +44,25 @@ public class Order {
 
     @Column(name = "recipient_phone")
     private String recipientPhone;
-
-    @Column(name = "address_text", columnDefinition = "NVARCHAR(MAX)")
-    private String addressText;
-
+    
+    @Column(name = "delivery_fee")
+    private Double deliveryFee;
+    
+    @Column(name = "assigned_shipper_id")
+    private Integer assignedShipperId;
+    
     @Column(name = "latitude", precision = 9, scale = 6)
     private BigDecimal latitude;
-
+    
     @Column(name = "longitude", precision = 9, scale = 6)
     private BigDecimal longitude;
+    
+    @Column(name = "address_text", columnDefinition = "NVARCHAR(MAX)")
+    private String addressText;
+    
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "shop_id", referencedColumnName = "id", insertable = false, updatable = false)
+    private Shop shop;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -66,9 +73,6 @@ public class Order {
     // Thêm các trường cho hệ thống phân phối đơn hàng
     @Column(name = "assigned_seller_id")
     private Integer assignedSellerId;
-
-    @Column(name = "assigned_shipper_id")
-    private Integer assignedShipperId;
 
     @Column(name = "assignment_status")
     private String assignmentStatus = "pending"; // pending, assigned, accepted, rejected
@@ -83,31 +87,6 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrderItem> orderItems;
 
-    // Constructor for creating new orders
-    public Order(Integer buyerId, Integer shopId, Integer deliveryAddressId,
-            BigDecimal totalAmount, String status, String notes) {
-        this.buyerId = buyerId;
-        this.shopId = shopId;
-        this.deliveryAddressId = deliveryAddressId;
-        this.totalAmount = totalAmount;
-        this.status = status;
-        this.notes = notes;
-        this.createdAt = LocalDateTime.now();
-    }
-
-    // Constructor with voucher
-    public Order(Integer buyerId, Integer shopId, Integer deliveryAddressId,
-            BigDecimal totalAmount, String status, Integer voucherId, String notes) {
-        this.buyerId = buyerId;
-        this.shopId = shopId;
-        this.deliveryAddressId = deliveryAddressId;
-        this.totalAmount = totalAmount;
-        this.status = status;
-        this.voucherId = voucherId;
-        this.notes = notes;
-        this.createdAt = LocalDateTime.now();
-    }
-
     // Auto set createdAt when persisting
     @PrePersist
     protected void onCreate() {
@@ -120,6 +99,10 @@ public class Order {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+    
+    public Double getDeliveryFee() {
+        return deliveryFee;
     }
 
 }

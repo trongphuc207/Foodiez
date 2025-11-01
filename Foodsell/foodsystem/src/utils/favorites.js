@@ -100,6 +100,14 @@ export const toggleFavoriteForUser = (user, productId) => {
   }
   saveFavoritesForUser(user, arr);
 
+  // Dispatch an event so other components (profile) can react
+  try {
+    const ev = new CustomEvent('favoritesUpdated', { detail: arr.slice() });
+    window.dispatchEvent(ev);
+  } catch (e) {
+    // ignore for older browsers
+  }
+
   // Fire-and-forget server sync
   (async () => {
     try {
@@ -123,7 +131,8 @@ export const isProductFavoritedForUser = (user, productId) => {
   return arr.includes(productId);
 };
 
-export default {
+// Define the object first and assign it to a const
+const favoriteService = {
   loadFavoritesForUser,
   saveFavoritesForUser,
   toggleFavoriteForUser,
@@ -132,3 +141,6 @@ export default {
   addServerFavorite,
   removeServerFavorite,
 };
+
+// Then export it as default
+export default favoriteService;

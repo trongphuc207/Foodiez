@@ -166,11 +166,8 @@ export const authAPI = {
   changePassword: async (currentPassword, newPassword) => {
     const token = getAuthToken();
     
-    console.log('🔑 Change password - Token check:', token ? 'Token exists' : 'No token');
-    console.log('🔑 Token value:', token);
-    
     if (!token) {
-      throw new Error('No authentication token found. Please login again.');
+      return { success: false, message: 'Bạn cần đăng nhập lại để thực hiện thao tác này.' };
     }
     
     try {
@@ -183,21 +180,29 @@ export const authAPI = {
         body: JSON.stringify({
           currentPassword,
           newPassword
-        }),
+        })
       });
+
+      const data = await response.json();
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to change password');
+      if (response.ok) {
+        return { success: true, message: 'Mật khẩu đã được thay đổi thành công!' };
+      } else {
+        return { 
+          success: false, 
+          message: data.message || 'Có lỗi xảy ra khi đổi mật khẩu.'
+        };
       }
-      
-      return response.json();
     } catch (error) {
-      console.error('Change password error:', error);
-      throw error;
+      console.error('Error changing password:', error);
+      return { 
+        success: false, 
+        message: 'Có lỗi xảy ra khi kết nối với máy chủ. Vui lòng thử lại sau.'
+      };
     }
   },
 
+  // Validate reset token
   validateResetToken: async (token) => {
     const response = await fetch(`${API_BASE_URL}/auth/validate-reset-token?token=${token}`);
     

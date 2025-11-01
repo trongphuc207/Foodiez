@@ -17,6 +17,12 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     // Find orders by shop ID ordered by created date
     List<Order> findByShopIdOrderByCreatedAtDesc(Integer shopId);
     
+    // Find orders by assigned shipper
+    List<Order> findByAssignedShipperId(Integer shipperId);
+    
+    // Find orders by assigned shipper and status
+    List<Order> findByAssignedShipperIdAndStatus(Integer shipperId, String status);
+    
     // Find orders by shop ID and status
     List<Order> findByShopIdAndStatus(Integer shopId, String status);
     
@@ -95,4 +101,8 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     
     // Find by orderCode (PayOS order code)
     Optional<Order> findByOrderCode(Integer orderCode);
+
+    // Find completed (delivered) orders for a shipper
+    @Query("SELECT o FROM Order o WHERE o.assignedShipperId = :shipperId AND o.status = 'delivered' ORDER BY o.updatedAt DESC")
+    List<Order> findCompletedOrdersByShipperId(@Param("shipperId") Integer shipperId);
 }
