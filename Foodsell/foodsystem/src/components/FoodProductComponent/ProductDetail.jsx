@@ -3,14 +3,43 @@ import { useNavigate } from "react-router-dom";
 import "./ProductDetail.css";
 import { useCart } from "../../contexts/CartContext";
 import { useAuth } from "../../hooks/useAuth";
+import { isProductFavoritedForUser, toggleFavoriteForUser, fetchServerFavorites } from "../../utils/favorites";
 import { getShopName } from "../../constants/shopNames";
 import { getCategoryName } from "../../constants/categoryNames";
 
 const ProductDetail = ({ product, onClose }) => {
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [isFav, setIsFav] = useState(false);
+
+  // initialize favorite state
+  React.useEffect(() => {
+    let mounted = true
+    try {
+      setIsFav(isProductFavoritedForUser(user, product.id));
+
+      // If authenticated, ensure server favorites are reflected
+      if (isAuthenticated) {
+        ;(async () => {
+          try {
+            const serverFavs = await fetchServerFavorites()
+            if (!mounted) return
+            if (Array.isArray(serverFavs)) {
+              setIsFav(serverFavs.includes(product.id))
+            }
+          } catch (err) {
+            // ignore
+          }
+        })()
+      }
+    } catch (e) {
+      setIsFav(false);
+    }
+
+    return () => { mounted = false }
+  }, [user, product.id, isAuthenticated]);
 
   if (!product) return null;
 
@@ -70,7 +99,23 @@ const ProductDetail = ({ product, onClose }) => {
           </div>
           
           <div className="product-detail-info">
-            <h2>{product.name}</h2>
+            <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+              <h2 style={{margin:0}}>{product.name}</h2>
+              <button
+                className={`favorite-btn ${isFav ? 'active' : ''}`}
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    alert('Vui lòng đăng nhập để quản lý yêu thích!');
+                    return;
+                  }
+                  const updated = toggleFavoriteForUser(user, product.id);
+                  setIsFav(updated.includes(product.id));
+                }}
+                title={isFav ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+              >
+                {isFav ? '♥' : '♡'}
+              </button>
+            </div>
             <p className="product-description">{product.description}</p>
             
             <div className="product-details">

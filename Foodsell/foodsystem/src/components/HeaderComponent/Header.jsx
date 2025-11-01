@@ -237,6 +237,9 @@ const Header = ({ toggleSidebar }) => {
                         🏪 Quản lý cửa hàng
                       </button>
                     )}
+                    {/** Seller-specific link to shop management remains above. The separate
+                        "Tạo đơn giao cho shipper" menu item was removed in favor of an
+                        inline control inside the Shop Management -> Quản lý đơn hàng tab. */}
                     <button
                       className="dropdown-item"
                       onClick={handleLogout}

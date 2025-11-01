@@ -43,6 +43,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(null, "Mã OTP đã được gửi đến email của bạn"));
     }
 
+
     @PostMapping("/make-admin/{email}")
     public ResponseEntity<ApiResponse<User>> makeAdmin(@PathVariable String email) {
         Optional<User> userOpt = userRepository.findByEmail(email);
@@ -272,11 +273,14 @@ public class AuthController {
     }
     
     @GetMapping("/validate-reset-token")
-    public ResponseEntity<ApiResponse<Boolean>> validateResetToken(@RequestParam String token) {
+    public ResponseEntity<java.util.Map<String, Object>> validateResetToken(@RequestParam String token) {
         boolean isValid = authService.validateResetToken(token);
-        
-        return ResponseEntity.ok(ApiResponse.success(isValid, 
-            isValid ? "Token is valid" : "Token is invalid or expired"));
+
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("valid", isValid);
+        body.put("message", isValid ? "Token is valid" : "Token is invalid or expired");
+
+        return ResponseEntity.ok(body);
     }
     
     @PostMapping("/verify-email")

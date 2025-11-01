@@ -39,6 +39,43 @@ public class AuthService {
         return savedUser;
     }
 
+    public User handleGoogleLogin(String idToken) {
+        try {
+            // In a real implementation, verify the Google ID token
+            // For now, we'll just extract the email from the token
+            String email = extractEmailFromGoogleToken(idToken);
+            
+            Optional<User> existingUser = userRepository.findByEmail(email);
+            if (existingUser.isPresent()) {
+                return existingUser.get();
+            }
+            
+            // Create new user if not exists
+            User newUser = new User();
+            newUser.setEmail(email);
+            newUser.setFullName("Google User"); // You should extract this from the token
+            newUser.setRole("buyer");
+            newUser.setIsVerified(true);
+            return userRepository.save(newUser);
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to process Google login: " + e.getMessage());
+        }
+    }
+    
+    private String extractEmailFromGoogleToken(String idToken) {
+        // In a real implementation, verify the token with Google's API
+        // For now, we'll just decode the JWT and extract the email
+        try {
+            String[] parts = idToken.split("\\.");
+            String payload = new String(java.util.Base64.getDecoder().decode(parts[1]));
+            // Use a proper JSON parser in production
+            return payload.split("\"email\":\"")[1].split("\"")[0];
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid Google ID token");
+        }
+    }
+
     public User login(String email, String rawPassword) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Sai email hoặc mật khẩu"));
@@ -66,7 +103,12 @@ public class AuthService {
             
             // Generate reset token
             String resetToken = java.util.UUID.randomUUID().toString();
-            LocalDateTime expiryTime = LocalDateTime.now().plusHours(1); // Token expires in 1 hour
+            LocalDateTime expiryTime = LocalDateTime.now().plusHours(24); // Tăng thời gian hết hạn lên 24 tiếng
+            
+            System.out.println("🔄 Generating password reset token:");
+            System.out.println("Email: " + email);
+            System.out.println("Token: " + resetToken);
+            System.out.println("Expiry time: " + expiryTime);
             
             // Save reset token to user
             user.setResetToken(resetToken);
@@ -100,9 +142,7 @@ public class AuthService {
         }
         
         User user = userOpt.get();
-        
-        // Check if token is expired
-        if (user.getResetTokenExpiry() == null || user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+        if (user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Reset token has expired");
         }
         

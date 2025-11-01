@@ -27,12 +27,20 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                       Authentication authentication) throws IOException, ServletException {
+        System.out.println("🔐 OAuth2 Authentication Success Handler triggered");
         
         OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
+        System.out.println("👤 OAuth2User details: " + oauth2User.getAttributes());
         
         String email = oauth2User.getAttribute("email");
         String name = oauth2User.getAttribute("name");
         String picture = oauth2User.getAttribute("picture");
+        
+        if (email == null) {
+            System.out.println("❌ Error: No email found in OAuth2User attributes");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No email found in OAuth2 response");
+            return;
+        }
         
         System.out.println("🔍 Google OAuth2 Login - Email: " + email + ", Name: " + name);
         
@@ -60,8 +68,15 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         // Generate JWT token
         String token = jwtUtil.generateToken(user.getEmail());
         
-        // Redirect to frontend with token
-        String redirectUrl = "http://localhost:3000/auth/success?token=" + token;
-        response.sendRedirect(redirectUrl);
+        // Return JSON response
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        String jsonResponse = String.format(
+            "{\"success\":true,\"data\":{\"user\":{\"id\":%d,\"email\":\"%s\",\"fullName\":\"%s\",\"role\":\"%s\"},\"token\":\"%s\"},\"message\":\"Google login successful\"}",
+            user.getId(), user.getEmail(), user.getFullName(), user.getRole(), token
+        );
+        
+        response.getWriter().write(jsonResponse);
     }
 }

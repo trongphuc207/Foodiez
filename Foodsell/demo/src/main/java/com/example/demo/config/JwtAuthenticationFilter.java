@@ -34,6 +34,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                uri.startsWith("/api/auth/verify") ||
                uri.startsWith("/api/auth/forgot-password") ||
                uri.startsWith("/api/auth/reset-password") ||
+               // Allow validating reset tokens without a Bearer JWT
+               uri.startsWith("/api/auth/validate-reset-token") ||
+               // Allow Google auth endpoints (login via Google should be public)
+               uri.startsWith("/api/auth/google") ||
                (uri.startsWith("/api/products") && method.equals("GET")) ||
                (uri.startsWith("/api/categories") && method.equals("GET")) ||
                (uri.startsWith("/api/shops") && method.equals("GET")) ||
@@ -61,7 +65,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token == null) {
             System.out.println("❌ No token found for protected endpoint");
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Unauthorized: No token provided");
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"Unauthorized: No token provided\"}");
             return;
         }
         

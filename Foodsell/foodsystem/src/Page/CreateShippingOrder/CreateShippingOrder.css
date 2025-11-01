@@ -1,0 +1,11 @@
+.create-shipping-page {
+  /* Placeholder CSS kept to avoid missing-import errors. The real UI was moved
+     into Shop Management -> Quản lý đơn hàng. */
+/* Placeholder CSS for CreateShippingOrder page.
+   The actual UI was moved into Shop Management -> Quản lý đơn hàng. */
+
+.create-shipping-placeholder {
+  padding: 20px;
+  color: #444;
+}
+}

@@ -96,6 +96,46 @@
   margin: 0 auto 20px;
 }
 
+.favorite-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 2;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.favorite-btn i {
+  font-size: 20px;
+  color: #ccc;
+  transition: all 0.3s ease;
+}
+
+.favorite-btn.active i {
+  color: #ff4b4b;
+}
+
+.favorite-btn:hover {
+  transform: scale(1.1);
+  background-color: #fff;
+}
+
+.favorite-btn:hover i {
+  color: #ff4b4b;
+}
+
+.favorite-btn:active {
+  transform: scale(0.95);
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -327,6 +367,37 @@
   cursor: pointer;
   background: #f8f9fa;
   flex-shrink: 0;
+}
+
+/* Favorite heart button (on product image) */
+.favorite-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 30;
+  background: rgba(255,255,255,0.9);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  color: #e74c3c;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.favorite-btn:hover { transform: scale(1.05); }
+.favorite-btn.active { background: #ffe6e6; color: #e74c3c; }
+
+/* Simple star rating display */
+.star-rating {
+  color: #f1c40f;
+  font-weight: 700;
+  margin: 4px 0 2px 0;
+  font-size: 13px;
 }
 
 .product-image img {

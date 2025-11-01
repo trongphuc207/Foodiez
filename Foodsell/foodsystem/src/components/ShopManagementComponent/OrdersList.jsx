@@ -1,26 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../../hooks/useAuth';
-import { shopAPI } from '../../api/shop';
+import React, { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import shopOrdersAPI from '../../api/shop-orders';
 import './OrdersList.css';
 
-const OrdersList = ({ status }) => {
-  const { user } = useAuth();
+// Simpler OrdersList: sellers operate on existing orders only (accept/limited edit)
+const OrdersList = ({ shopId, status }) => {
   const queryClient = useQueryClient();
-  const [shopId, setShopId] = useState(null);
-
-  // Load shop for current seller
-  const { data: shopData } = useQuery({
-    queryKey: ['shop', user?.id],
-    queryFn: () => shopAPI.getShopBySellerId(user?.id),
-    enabled: !!user?.id,
-    retry: 1
-  });
-
-  useEffect(() => {
-    if (shopData && shopData.data) setShopId(shopData.data.id);
-  }, [shopData]);
 
   const { data: ordersResp, isLoading, error } = useQuery({
     queryKey: ['sellerOrders', shopId, status],
@@ -31,35 +16,57 @@ const OrdersList = ({ status }) => {
 
   const orders = ordersResp?.data || [];
 
-  const updateStatusMutation = useMutation({
-    mutationFn: ({ orderId, newStatus }) => shopOrdersAPI.updateOrderStatus(orderId, newStatus),
+  // Seller updates order details (optional small edits)
+  const updateDetailsMutation = useMutation({
+    mutationFn: ({ orderId, data }) => shopOrdersAPI.updateOrderDetails(orderId, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['sellerOrders']);
-      alert('Cập nhật trạng thái thành công');
     },
-    onError: (err) => {
-      console.error(err);
-      alert('Không thể cập nhật trạng thái: ' + (err.message || ''));
-    }
+    onError: (err) => { console.error(err); alert('Không thể cập nhật đơn: ' + (err.message || '')); }
   });
 
-  const handleUpdateStatus = (order) => {
-    // simple demo: toggle pending -> confirmed -> completed
-    const next = order.status === 'pending' ? 'confirmed' : order.status === 'confirmed' ? 'completed' : 'completed';
-    if (!window.confirm(`Update order #${order.id} status to ${next}?`)) return;
-    updateStatusMutation.mutate({ orderId: order.id, newStatus: next });
+  const [editingOrder, setEditingOrder] = useState(null);
+
+  const openEditModal = (order) => {
+    setEditingOrder({
+      id: order.id,
+      recipientPhone: order.recipientPhone || order.recipient_phone || '',
+      recipientAddress: order.recipientAddress || order.recipient_address || ''
+    });
   };
 
-  if (!shopId) {
-    return <div>Chưa có cửa hàng liên kết với tài khoản seller này.</div>;
-  }
+  const closeEditModal = () => setEditingOrder(null);
 
+  const handleEditSave = () => {
+    if (!editingOrder) return;
+    updateDetailsMutation.mutate({ orderId: editingOrder.id, data: { recipientPhone: editingOrder.recipientPhone, recipientAddress: editingOrder.recipientAddress } }, {
+      onSuccess: () => closeEditModal()
+    });
+  };
+
+  // Seller accepts and forwards order to shipper by updating status
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ orderId, newStatus }) => shopOrdersAPI.updateOrderStatus(orderId, newStatus),
+    onSuccess: () => queryClient.invalidateQueries(['sellerOrders']),
+    onError: (err) => { console.error(err); alert('Không thể cập nhật trạng thái: ' + (err.message || '')); }
+  });
+
+  if (!shopId) return <div>Chưa có cửa hàng liên kết với tài khoản seller này.</div>;
   if (isLoading) return <div>Đang tải đơn hàng...</div>;
   if (error) return <div>Lỗi khi tải đơn hàng: {error.message}</div>;
 
+  const handleAccept = (order) => {
+    if (!window.confirm(`Chấp nhận đơn #${order.id} và chuyển cho shipper?`)) return;
+    // Update status to 'confirmed' as requested
+    updateStatusMutation.mutate({ orderId: order.id, newStatus: 'confirmed' });
+  };
+
   return (
     <div className="orders-list">
-      <h3>Đơn hàng của cửa hàng</h3>
+      <div className="section-header">
+        <h3>Đơn hàng của cửa hàng</h3>
+      </div>
+
       {orders.length === 0 ? (
         <div>Không có đơn hàng.</div>
       ) : (
@@ -67,7 +74,7 @@ const OrdersList = ({ status }) => {
           <thead>
             <tr>
               <th>#ID</th>
-              <th>Người mua</th>
+              <th>Người nhận</th>
               <th>Tổng</th>
               <th>Trạng thái</th>
               <th>Ngày</th>
@@ -83,8 +90,12 @@ const OrdersList = ({ status }) => {
                 <td>{o.status}</td>
                 <td>{o.createdAt ? new Date(o.createdAt).toLocaleString() : ''}</td>
                 <td>
-                  <button onClick={() => handleUpdateStatus(o)} disabled={updateStatusMutation.isLoading}>
-                    Cập nhật trạng thái
+                  <button onClick={() => openEditModal(o)} disabled={updateDetailsMutation.isLoading}>
+                    ✏️ Edit
+                  </button>
+                  {' '}
+                  <button onClick={() => handleAccept(o)} disabled={updateStatusMutation.isLoading || o.status === 'to_shipper'}>
+                    ✅ Chấp nhận
                   </button>
                 </td>
               </tr>

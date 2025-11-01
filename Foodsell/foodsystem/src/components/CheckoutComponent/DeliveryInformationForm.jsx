@@ -144,7 +144,11 @@ const districts = {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      onSubmit(formData);
+      // Pass both form data and shipping details to parent
+      onSubmit({
+        ...formData,
+        shippingDetails
+      });
     }
   };
 

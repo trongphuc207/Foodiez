@@ -37,6 +37,24 @@ export const shopOrdersAPI = {
     return res.json();
   },
 
+  // NOTE: creating orders should normally happen via the public orders API
+  // when a buyer places an order. Sellers should operate on existing orders
+  // (accept/forward), so the explicit createShippingOrder helper was removed.
+
+  // Update basic order details (recipient info, phone, address) from seller side
+  updateOrderDetails: async (orderId, data) => {
+    const res = await fetch(`${API_BASE_URL}/seller/orders/${orderId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      throw new Error(err?.message || 'Failed to update order details');
+    }
+    return res.json();
+  },
+
   updateOrderStatus: async (orderId, status) => {
     const res = await fetch(`${API_BASE_URL}/seller/orders/${orderId}/status`, {
       method: 'PUT',

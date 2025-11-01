@@ -176,6 +176,9 @@ export const routes = [
         isShowHeader: false
     },
 
+    // The separate create-shipping-order route was removed. Sellers create shipping
+    // orders inline from the Shop Management -> Quản lý đơn hàng tab.
+
     {
         path: '/seller',
         component: () => <Navigate to="/seller/dashboard" replace />,

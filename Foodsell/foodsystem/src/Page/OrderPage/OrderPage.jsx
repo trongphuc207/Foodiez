@@ -445,32 +445,7 @@ export default function OrderPage() {
                     )}
                   </div>
 
-                  {order.status !== 'pending' && (
-                    <div className="order-progress">
-                      <div className="progress-bar">
-                        <div className={`progress-step ${order.status === 'pending' || order.status === 'confirmed' || order.status === 'preparing' || order.status === 'shipping' || order.status === 'delivered' ? 'active' : ''}`}>
-                          <div className="step-icon">📦</div>
-                          <span>Đặt hàng</span>
-                        </div>
-                        <div className={`progress-step ${order.status === 'confirmed' || order.status === 'preparing' || order.status === 'shipping' || order.status === 'delivered' ? 'active' : ''}`}>
-                          <div className="step-icon">✅</div>
-                          <span>Xác nhận</span>
-                        </div>
-                        <div className={`progress-step ${order.status === 'preparing' || order.status === 'shipping' || order.status === 'delivered' ? 'active' : ''}`}>
-                          <div className="step-icon">👨‍🍳</div>
-                          <span>Chuẩn bị</span>
-                        </div>
-                        <div className={`progress-step ${order.status === 'shipping' || order.status === 'delivered' ? 'active' : ''}`}>
-                          <div className="step-icon">🚚</div>
-                          <span>Giao hàng</span>
-                        </div>
-                        <div className={`progress-step ${order.status === 'delivered' ? 'active' : ''}`}>
-                          <div className="step-icon">🎉</div>
-                          <span>Hoàn thành</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {/* Progress is shown only inside expanded details (Xem chi tiết) */}
                 </div>
 
                 {selectedOrder === order.id && (
@@ -563,6 +538,22 @@ export default function OrderPage() {
                           </div>
                         </div>
                       </div>
+                      {/* Progress inside expanded details */}
+                      {order.status !== 'pending' && (
+                        <div className="detail-section order-progress-expanded">
+                          <div className="section-header">
+                            <i className="section-icon">📈</i>
+                            <h4>Tiến trình đơn hàng</h4>
+                          </div>
+                          <div className="section-content">
+                            <div className="shipper-info">
+                              <div className="shipper-line"><span className="shipper-label">Shipper:</span> <span className="shipper-value">{order.shipperName || order.shipper_name || (order.shipper && order.shipper.name) || 'Chưa phân công'}</span></div>
+                              <div className="shipper-line"><span className="shipper-label">SDT shipper:</span> <span className="shipper-value">{order.shipperPhone || order.shipper_phone || (order.shipper && order.shipper.phone) || 'Không có'}</span></div>
+                              <div className="shipper-line"><span className="shipper-label">Dự kiến giao hàng:</span> <span className="shipper-value">{formatDate(order.estimated_delivery_time || order.estimatedDeliveryTime || order.delivery_time || order.expected_delivery_time) || 'Không có'}</span></div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

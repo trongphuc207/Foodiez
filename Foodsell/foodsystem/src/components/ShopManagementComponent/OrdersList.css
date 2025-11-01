@@ -32,3 +32,55 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Modal styles reused in other parts of the project (keeps UI consistent) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.modal-content {
+  background: #fff;
+  padding: 16px;
+  width: 420px;
+  max-width: 95%;
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+.modal-content h3 {
+  margin-top: 0;
+}
+.modal-content .form-group {
+  margin-bottom: 8px;
+}
+.modal-content label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.modal-content input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+.btn-secondary {
+  background: #f3f4f6;
+  color: #111;
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  border-radius: 6px;
+}

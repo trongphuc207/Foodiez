@@ -49,6 +49,27 @@
   font-size: 24px;
 }
 
+/* Favorite button shown next to title */
+.favorite-btn {
+  background: rgba(255,255,255,0.95);
+  border: 1px solid #ffe6e6;
+  color: #e74c3c;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.favorite-btn.active { background: #ffe6e6; }
+
+.star-rating {
+  color: #f1c40f;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
 .product-description {
   color: #666;
   margin-bottom: 20px;

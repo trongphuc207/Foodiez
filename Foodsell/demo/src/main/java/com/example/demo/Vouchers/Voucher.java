@@ -24,7 +24,7 @@ public class Voucher {
     @Column(name = "discount_type", nullable = false)
     private String discountType; // 'percentage' or 'fixed'
 
-    @Column(name = "discount_value", nullable = false, precision = 5, scale = 2)
+    @Column(name = "discount_value", nullable = false, precision = 10, scale = 2)
     private BigDecimal discountValue;
 
     @Column(name = "min_order_value", precision = 10, scale = 2)

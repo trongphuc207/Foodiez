@@ -3,6 +3,14 @@ import { useState, useEffect } from "react"
 import axios from "axios"
 import "./ProductList.css"
 import ProductDetail from "./ProductDetail"
+import { useAuth } from "../../hooks/useAuth"
+import {
+  loadFavoritesForUser,
+  saveFavoritesForUser,
+  toggleFavoriteForUser,
+  isProductFavoritedForUser,
+  fetchServerFavorites,
+} from "../../utils/favorites"
 // import { useCart } from "../../contexts/CartContext" // Không sử dụng vì chỉ mở ProductDetail modal
 import { getShopName } from "../../constants/shopNames"
 import { getCategoryName } from "../../constants/categoryNames"
@@ -60,6 +68,59 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
     // guard: only change to a valid page
     if (page < 1 || page > totalPages) return
     setCurrentPage(page)
+  }
+
+  // Favorites (localStorage)
+  const { user, isAuthenticated } = useAuth()
+  const [favoritesSet, setFavoritesSet] = useState(new Set())
+
+  useEffect(() => {
+    let mounted = true
+    try {
+      const localFavs = loadFavoritesForUser(user)
+      setFavoritesSet(new Set(localFavs))
+
+      // If user is authenticated, try to fetch server-side favorites and merge
+      if (isAuthenticated) {
+        ;(async () => {
+          try {
+            const serverFavs = await fetchServerFavorites()
+            if (!mounted) return
+            if (Array.isArray(serverFavs)) {
+              const merged = Array.from(new Set([...(serverFavs || []), ...localFavs]))
+              saveFavoritesForUser(user, merged)
+              setFavoritesSet(new Set(merged))
+            }
+          } catch (err) {
+            console.warn('Failed to load server favorites', err)
+          }
+        })()
+      }
+    } catch (e) {
+      setFavoritesSet(new Set())
+    }
+
+    return () => {
+      mounted = false
+    }
+  }, [user, isAuthenticated])
+
+  const handleToggleFavorite = (e, product) => {
+    e.stopPropagation()
+    const updated = toggleFavoriteForUser(user, product.id)
+    setFavoritesSet(new Set(updated))
+  }
+
+  const renderStars = (rating) => {
+    if (rating === null || rating === undefined) return null
+    const val = Number(rating)
+    if (Number.isNaN(val)) return null
+    const full = Math.round(val)
+    return (
+      <div className="star-rating" title={`${val.toFixed(1)} / 5`}>
+        {'⭐'.repeat(full)}{val % 1 !== 0 ? ` ${val.toFixed(1)}` : ''}
+      </div>
+    )
   }
 
   const handleAddToCart = (product, e) => {
@@ -168,6 +229,14 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
                   <span>Không có sẵn</span>
                 </div>
               )}
+              {/* Favorite button (top-right) */}
+              <div
+                className={`favorite-btn ${favoritesSet.has(product.id) ? 'active' : ''}`}
+                onClick={(e) => handleToggleFavorite(e, product)}
+                title={favoritesSet.has(product.id) ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+              >
+                <i className="bi bi-heart-fill"></i>
+              </div>
               {product.available && product.status === 'out_of_stock' && (
                 <div className="unavailable-overlay">
                   <span>Hết hàng</span>
@@ -179,6 +248,7 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
             <div className="product-info">
               <div className="product-content">
                 <h3 className="product-name">{product.name}</h3>
+                {renderStars(product.averageRating || product.rating || product.avgRating)}
                 <p className="shop-name">🏪 {getShopName(product.shopId)}</p>
                 <p className="product-description">{product.description}</p>
                 <div className="product-stats">
