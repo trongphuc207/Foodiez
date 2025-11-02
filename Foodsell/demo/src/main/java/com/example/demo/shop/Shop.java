@@ -1,29 +1,18 @@
 package com.example.demo.shop;
 
-import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import java.io.Serializable;
 
-@Entity
-@Table(name = "shops")
+// Keep as a simple DTO; canonical JPA entity is in com.example.demo.shops.Shop
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Shop {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class Shop implements Serializable {
     private Integer id;
-
-    @Column(name = "name")
     private String name;
-
-    @Column(name = "address")
     private String address;
-
-    @Column(name = "latitude")
     private Double latitude;
-
-    @Column(name = "longitude")
     private Double longitude;
 }

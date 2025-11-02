@@ -5,7 +5,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import com.example.demo.shop.Shop;
+import com.example.demo.shops.Shop;
 
 @Entity
 @Table(name = "orders")

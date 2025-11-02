@@ -7,6 +7,8 @@ import com.example.demo.Users.User;
 import com.example.demo.Users.UserRepository;
 import com.example.demo.Orders.Order;
 import com.example.demo.Orders.OrderRepository;
+import com.example.demo.order.OrderStatusHistory;
+import com.example.demo.order.OrderStatusHistoryRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -96,7 +98,7 @@ public class ShipperServiceImpl implements ShipperService {
         history.setOrderId(orderId);
         history.setStatus(status);
         history.setNotes(note);
-        history.setChangedBy(user.getId().longValue());
+    history.setChangedBy(user.getId().intValue());
         orderStatusHistoryRepository.save(history);
     }
 
@@ -124,7 +126,7 @@ public class ShipperServiceImpl implements ShipperService {
         OrderStatusHistory history = new OrderStatusHistory();
         history.setOrderId(orderId);
         history.setStatus("accepted");
-        history.setChangedBy(user.getId().longValue());
+    history.setChangedBy(user.getId().intValue());
         orderStatusHistoryRepository.save(history);
     }
 

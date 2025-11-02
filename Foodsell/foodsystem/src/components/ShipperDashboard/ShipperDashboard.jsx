@@ -26,22 +26,17 @@ export default function ShipperDashboard() {
   const [error, setError] = useState(null)
 
   // Load data from API
-  // Load data from API
-  useEffect(() => {
-    loadShipperData()
-  }, [loadShipperData]) // Reload when loadShipperData changes
-
   const loadShipperData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
-      
+
       // Load orders based on active tab and dashboard data in parallel
       const [ordersResponse, dashboardResponse] = await Promise.all([
         shipperAPI.getOrders(activeTab !== 'all' ? activeTab : null),
         shipperAPI.getDashboard()
       ])
-      
+
       if (ordersResponse.success) {
         setOrders(ordersResponse.data || [])
       } else {
@@ -59,6 +54,10 @@ export default function ShipperDashboard() {
       setLoading(false)
     }
   }, [activeTab])
+
+  useEffect(() => {
+    loadShipperData()
+  }, [loadShipperData]) // Reload when loadShipperData changes
 
   // Render loading state
   if (loading) {

@@ -28,6 +28,12 @@ public class Shop {
     @Column(name = "address", nullable = false, columnDefinition = "TEXT")
     private String address;
 
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
     @Column(name = "opening_hours")
     private String openingHours;
 
