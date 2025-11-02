@@ -45,6 +45,13 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     
     List<Order> findByAssignmentStatusOrderByCreatedAtDesc(String assignmentStatus);
     
+    // Find available orders that have been accepted by seller but not yet assigned to a shipper
+    List<Order> findByAssignmentStatusAndAssignedShipperIdIsNullOrderByCreatedAtDesc(String assignmentStatus);
+
+    // Search available orders by keyword in notes, recipient name or address_text
+    @Query("SELECT o FROM Order o WHERE o.assignmentStatus = :assignmentStatus AND o.assignedShipperId IS NULL AND (LOWER(o.notes) LIKE LOWER(CONCAT('%',:kw,'%')) OR LOWER(o.recipientName) LIKE LOWER(CONCAT('%',:kw,'%')) OR LOWER(o.addressText) LIKE LOWER(CONCAT('%',:kw,'%'))) ORDER BY o.createdAt DESC")
+    List<Order> searchAvailableOrdersByKeyword(@Param("assignmentStatus") String assignmentStatus, @Param("kw") String keyword);
+    
     List<Order> findByAssignedSellerIdOrderByCreatedAtDesc(Integer sellerId);
     
     List<Order> findByAssignedShipperIdOrderByCreatedAtDesc(Integer shipperId);

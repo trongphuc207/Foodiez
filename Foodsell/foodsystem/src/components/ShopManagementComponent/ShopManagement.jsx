@@ -79,15 +79,30 @@ const ShopManagement = () => {
     retry: 1
   });
 
-  // Debug log for categories
+  // Debug log and handle fetch errors
   useEffect(() => {
     if (categoriesData) {
       console.log('📂 Categories loaded:', categoriesData);
     }
     if (categoriesError) {
       console.error('❌ Categories error:', categoriesError);
+      // Thử lại sau 5 giây
+      setTimeout(() => {
+        queryClient.invalidateQueries(['categories']);
+      }, 5000);
     }
   }, [categoriesData, categoriesError]);
+
+  // Thêm xử lý lỗi cho products
+  useEffect(() => {
+    if (productsError) {
+      console.error('❌ Products error:', productsError);
+      // Thử lại sau 5 giây
+      setTimeout(() => {
+        queryClient.invalidateQueries(['products']);
+      }, 5000);
+    }
+  }, [productsError]);
 
   // Test server connection on mount
   useEffect(() => {

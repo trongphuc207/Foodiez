@@ -39,6 +39,39 @@ public class OrderController {
     public List<OrderHistory> getOrderHistory(@PathVariable Integer id) {
         return orderService.getOrderHistory(id);
     }
+
+    // POST: Chấp nhận đơn hàng (seller)
+    @PostMapping("/{id}/accept")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<Map<String, Object>> acceptOrder(@PathVariable Integer id) {
+        try {
+            var currentUser = roleChecker.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseEntity.status(401).body(Map.of(
+                    "success", false,
+                    "message", "User not authenticated"
+                ));
+            }
+
+            boolean success = orderService.acceptOrder(id, currentUser.getId());
+            if (success) {
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Order accepted successfully"
+                ));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Could not accept order"
+                ));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                "success", false,
+                "message", "Internal server error: " + e.getMessage()
+            ));
+        }
+    }
     
     // GET: Test endpoint
     @GetMapping("/test")

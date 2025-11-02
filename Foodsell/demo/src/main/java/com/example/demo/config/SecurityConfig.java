@@ -65,6 +65,7 @@ public class SecurityConfig {
                 
                 // Seller endpoints
                 .requestMatchers("/api/seller/**").hasAnyRole("SELLER", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/orders/*/accept").hasAnyRole("SELLER", "ADMIN")
                 
                 // Shipper endpoints  
                 .requestMatchers("/api/shipper/**").hasAnyRole("SHIPPER", "ADMIN")

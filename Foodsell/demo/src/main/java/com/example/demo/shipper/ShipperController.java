@@ -31,6 +31,25 @@ public class ShipperController {
         }
     }
 
+    @GetMapping("/available")
+    public ResponseEntity<?> getAvailableOrders(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String area,
+            Authentication authentication) {
+        try {
+            var orders = shipperService.getAvailableOrders(authentication.getName(), keyword, area);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", orders
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
+
     @GetMapping("/dashboard")
     public ResponseEntity<?> getDashboard(Authentication authentication) {
         try {

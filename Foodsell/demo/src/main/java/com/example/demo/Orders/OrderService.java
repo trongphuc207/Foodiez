@@ -97,6 +97,12 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
     
+    @Transactional
+    public boolean acceptOrder(Integer orderId, Integer userId) {
+        // Delegate to OrderAssignmentService
+        return orderAssignmentService.acceptOrder(orderId, userId);
+    }
+
     public List<OrderDTO> getOrdersByShopId(Integer shopId) {
         List<Order> orders = orderRepository.findByShopIdOrderByCreatedAtDesc(shopId);
         // Load order items for each order

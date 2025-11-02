@@ -66,6 +66,19 @@ export const shopOrdersAPI = {
       throw new Error(err?.message || 'Failed to update order status');
     }
     return res.json();
+  },
+
+  // Chấp nhận đơn hàng
+  acceptOrder: async (orderId) => {
+    const res = await fetch(`${API_BASE_URL}/orders/${orderId}/accept`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      throw new Error(err?.message || 'Failed to accept order');
+    }
+    return res.json();
   }
 };
 

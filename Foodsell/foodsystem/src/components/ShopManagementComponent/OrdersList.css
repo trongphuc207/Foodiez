@@ -21,13 +21,23 @@
   background: #fbfbfb;
 }
 .orders-table button {
-  background: #1177ff;
-  color: white;
   border: none;
   padding: 6px 10px;
   border-radius: 4px;
   cursor: pointer;
+  margin: 0 4px;
 }
+
+.orders-table .edit-btn {
+  background: #6c757d;
+  color: white;
+}
+
+.orders-table .accept-btn {
+  background: #28a745;
+  color: white;
+}
+
 .orders-table button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -83,4 +93,40 @@
   border: 1px solid #ddd;
   padding: 8px 12px;
   border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.btn-primary {
+  background: #4A90E2;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #357ABD;
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.modal-content input:focus {
+  border-color: #4A90E2;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.form-group input {
+  font-size: 1rem;
 }

@@ -11,6 +11,7 @@ import com.example.demo.order.OrderStatusHistory;
 import com.example.demo.order.OrderStatusHistoryRepository;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.time.LocalDateTime;
 
 @Service
 public class ShipperServiceImpl implements ShipperService {
@@ -36,14 +37,50 @@ public class ShipperServiceImpl implements ShipperService {
 
         List<Order> orders;
         if (status != null) {
+            // If a specific status is supplied, return orders assigned to this shipper with that status
             orders = orderRepository.findByAssignedShipperIdAndStatus(shipper.getId().intValue(), status);
         } else {
-            orders = orderRepository.findByAssignedShipperId(shipper.getId().intValue());
+            // Default: return orders assigned to this shipper AND orders that have been accepted by sellers
+            // (assignmentStatus = 'accepted' and not yet assigned to a shipper) so shippers can pick them up.
+            List<Order> assignedToShipper = orderRepository.findByAssignedShipperId(shipper.getId().intValue());
+            List<Order> sellerAccepted = orderRepository.findByAssignmentStatusAndAssignedShipperIdIsNullOrderByCreatedAtDesc("accepted");
+
+            assignedToShipper.addAll(sellerAccepted);
+            orders = assignedToShipper;
         }
 
         return orders.stream()
             .map(this::convertToShipperOrderDTO)
             .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ShipperOrderDTO> getAvailableOrders(String username, String keyword, String area) {
+        // Returns orders that sellers have accepted and are not yet assigned to any shipper.
+        // Optional keyword search (notes, recipientName, addressText) and optional area filter (simple substring match on address_text)
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Shipper shipper = shipperRepository.findByUserId(user.getId().longValue())
+            .orElseThrow(() -> new RuntimeException("Shipper not found"));
+
+        List<Order> available;
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            available = orderRepository.searchAvailableOrdersByKeyword("accepted", keyword.trim());
+        } else {
+            available = orderRepository.findByAssignmentStatusAndAssignedShipperIdIsNullOrderByCreatedAtDesc("accepted");
+        }
+
+        // If area filter provided, simple substring match on shop address or order address
+        if (area != null && !area.trim().isEmpty()) {
+            String a = area.trim().toLowerCase();
+            available = available.stream()
+                .filter(o -> (o.getShop() != null && o.getShop().getAddress() != null && o.getShop().getAddress().toLowerCase().contains(a))
+                              || (o.getAddressText() != null && o.getAddressText().toLowerCase().contains(a)))
+                .collect(Collectors.toList());
+        }
+
+        // TODO: Could sort by distance to shipper if shipper/location available. For now return as-is (recent first)
+        return available.stream().map(this::convertToShipperOrderDTO).collect(Collectors.toList());
     }
 
     @Override
@@ -118,15 +155,18 @@ public class ShipperServiceImpl implements ShipperService {
             throw new RuntimeException("Order already assigned to another shipper");
         }
 
-        order.setAssignedShipperId(shipper.getId().intValue());
-        order.setStatus("accepted");
+        // Assign to this shipper and update assignment status
+    order.setAssignedShipperId(shipper.getId().intValue());
+    order.setAssignmentStatus("assigned");
+    order.setAssignedAt(LocalDateTime.now());
+        // Optionally set delivery workflow status (e.g. delivering) depending on your flow. Keep existing status unchanged if you prefer.
         orderRepository.save(order);
 
         // Save status history
         OrderStatusHistory history = new OrderStatusHistory();
         history.setOrderId(orderId);
-        history.setStatus("accepted");
-    history.setChangedBy(user.getId().intValue());
+        history.setStatus("assigned");
+        history.setChangedBy(user.getId().intValue());
         orderStatusHistoryRepository.save(history);
     }
 

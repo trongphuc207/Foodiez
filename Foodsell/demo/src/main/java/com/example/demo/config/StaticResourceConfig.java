@@ -3,26 +3,22 @@ package com.example.demo.config;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.resource.PathResourceResolver;
+import org.springframework.core.io.Resource;
+import java.io.IOException;
 
 @Configuration
 public class StaticResourceConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Serve uploaded files from the uploads directory
+        // Only configure specific paths for static resources, leave /api/** for controllers
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:./uploads/");
         
-        // Serve product images
-        registry.addResourceHandler("/uploads/product-images/**")
-                .addResourceLocations("file:./uploads/product-images/");
+        registry.addResourceHandler("/static/**")
+                .addResourceLocations("classpath:/static/");
         
-        // Serve profile images
-        registry.addResourceHandler("/uploads/profile-images/**")
-                .addResourceLocations("file:./uploads/profile-images/");
-        
-        System.out.println("📁 Static resources configured for: ./uploads/");
-        System.out.println("📁 Product images configured for: ./uploads/product-images/");
-        System.out.println("📁 Profile images configured for: ./uploads/profile-images/");
+        System.out.println("📁 Static resources configured: /uploads/**, /static/**");
     }
 }

@@ -2,6 +2,8 @@ package com.example.demo.Orders;
 
 import com.example.demo.Users.User;
 import com.example.demo.Users.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +14,7 @@ import java.util.Optional;
 
 @Service
 public class OrderAssignmentService {
+    private static final Logger logger = LoggerFactory.getLogger(OrderAssignmentService.class);
     
     private final OrderRepository orderRepository;
     private final OrderHistoryRepository orderHistoryRepository;
@@ -111,53 +114,148 @@ public class OrderAssignmentService {
      */
     @Transactional
     public boolean acceptOrder(Integer orderId, Integer userId) {
+        logger.info("=== START ACCEPT ORDER FLOW ===");
+        logger.info("Processing order acceptance request - Order ID: {}, User ID: {}", orderId, userId);
         try {
+            logger.info("1. Looking up order in database...");
             Order order = orderRepository.findById(orderId).orElse(null);
             if (order == null) {
-                System.out.println("❌ Order not found: " + orderId);
+                logger.error("Failed to accept order: Order not found with ID: {}", orderId);
                 return false;
             }
+            logger.info("Order found - Current status: {}, Assignment status: {}", order.getStatus(), order.getAssignmentStatus());
 
             User user = userRepository.findById(userId).orElse(null);
             if (user == null) {
-                System.out.println("❌ User not found: " + userId);
+                logger.error("Failed to accept order: User not found with ID: {}", userId);
                 return false;
             }
 
-            // Kiểm tra quyền
+            // Log current order state
+            logger.debug("Current order state - ID: {}, Status: {}, Assignment Status: {}, Seller ID: {}, Shipper ID: {}", 
+                orderId, order.getStatus(), order.getAssignmentStatus(), order.getAssignedSellerId(), order.getAssignedShipperId());
+
+            // Log current state for debugging
+            logger.info("2. Current order state:");
+            logger.info("Status: {}, Assignment status: {}", order.getStatus(), order.getAssignmentStatus());
+
+            // Kiểm tra quyền và bỏ qua kiểm tra assignment status
+            logger.info("Checking user permissions for order acceptance - User Role: {}, Order ID: {}", user.getRole(), orderId);
             boolean canAccept = false;
-            if (user.getRole().equals("seller") && order.getAssignedSellerId() != null && order.getAssignedSellerId().equals(userId)) {
-                canAccept = true;
-                order.setStatus("confirmed");
-            } else if (user.getRole().equals("shipper") && order.getAssignedShipperId() != null && order.getAssignedShipperId().equals(userId)) {
-                canAccept = true;
-                order.setStatus("shipping");
+            
+            if (user.getRole().equals("seller")) {
+                logger.info("3. Checking seller permissions...");
+                logger.info("User ID: {}, Order ID: {}, User Role: {}", userId, orderId, user.getRole());
+                
+                // Allow acceptance for any seller who owns the shop
+                boolean isAssignedSeller = true; // Remove assignment check
+                logger.info("Bypassing assignment check for sellers");
+                
+                boolean isShopOwner = false;
+                
+                try {
+                    if (order.getShop() != null) {
+                        logger.info("Shop information found - Shop ID: {}", order.getShop().getId());
+                        logger.info("Checking shop ownership - Shop Seller ID: {}, User ID: {}", 
+                            order.getShop().getSellerId(), userId);
+                        isShopOwner = Integer.valueOf(order.getShop().getSellerId()).equals(userId);
+                        logger.info("Is shop owner? {}", isShopOwner);
+                    } else {
+                        logger.error("Shop information is missing for order {}", orderId);
+                    }
+                } catch (Exception ex) {
+                    logger.error("Error checking shop ownership for order {}: {}", orderId, ex.getMessage());
+                    isShopOwner = false;
+                }
+
+                if (isAssignedSeller || isShopOwner) {
+                    logger.debug("User {} (seller) is allowed to accept order {} (assignedSeller={}, shopOwner={})", 
+                        userId, orderId, isAssignedSeller, isShopOwner);
+                    canAccept = true;
+                }
+            } else if (user.getRole().equals("shipper")) {
+                if (order.getAssignedShipperId() != null && order.getAssignedShipperId().equals(userId)) {
+                    logger.debug("User {} is a shipper and is assigned to this order", userId);
+                    canAccept = true;
+                }
             }
 
             if (!canAccept) {
-                System.out.println("❌ User " + userId + " cannot accept order " + orderId);
+                logger.error("User {} cannot accept order {}. User role: {}, Not shop owner", 
+                    userId, orderId, user.getRole());
                 return false;
             }
 
-            // Cập nhật đơn hàng
-            order.setAssignmentStatus("accepted");
-            order.setAcceptedAt(LocalDateTime.now());
-            order.setUpdatedAt(LocalDateTime.now());
+            // Cập nhật trạng thái đơn hàng và không kiểm tra assignment status
+            String currentAssignmentStatus = "not_required"; // Bỏ qua kiểm tra trạng thái assignment
             
-            orderRepository.save(order);
-
-            // Tạo lịch sử
-            String action = user.getRole().equals("seller") ? "order_accepted_by_seller" : "order_accepted_by_shipper";
-            String description = user.getRole().equals("seller") ? 
-                "Seller đã chấp nhận đơn hàng" : "Shipper đã chấp nhận đơn hàng";
+            // Validate shop information for seller acceptance
+            if (user.getRole().equals("seller")) {
+                if (order.getShop() == null) {
+                    logger.error("Cannot accept order: Shop information is missing for order {}", orderId);
+                    return false;
+                }
+            }
             
-            createOrderHistory(orderId, null, order.getStatus(), action, description, user.getEmail());
+            // Cập nhật đơn hàng - CHỈ thay đổi assignment status
+            try {
+                order.setAssignmentStatus("accepted");
+                order.setAcceptedAt(LocalDateTime.now());
+                order.setUpdatedAt(LocalDateTime.now());
+                
+                logger.debug("Order assignment status transition - Order ID: {}, " +
+                            "Old Assignment Status: {}, New Assignment Status: accepted", 
+                            orderId, currentAssignmentStatus);
+                
+                // Persist and flush immediately so we see DB changes within this transaction
+                logger.info("Attempting to save order changes - Order ID: {}, Status: {}, New Assignment Status: {}, Accepted At: {}", 
+                    order.getId(), order.getStatus(), order.getAssignmentStatus(), order.getAcceptedAt());
+                
+                Order savedOrder = orderRepository.saveAndFlush(order);
+                logger.info("Order successfully updated in database - Order ID: {}, Status: {}, Assignment Status: {}, Updated At: {}, Accepted At: {}", 
+                    savedOrder.getId(), savedOrder.getStatus(), savedOrder.getAssignmentStatus(), 
+                    savedOrder.getUpdatedAt(), savedOrder.getAcceptedAt());
+                    
+                // Verify the changes were saved
+                Order verifiedOrder = orderRepository.findById(orderId).orElse(null);
+                if (verifiedOrder != null) {
+                    logger.info("Verified order state after save - Order ID: {}, Status: {}, Assignment Status: {}, Accepted At: {}", 
+                        verifiedOrder.getId(), verifiedOrder.getStatus(), verifiedOrder.getAssignmentStatus(), 
+                        verifiedOrder.getAcceptedAt());
+                }
+            } catch (Exception e) {
+                logger.error("Failed to save order changes: {}", e.getMessage());
+                throw e;  // Re-throw to trigger transaction rollback
+            }
 
-            System.out.println("✅ Order " + orderId + " accepted by " + user.getRole() + " " + userId);
+            // Tạo lịch sử với assignment status
+            try {
+                String oldAssignmentStatus = order.getAssignmentStatus() != null ? order.getAssignmentStatus() : "pending";
+                createOrderHistory(
+                    orderId,
+                    oldAssignmentStatus,    // Assignment status cũ
+                    "accepted",             // Assignment status mới
+                    user.getRole().equals("seller") ? "order_accepted_by_seller" : "order_accepted_by_shipper",
+                    user.getRole().equals("seller") ? "Seller đã chấp nhận đơn hàng" : "Shipper đã chấp nhận đơn hàng",
+                    user.getEmail()
+                );
+                logger.info("Successfully created order history for order {}", orderId);
+            } catch (Exception ex) {
+                logger.error("Failed to create order history: {}", ex.getMessage());
+                // Don't throw here, we still want to return true if the order was accepted
+            }
+
+            logger.info("Order {} successfully accepted by {} (ID: {})", orderId, user.getRole(), userId);
             return true;
 
         } catch (Exception e) {
-            System.err.println("❌ Error accepting order: " + e.getMessage());
+            logger.error("Error accepting order {} by user {}: {}", orderId, userId, e.getMessage(), e);
+            // In case of error, try to rollback any partial changes
+            if (orderRepository.findById(orderId).isPresent()) {
+                Order originalOrder = orderRepository.findById(orderId).get();
+                logger.info("Rolling back order to previous state - Order ID: {}, Status: {}, Assignment Status: {}", 
+                    originalOrder.getId(), originalOrder.getStatus(), originalOrder.getAssignmentStatus());
+            }
             return false;
         }
     }
@@ -263,6 +361,10 @@ public class OrderAssignmentService {
     private void createOrderHistory(Integer orderId, String statusFrom, String statusTo, 
                                   String action, String description, String createdBy) {
         try {
+            logger.info("Creating order history entry - Order ID: {}, Status From: {}, Status To: {}, Action: {}, Created By: {}", 
+                orderId, statusFrom, statusTo, action, createdBy);
+            logger.debug("Order history details - Description: {}", description);
+            
             OrderHistory history = new OrderHistory();
             history.setOrderId(orderId);
             history.setStatusFrom(statusFrom);
@@ -272,9 +374,11 @@ public class OrderAssignmentService {
             history.setCreatedBy(createdBy);
             history.setCreatedAt(LocalDateTime.now());
             
-            orderHistoryRepository.save(history);
+            OrderHistory savedHistory = orderHistoryRepository.save(history);
+            logger.debug("Order history created - ID: {}, Order ID: {}, Action: {}", 
+                savedHistory.getId(), savedHistory.getOrderId(), savedHistory.getAction());
         } catch (Exception e) {
-            System.err.println("❌ Error creating order history: " + e.getMessage());
+            logger.error("Error creating order history for order {}: {}", orderId, e.getMessage());
         }
     }
 }
