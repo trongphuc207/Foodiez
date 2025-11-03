@@ -4,6 +4,8 @@ import com.example.demo.dto.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,46 +16,26 @@ import java.util.ArrayList;
 @CrossOrigin(origins = "http://localhost:3000")
 public class CategoryController {
     
+    private static final Logger logger = LoggerFactory.getLogger(CategoryController.class);
     private final CategoryService categoryService;
     
     @Autowired
     public CategoryController(CategoryService categoryService) {
         this.categoryService = categoryService;
+        logger.info("✅ CategoryController initialized!");
     }
     
     // GET: Lấy tất cả categories
     @GetMapping
     public ResponseEntity<ApiResponse<List<Category>>> getAllCategories() {
+        logger.info("🔥 GET /api/categories called!");
         try {
-            // Mock data với ID cố định để đồng bộ với frontend
-            List<Category> categories = new ArrayList<>();
-            
-            Category pho = new Category("Phở", "Vietnamese noodle soup, ready-to-eat");
-            pho.setId(1);
-            categories.add(pho);
-            
-            Category banhMi = new Category("Bánh Mì", "Vietnamese sandwich, ready-to-eat");
-            banhMi.setId(2);
-            categories.add(banhMi);
-            
-            Category com = new Category("Cơm", "Rice dishes, ready-to-eat");
-            com.setId(3);
-            categories.add(com);
-            
-            Category nuocUong = new Category("Nước uống", "Beverages including coffee, tea, and soft drinks");
-            nuocUong.setId(4);
-            categories.add(nuocUong);
-            
-            Category pizza = new Category("Pizza", "Món pizza phong cách Ý, nhiều loại topping đa dạng");
-            pizza.setId(5);
-            categories.add(pizza);
-            
-            Category bun = new Category("Bún", "Món bún Việt Nam truyền thống, dùng với thịt, chả");
-            bun.setId(6);
-            categories.add(bun);
-            
+            // Lấy từ database thực thay vì hardcoded
+            List<Category> categories = categoryService.getAllCategories();
+            logger.info("✅ Found {} categories from database", categories.size());
             return ResponseEntity.ok(ApiResponse.success(categories, "Lấy danh sách categories thành công"));
         } catch (Exception e) {
+            logger.error("❌ Error getting categories: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(ApiResponse.error("Lỗi khi lấy danh sách categories: " + e.getMessage()));
         }
     }

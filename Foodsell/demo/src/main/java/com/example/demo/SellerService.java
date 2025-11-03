@@ -30,6 +30,9 @@ public class SellerService {
     @Autowired
     private UserRepository userRepository;
     
+    @Autowired
+    private OrderHistoryRepository orderHistoryRepository;
+    
     // Get dashboard statistics
     public SellerDashboardDTO getDashboardStats(Integer shopId) {
         LocalDateTime today = LocalDate.now().atStartOfDay();
@@ -128,15 +131,34 @@ public class SellerService {
     public Order updateOrderStatus(Integer orderId, String status, String notes) {
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new RuntimeException("Order not found"));
-        
+        String oldStatus = order.getStatus();
+
         order.setStatus(status);
         if (notes != null && !notes.isEmpty()) {
             String currentNotes = order.getNotes() != null ? order.getNotes() : "";
             order.setNotes(currentNotes + "\n" + notes);
         }
         order.setUpdatedAt(LocalDateTime.now());
-        
-        return orderRepository.save(order);
+
+        Order saved = orderRepository.save(order);
+
+        // create order history entry
+        try {
+            OrderHistory history = new OrderHistory(
+                saved.getId(),
+                oldStatus,
+                status,
+                "SELLER_UPDATE",
+                (notes == null || notes.isEmpty()) ? "Seller updated status" : notes,
+                "SELLER"
+            );
+            orderHistoryRepository.save(history);
+        } catch (Exception e) {
+            // Do not break main flow if history fails
+            System.err.println("Failed to create order history: " + e.getMessage());
+        }
+
+        return saved;
     }
     
     // Get daily revenue

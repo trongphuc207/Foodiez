@@ -15,6 +15,7 @@ const ShopManagement = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [showShopForm, setShowShopForm] = useState(false);
   const [showRatings, setShowRatings] = useState(false);
+  const modalOverlayRef = React.useRef(null);
 
   // Form states
   const [productForm, setProductForm] = useState({
@@ -44,33 +45,35 @@ const ShopManagement = () => {
       // Prevent body scroll
       document.body.style.overflow = 'hidden';
       
-      // Force scroll to top immediately
-      requestAnimationFrame(() => {
+      // Scroll function
+      const scrollToTop = () => {
         const modalOverlay = document.querySelector('.modal-overlay');
         if (modalOverlay) {
           modalOverlay.scrollTop = 0;
-          modalOverlay.scrollTo({ top: 0, behavior: 'instant' });
+          modalOverlay.scrollTo(0, 0);
+          console.log('📜 Scrolled to top, scrollTop:', modalOverlay.scrollTop);
         }
-        window.scrollTo({ top: 0, behavior: 'instant' });
-      });
+      };
       
-      // Additional safety scroll after render
-      setTimeout(() => {
-        const modalOverlay = document.querySelector('.modal-overlay');
-        if (modalOverlay) {
-          modalOverlay.scrollTop = 0;
-        }
-      }, 0);
-    } else {
-      // Re-enable body scroll when modal is closed
-      document.body.style.overflow = 'auto';
-    }
-    
-    // Cleanup
+      // Scroll immediately
+      scrollToTop();
+      
+      // For EDIT mode with ImageUpload component, we need MORE aggressive scrolling
+      // because ImageUpload takes time to render and causes scroll down
+      const delays = editingProduct 
+        ? [0, 10, 50, 100, 150, 200, 300, 500, 750, 1000] // More delays for edit mode
+        : [0, 50, 100, 200, 500]; // Less delays for add mode
+      
+      const timers = delays.map(delay => setTimeout(scrollToTop, delay));
+      
     return () => {
+        timers.forEach(timer => clearTimeout(timer));
       document.body.style.overflow = 'auto';
     };
-  }, [showProductForm, showShopForm]);
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+  }, [showProductForm, showShopForm, editingProduct]);
 
   // Fetch shop data
   const { data: shopData, isLoading: shopLoading } = useQuery({
@@ -86,39 +89,43 @@ const ShopManagement = () => {
     enabled: !!shopData?.data?.id
   });
 
-  // Fetch categories with fallback data
-  const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError } = useQuery({
+  // Fetch categories từ database
+  const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError, refetch: refetchCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
       try {
-        return await categoryAPI.getAllCategories();
+        const result = await categoryAPI.getAllCategories();
+        console.log('✅ Categories loaded from database:', result);
+        return result;
       } catch (error) {
         console.error('❌ Categories API error:', error);
-        // Return fallback data if API fails
-        return {
-          success: true,
-          data: [
-            { id: 1, name: 'Phở', description: 'Vietnamese noodle soup' },
-            { id: 2, name: 'Bánh Mì', description: 'Vietnamese sandwich' },
-            { id: 3, name: 'Cơm', description: 'Rice dishes' },
-            { id: 4, name: 'Nước uống', description: 'Beverages' },
-            { id: 5, name: 'Pizza', description: 'Italian pizza' },
-            { id: 6, name: 'Bún', description: 'Vietnamese vermicelli' }
-          ]
-        };
+        throw error; // Throw error để React Query retry
       }
     },
-    refetchOnWindowFocus: false,
-    retry: 1
+    refetchOnWindowFocus: true, // Auto refresh khi focus lại window
+    retry: 1, // Chỉ retry 1 lần
+    retryDelay: 1000, // Delay 1s giữa các retry
+    staleTime: 0, // Không cache để luôn fetch mới
+    cacheTime: 0 // Xóa cache ngay
   });
 
   // Debug log for categories
   useEffect(() => {
     if (categoriesData) {
       console.log('📂 Categories loaded:', categoriesData);
+      console.log('📂 Categories data structure:', {
+        success: categoriesData?.success,
+        dataLength: categoriesData?.data?.length,
+        firstCategory: categoriesData?.data?.[0]
+      });
     }
     if (categoriesError) {
       console.error('❌ Categories error:', categoriesError);
+      console.error('❌ Error details:', {
+        message: categoriesError?.message,
+        stack: categoriesError?.stack,
+        response: categoriesError?.response
+      });
     }
   }, [categoriesData, categoriesError]);
 
@@ -132,6 +139,13 @@ const ShopManagement = () => {
     };
     testConnection();
   }, []);
+
+  // Force reload categories function
+  const handleReloadCategories = () => {
+    console.log('🔄 Force reloading categories...');
+    queryClient.removeQueries(['categories']); // Remove cache
+    refetchCategories(); // Refetch
+  };
 
   // Mutations
   const createProductMutation = useMutation({
@@ -269,6 +283,13 @@ const ShopManagement = () => {
   const handleProductSubmit = async (e) => {
     e.preventDefault();
     
+    console.log('📝 Form submitted with values:', {
+      name: productForm.name,
+      price: productForm.price,
+      categoryId: productForm.categoryId,
+      description: productForm.description
+    });
+    
     // Validation
     if (!productForm.name.trim()) {
       alert('❌ Vui lòng nhập tên món ăn');
@@ -293,9 +314,17 @@ const ShopManagement = () => {
       status: productForm.status
     };
 
+    console.log('✅ Product data after validation:', productData);
+
     // Validate data before sending
     if (!productData.name || !productData.price || !productData.categoryId || !productData.shopId) {
       alert('❌ Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các trường bắt buộc.');
+      console.error('❌ Missing required fields:', {
+        name: productData.name,
+        price: productData.price,
+        categoryId: productData.categoryId,
+        shopId: productData.shopId
+      });
       return;
     }
 
@@ -533,8 +562,18 @@ const ShopManagement = () => {
           </div>
 
           {showProductForm && (
-            <div className="modal-overlay" onClick={() => setShowProductForm(false)}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div 
+              className="modal-overlay" 
+              onClick={() => setShowProductForm(false)}
+            >
+              <div 
+                className="modal-overlay-inner"
+                ref={modalOverlayRef}
+              >
+                <div 
+                  className="modal-content" 
+                  onClick={(e) => e.stopPropagation()}
+                >
                 <button 
                   type="button"
                   className="modal-close-btn" 
@@ -542,12 +581,15 @@ const ShopManagement = () => {
                 >
                   ✕
                 </button>
-                <h3>{editingProduct ? 'Sửa món ăn' : 'Thêm món ăn mới'}</h3>
+                <h3>
+                  {editingProduct ? 'Sửa món ăn' : 'Thêm món ăn mới'}
+                </h3>
                 <form onSubmit={handleProductSubmit}>
                   <div className="form-group">
-                    <label>Tên món ăn:</label>
+                    <label>Tên món ăn: <span style={{color: 'red'}}>*</span></label>
                     <input
                       type="text"
+                      placeholder="Nhập tên món ăn"
                       value={productForm.name}
                       onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
                       required
@@ -556,25 +598,32 @@ const ShopManagement = () => {
                   <div className="form-group">
                     <label>Mô tả:</label>
                     <textarea
+                      placeholder="Nhập mô tả món ăn"
                       value={productForm.description}
                       onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
                       required
                     />
                   </div>
                   <div className="form-group">
-                    <label>Giá (VNĐ):</label>
+                    <label>Giá (VNĐ): <span style={{color: 'red'}}>*</span></label>
                     <input
                       type="number"
+                      placeholder="Nhập giá món ăn"
                       value={productForm.price}
                       onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
+                      min="0"
+                      step="1000"
                       required
                     />
                   </div>
                    <div className="form-group">
-                     <label>Danh mục:</label>
+                     <label>Danh mục: <span style={{color: 'red'}}>*</span></label>
                      <select
                        value={productForm.categoryId}
-                       onChange={(e) => setProductForm({ ...productForm, categoryId: e.target.value })}
+                       onChange={(e) => {
+                         console.log('Selected category ID:', e.target.value);
+                         setProductForm({ ...productForm, categoryId: e.target.value });
+                       }}
                        required
                        disabled={categoriesLoading}
                      >
@@ -587,11 +636,16 @@ const ShopManagement = () => {
                          </option>
                        ))}
                      </select>
-                     {categoriesError && (
+                    {categoriesError && !categoriesData?.data && (
                        <div className="error-message">
                          ⚠️ Lỗi khi tải danh mục từ server. Đang sử dụng danh mục mặc định.
                        </div>
                      )}
+                    {categoriesData?.data && (
+                      <div style={{fontSize: '12px', color: '#28a745', marginTop: '5px'}}>
+                        ✅ Đã tải {categoriesData.data.length} danh mục từ database
+                      </div>
+                    )}
                    </div>
                   <div className="form-group">
                     <label>Ảnh món ăn:</label>
@@ -659,6 +713,7 @@ const ShopManagement = () => {
                     </button>
                   </div>
                 </form>
+              </div>
               </div>
             </div>
           )}

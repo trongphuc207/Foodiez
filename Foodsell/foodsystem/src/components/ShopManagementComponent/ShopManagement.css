@@ -302,12 +302,21 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  display: block;
+  padding: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0;
-  display: block;
+}
+
+.modal-overlay-inner {
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px;
 }
 
 .modal-content {
@@ -315,12 +324,15 @@
   border-radius: 12px;
   padding: 30px;
   max-width: 600px;
-  width: 90%;
-  margin: 20px auto;
+  width: 100%;
   position: relative;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  animation: modalFadeIn 0.3s ease-out;
-  min-height: 200px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  margin: 0 auto;
+}
+
+.modal-content form {
+  margin: 0;
+  padding: 0;
 }
 
 @keyframes modalFadeIn {
@@ -368,6 +380,11 @@
   margin-bottom: 20px;
 }
 
+.form-group:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+}
+
 .image-upload-section {
   border: 2px dashed #ddd;
   border-radius: 8px;
@@ -411,6 +428,7 @@
   border-radius: 8px;
   font-size: 1rem;
   transition: border-color 0.3s ease;
+  background-color: white;
 }
 
 .form-group input:focus,
@@ -418,6 +436,19 @@
 .form-group select:focus {
   outline: none;
   border-color: #3498db;
+  background-color: #f8fcff;
+}
+
+.form-group input:required:invalid:not(:placeholder-shown),
+.form-group textarea:required:invalid:not(:placeholder-shown),
+.form-group select:required:invalid {
+  border-color: #ffc107;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #999;
+  font-style: italic;
 }
 
 .form-group textarea {
@@ -640,10 +671,14 @@
     padding: 0;
   }
   
+  .modal-overlay-inner {
+    padding: 10px;
+  }
+  
   .modal-content {
     padding: 20px;
-    margin: 10px auto;
-    width: 95%;
+    width: calc(100% - 20px);
+    margin: 10px;
   }
   
   .modal-content h3 {
