@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { shopAPI } from '../../api/shop';
+import { reviewAPI } from '../../api/review';
 import './ShopList.css';
 
 const ShopList = () => {
   const [shops, setShops] = useState([]);
+  const [baseShops, setBaseShops] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [filterRating, setFilterRating] = useState('');
@@ -14,11 +16,43 @@ const ShopList = () => {
     loadShops();
   }, []);
 
+  const enrichWithReviewStats = async (list) => {
+    try {
+      const enriched = await Promise.all(
+        (list || []).map(async (s) => {
+          try {
+            const res = await reviewAPI.getShopReviewStats(s.id);
+            const avg = res?.success ? (res.data?.averageRating ?? 0) : 0;
+            const count = res?.success ? (res.data?.reviewCount ?? 0) : 0;
+            return { ...s, _avgRating: avg, _reviewCount: count };
+          } catch {
+            return { ...s, _avgRating: 0, _reviewCount: 0 };
+          }
+        })
+      );
+      setBaseShops(enriched);
+      setShops(enriched);
+    } catch {
+      setBaseShops(list || []);
+      setShops(list || []);
+    }
+  };
+
+  // Apply rating filter on change using real average rating
+  useEffect(() => {
+    if (!filterRating) {
+      setShops(baseShops);
+      return;
+    }
+    const t = parseFloat(filterRating);
+    setShops((baseShops || []).filter(s => ((s._avgRating ?? s.rating ?? 0) >= t)));
+  }, [filterRating, baseShops]);
+
   const loadShops = async () => {
     try {
       setLoading(true);
       const response = await shopAPI.getAllShops();
-      setShops(response.data || []);
+      await enrichWithReviewStats(response.data || []);
     } catch (error) {
       console.error('Lỗi khi tải danh sách shop:', error);
       alert('Lỗi khi tải danh sách shop');
@@ -36,7 +70,7 @@ const ShopList = () => {
     try {
       setLoading(true);
       const response = await shopAPI.searchShops(searchKeyword);
-      setShops(response.data || []);
+      await enrichWithReviewStats(response.data || []);
     } catch (error) {
       console.error('Lỗi khi tìm kiếm shop:', error);
       alert('Lỗi khi tìm kiếm shop');
@@ -54,7 +88,7 @@ const ShopList = () => {
     try {
       setLoading(true);
       const response = await shopAPI.getShopsByRating(parseFloat(filterRating));
-      setShops(response.data || []);
+      await enrichWithReviewStats(response.data || []);
     } catch (error) {
       console.error('Lỗi khi lọc shop theo rating:', error);
       alert('Lỗi khi lọc shop theo rating');
@@ -148,8 +182,8 @@ const ShopList = () => {
               <div className="shop-card-header">
                 <h3 className="shop-name">{shop.name}</h3>
                 <div className="shop-rating">
-                  {renderStars(shop.rating)}
-                  <span className="rating-text">({shop.rating.toFixed(1)})</span>
+                  {renderStars((shop._avgRating ?? shop.rating ?? 0))}
+                  <span className="rating-text">({(shop._avgRating ?? shop.rating ?? 0).toFixed(1)})</span>
                 </div>
               </div>
               
@@ -183,4 +217,3 @@ const ShopList = () => {
 };
 
 export default ShopList;
-

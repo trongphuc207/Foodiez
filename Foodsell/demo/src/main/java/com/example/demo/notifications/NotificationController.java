@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @RestController
 @RequestMapping("/api/notifications")
@@ -174,6 +176,88 @@ public class NotificationController {
             return ResponseEntity.ok(ApiResponse.success(notification, "Tạo promotion notification thành công!"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // Tạo customer message notification cho merchant
+    @PostMapping("/system/customer-message")
+    public ResponseEntity<ApiResponse<Notification>> createCustomerMessageNotification(@RequestBody Map<String, Object> request) {
+        try {
+            Integer merchantId = (Integer) request.get("merchantId");
+            Integer customerId = (Integer) request.get("customerId");
+            String msg = (String) request.get("message");
+            String title = "Tin nhắn từ khách hàng";
+            String message = "Khách #" + customerId + ": " + (msg != null ? msg : "Bạn có tin nhắn mới");
+            Notification notification = notificationService.createNotification(merchantId, "MESSAGE", title, message);
+            return ResponseEntity.ok(ApiResponse.success(notification, "Tạo customer message notification thành công!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // Tạo order status notification cho customer
+    @PostMapping("/system/order-status")
+    public ResponseEntity<ApiResponse<Notification>> createOrderStatusNotification(@RequestBody Map<String, Object> request) {
+        try {
+            Integer customerId = (Integer) request.get("customerId");
+            Integer orderId = (Integer) request.get("orderId");
+            String status = (String) request.get("status");
+            String title = "Cập nhật trạng thái đơn hàng";
+            String message = "Đơn hàng #" + orderId + " đã chuyển sang trạng thái: " + status;
+            Notification notification = notificationService.createNotification(customerId, "ORDER", title, message);
+            return ResponseEntity.ok(ApiResponse.success(notification, "Tạo order status notification thành công!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // Tạo delivery assignment notification cho shipper
+    @PostMapping("/system/delivery-assignment")
+    public ResponseEntity<ApiResponse<Notification>> createDeliveryAssignment(@RequestBody Map<String, Object> request) {
+        try {
+            Integer shipperId = (Integer) request.get("shipperId");
+            Integer orderId = (Integer) request.get("orderId");
+            String title = "Đơn giao hàng mới";
+            String message = "Bạn được phân công đơn #" + orderId;
+            Notification notification = notificationService.createNotification(shipperId, "DELIVERY", title, message);
+            return ResponseEntity.ok(ApiResponse.success(notification, "Tạo delivery assignment notification thành công!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // Tạo delivery update notification cho shipper
+    @PostMapping("/system/delivery-update")
+    public ResponseEntity<ApiResponse<Notification>> createDeliveryUpdate(@RequestBody Map<String, Object> request) {
+        try {
+            Integer shipperId = (Integer) request.get("shipperId");
+            Integer orderId = (Integer) request.get("orderId");
+            String update = (String) request.get("update");
+            String title = "Cập nhật giao hàng";
+            String message = "Đơn #" + orderId + ": " + (update != null ? update : "Có cập nhật mới");
+            Notification notification = notificationService.createNotification(shipperId, "DELIVERY", title, message);
+            return ResponseEntity.ok(ApiResponse.success(notification, "Tạo delivery update notification thành công!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // Xem log thông báo (Admin only)
+    @GetMapping("/admin/log")
+    @PreAuthorize("hasAnyRole('ADMIN', 'admin')")
+    public ResponseEntity<ApiResponse<List<Notification>>> getNotificationLog(
+            @RequestParam(value = "type", required = false) String type,
+            @RequestParam(value = "start", required = false) String start,
+            @RequestParam(value = "end", required = false) String end) {
+        try {
+            LocalDateTime s = null, e = null;
+            DateTimeFormatter fmt = DateTimeFormatter.ISO_DATE_TIME;
+            if (start != null && !start.isBlank()) s = LocalDateTime.parse(start, fmt);
+            if (end != null && !end.isBlank()) e = LocalDateTime.parse(end, fmt);
+            var list = notificationService.getLogs(type, s, e);
+            return ResponseEntity.ok(ApiResponse.success(list, "Lấy log thông báo thành công!"));
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(ex.getMessage()));
         }
     }
 }

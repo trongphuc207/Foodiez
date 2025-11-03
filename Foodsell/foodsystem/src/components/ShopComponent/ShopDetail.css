@@ -140,6 +140,14 @@
   font-weight: 500;
 }
 
+/* Use dynamic review count rendered from API */
+.shop-rating-section .review-count { display: none; }
+.shop-rating-section .review-count-dynamic {
+  color: #666;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
 .shop-hours {
   display: flex;
   align-items: center;

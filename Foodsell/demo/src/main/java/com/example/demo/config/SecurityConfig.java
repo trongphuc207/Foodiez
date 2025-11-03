@@ -42,6 +42,7 @@ public class SecurityConfig {
                 .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/login/oauth2/code/**").permitAll()
                 .requestMatchers("/oauth2/authorization/**").permitAll()
+                .requestMatchers("/ws-chat/**").permitAll()
                 
                 // Voucher endpoints (public for now, can be restricted later)
                 .requestMatchers("/api/vouchers/**").permitAll()
@@ -80,6 +81,9 @@ public class SecurityConfig {
                 
                 // Admin endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                // Chat endpoints
+                .requestMatchers("/api/chat/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/chat/**").authenticated()
                 
                 // All other requests need authentication
                 .anyRequest().authenticated()

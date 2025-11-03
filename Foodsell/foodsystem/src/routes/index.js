@@ -27,11 +27,17 @@ import ShipperOverviewPage from '../Page/ShipperOverviewPage/ShipperOverviewPage
 import VoucherPage from '../Page/VoucherPage/VoucherPage';
 import RouteGuard from '../components/RouteGuard/RouteGuard';
 import Unauthorized from '../components/Unauthorized/Unauthorized';
+import ChatPage from '../components/Chat/ChatPage';
 
 export const routes = [
     {
         path: '/',
         component: HomePage,
+        isShowHeader: true
+    },
+    {
+        path: '/chat',
+        component: ChatPage,
         isShowHeader: true
     },
     {

@@ -602,3 +602,18 @@
     margin: 20px;
   }
 }
+.ratings-section .ratings-summary:not(.real),
+.ratings-section .ratings-list:not(.real) {
+  display: none;
+}
+
+.ratings-list.real .rating-item-row {
+  display: flex;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+}
+.ratings-list.real .rating-left { display:flex; align-items:center; gap:8px; min-width:120px; }
+.ratings-list.real .rating-meta { color:#666; font-size: 12px; display:flex; gap:10px; }
+.ratings-list.real .rating-product { color:#444; font-size: 13px; margin-top: 2px; }
+.ratings-list.real .rating-content { margin-top: 6px; }

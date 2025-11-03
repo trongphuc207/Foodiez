@@ -18,7 +18,18 @@ public class NotificationService {
         Notification notification = new Notification(userId, type, title, message);
         return notificationRepository.save(notification);
     }
-    
+
+    // Cập nhật notification
+    public Notification updateNotification(Integer id, String type, String title, String message, Boolean isRead) {
+        Notification n = notificationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Notification not found with ID: " + id));
+        if (type != null) n.setType(type);
+        if (title != null) n.setTitle(title);
+        if (message != null) n.setMessage(message);
+        if (isRead != null) n.setIsRead(isRead);
+        return notificationRepository.save(n);
+    }
+
     // Lấy tất cả notifications của user
     public List<Notification> getNotificationsByUserId(Integer userId) {
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
@@ -70,5 +81,22 @@ public class NotificationService {
     // Lấy notifications theo type
     public List<Notification> getNotificationsByType(String type) {
         return notificationRepository.findByTypeOrderByCreatedAtDesc(type);
+    }
+
+    // Lấy log theo type và/hoặc khoảng thời gian
+    public List<Notification> getLogs(String type, LocalDateTime start, LocalDateTime end) {
+        if (type != null && start != null && end != null) {
+            // filter by time, then by type (hoặc viết query riêng nếu cần hiệu năng)
+            return notificationRepository.findByCreatedAtBetween(start, end)
+                    .stream().filter(n -> type.equalsIgnoreCase(n.getType())).toList();
+        } else if (start != null && end != null) {
+            return notificationRepository.findByCreatedAtBetween(start, end);
+        } else if (type != null) {
+            return notificationRepository.findByTypeOrderByCreatedAtDesc(type);
+        }
+        // Mặc định: trả về tất cả, mới nhất trước
+        return notificationRepository.findAll().stream()
+                .sorted((a,b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .toList();
     }
 }

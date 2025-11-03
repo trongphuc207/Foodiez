@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
 import { productAPI, testServerConnection } from '../../api/product';
 import { shopAPI } from '../../api/shop';
 import categoryAPI from '../../api/category';
 import ImageUpload from '../AdminComponent/ImageUpload';
+import { reviewAPI } from '../../api/review';
+import StarRating from '../ReviewComponent/StarRating';
+import ReviewReply from '../ReviewComponent/ReviewReply';
+import { chatAPI } from '../../api/chat';
 import './ShopManagement.css';
-
 const ShopManagement = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('products');
@@ -15,7 +20,6 @@ const ShopManagement = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [showShopForm, setShowShopForm] = useState(false);
   const [showRatings, setShowRatings] = useState(false);
-
   // Form states
   const [productForm, setProductForm] = useState({
     name: '',
@@ -26,32 +30,101 @@ const ShopManagement = () => {
     is_available: true,
     status: 'active'
   });
-
   // Image upload states
   const [productImageUrl, setProductImageUrl] = useState(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-
   const [shopForm, setShopForm] = useState({
     name: '',
     description: '',
     address: '',
     opening_hours: ''
   });
-
   // Fetch shop data
   const { data: shopData, isLoading: shopLoading } = useQuery({
     queryKey: ['shop', user?.id],
     queryFn: () => shopAPI.getShopBySellerId(user?.id),
     enabled: !!user?.id
   });
-
   // Fetch products
   const { data: productsData, isLoading: productsLoading } = useQuery({
     queryKey: ['products', shopData?.data?.id],
     queryFn: () => productAPI.getProductsByShopId(shopData?.data?.id),
     enabled: !!shopData?.data?.id
   });
-
+  // Reviews: stats + list for this shop (seller view)
+  const shopId = shopData?.data?.id;
+  const { data: reviewStatsData } = useQuery({
+    queryKey: ['shopReviewStats', shopId],
+    queryFn: () => reviewAPI.getShopReviewStats(shopId),
+    enabled: !!shopId,
+    staleTime: 60_000,
+  });
+  const { data: shopReviewsData, isLoading: shopReviewsLoading } = useQuery({
+    queryKey: ['shopReviews', shopId],
+    queryFn: () => reviewAPI.getShopReviews(shopId),
+    enabled: !!shopId,
+  });
+  // Map productId -> product name for reviews
+  const [reviewProductMap, setReviewProductMap] = useState({});
+  // Preload all products of this shop for name resolution
+  useEffect(() => {
+    if (!shopId) return;
+    (async () => {
+      try {
+        const res = await productAPI.getProductsByShopId(shopId);
+        const products = res?.data || res || [];
+        const map = {};
+        (products || []).forEach(p => {
+          const id = p.id ?? p.productId;
+          const name = p.name ?? p.productName;
+          if (id) map[id] = name || `#${id}`;
+        });
+        if (Object.keys(map).length) setReviewProductMap(map);
+      } catch {}
+    })();
+  }, [shopId]);
+  // Reply to a customer review (seller)
+  const handleReplyToReview = async (reviewId, content) => {
+    try {
+      const res = await reviewAPI.replyToReview(reviewId, content);
+      if (res?.success) {
+        // refresh replies/reviews
+        queryClient.invalidateQueries(['shopReviews', shopId]);
+        return true;
+      } else {
+        throw new Error(res?.message || 'Reply failed');
+      }
+    } catch (e) {
+      console.error('Reply error:', e);
+      throw e;
+    }
+  };
+  useEffect(() => {
+    const list = shopReviewsData?.data;
+    if (!list || !Array.isArray(list)) return;
+    const ids = Array.from(new Set(list
+      .map(r => r.productId)
+      .filter(id => typeof id === 'number' && id > 0 && !reviewProductMap[id])));
+    if (ids.length === 0) return;
+    (async () => {
+      try {
+        const results = await Promise.all(ids.map(async (pid) => {
+          try {
+            const res = await productAPI.getProductById(pid);
+            const name = res?.data?.name || res?.name || `#${pid}`;
+            return [pid, name];
+          } catch {
+            return [pid, `#${pid}`];
+          }
+        }));
+        setReviewProductMap(prev => {
+          const next = { ...prev };
+          results.forEach(([pid, name]) => { next[pid] = name; });
+          return next;
+        });
+      } catch {}
+    })();
+  }, [shopReviewsData]);
   // Fetch categories with fallback data
   const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError } = useQuery({
     queryKey: ['categories'],
@@ -59,17 +132,17 @@ const ShopManagement = () => {
       try {
         return await categoryAPI.getAllCategories();
       } catch (error) {
-        console.error('❌ Categories API error:', error);
+        console.error('âŒ Categories API error:', error);
         // Return fallback data if API fails
         return {
           success: true,
           data: [
-            { id: 1, name: 'Phở', description: 'Vietnamese noodle soup' },
-            { id: 2, name: 'Bánh Mì', description: 'Vietnamese sandwich' },
-            { id: 3, name: 'Cơm', description: 'Rice dishes' },
-            { id: 4, name: 'Nước uống', description: 'Beverages' },
+            { id: 1, name: 'Phá»Ÿ', description: 'Vietnamese noodle soup' },
+            { id: 2, name: 'BÃ¡nh MÃ¬', description: 'Vietnamese sandwich' },
+            { id: 3, name: 'CÆ¡m', description: 'Rice dishes' },
+            { id: 4, name: 'NÆ°á»›c uá»‘ng', description: 'Beverages' },
             { id: 5, name: 'Pizza', description: 'Italian pizza' },
-            { id: 6, name: 'Bún', description: 'Vietnamese vermicelli' }
+            { id: 6, name: 'BÃºn', description: 'Vietnamese vermicelli' }
           ]
         };
       }
@@ -77,28 +150,25 @@ const ShopManagement = () => {
     refetchOnWindowFocus: false,
     retry: 1
   });
-
   // Debug log for categories
   useEffect(() => {
     if (categoriesData) {
-      console.log('📂 Categories loaded:', categoriesData);
+      console.log('ðŸ“‚ Categories loaded:', categoriesData);
     }
     if (categoriesError) {
-      console.error('❌ Categories error:', categoriesError);
+      console.error('âŒ Categories error:', categoriesError);
     }
   }, [categoriesData, categoriesError]);
-
   // Test server connection on mount
   useEffect(() => {
     const testConnection = async () => {
       const isConnected = await testServerConnection();
       if (!isConnected) {
-        console.warn('⚠️ Server connection test failed');
+        console.warn('âš ï¸ Server connection test failed');
       }
     };
     testConnection();
   }, []);
-
   // Mutations
   const createProductMutation = useMutation({
     mutationFn: productAPI.createProduct,
@@ -106,14 +176,13 @@ const ShopManagement = () => {
       queryClient.invalidateQueries(['products']);
       setShowProductForm(false);
       setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, is_available: true, status: 'active' });
-      alert('✅ Thêm món ăn thành công!');
+      alert('âœ… ThÃªm mÃ³n Äƒn thÃ nh cÃ´ng!');
     },
     onError: (error) => {
-      console.error('❌ Create product error:', error);
-      alert('❌ Lỗi khi thêm món ăn: ' + error.message);
+      console.error('âŒ Create product error:', error);
+      alert('âŒ Lá»—i khi thÃªm mÃ³n Äƒn: ' + error.message);
     }
   });
-
   const updateProductMutation = useMutation({
     mutationFn: async ({ id, data }) => {
       const maxRetries = 5;
@@ -121,12 +190,12 @@ const ShopManagement = () => {
       
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-          console.log(`🔄 Attempt ${attempt}/${maxRetries} for product ${id}`);
+          console.log(`ðŸ”„ Attempt ${attempt}/${maxRetries} for product ${id}`);
           
           // Add delay between attempts
           if (attempt > 1) {
             const delay = Math.pow(2, attempt - 2) * 1000; // 1s, 2s, 4s, 8s
-            console.log(`⏳ Waiting ${delay}ms before retry...`);
+            console.log(`â³ Waiting ${delay}ms before retry...`);
             await new Promise(resolve => setTimeout(resolve, delay));
           }
           
@@ -143,22 +212,22 @@ const ShopManagement = () => {
               shopId: data.shopId
             };
             
-            console.log(`🔄 Attempt ${attempt} with minimal data:`, minimalData);
+            console.log(`ðŸ”„ Attempt ${attempt} with minimal data:`, minimalData);
             return await productAPI.updateProduct(id, minimalData);
           }
         } catch (error) {
           lastError = error;
-          console.error(`❌ Attempt ${attempt} failed:`, error);
+          console.error(`âŒ Attempt ${attempt} failed:`, error);
           
           // If it's a network error, continue to retry
           if (error.message.includes('Network error') || error.message.includes('Failed to fetch')) {
-            console.log('🔄 Network error detected, will retry...');
+            console.log('ðŸ”„ Network error detected, will retry...');
             continue;
           }
           
           // If it's a server error, try with even more minimal data
           if (error.message.includes('500') || error.message.includes('Internal server error')) {
-            console.log('🔄 Server error detected, trying with ultra-minimal data...');
+            console.log('ðŸ”„ Server error detected, trying with ultra-minimal data...');
             try {
               const ultraMinimalData = {
                 name: data.name,
@@ -168,7 +237,7 @@ const ShopManagement = () => {
               };
               return await productAPI.updateProduct(id, ultraMinimalData);
             } catch (ultraMinimalError) {
-              console.error('❌ Ultra-minimal data attempt also failed:', ultraMinimalError);
+              console.error('âŒ Ultra-minimal data attempt also failed:', ultraMinimalError);
               lastError = ultraMinimalError;
             }
           }
@@ -183,48 +252,45 @@ const ShopManagement = () => {
       setShowProductForm(false);
       setEditingProduct(null);
       setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, is_available: true, status: 'active' });
-      alert('✅ Cập nhật món ăn thành công!');
+      alert('âœ… Cáº­p nháº­t mÃ³n Äƒn thÃ nh cÃ´ng!');
     },
     onError: (error) => {
-      console.error('❌ Update product error:', error);
+      console.error('âŒ Update product error:', error);
       
       // Check if it's a server connection issue
       if (error.message.includes('Network error') || error.message.includes('Failed to fetch') || error.message.includes('Cannot connect to server')) {
-        alert('❌ Không thể kết nối đến server!\n\nVui lòng kiểm tra:\n1. Server có đang chạy không? (Port 8080)\n2. Kết nối internet\n3. Thử refresh trang\n4. Kiểm tra console để xem chi tiết lỗi');
+        alert('âŒ KhÃ´ng thá»ƒ káº¿t ná»‘i Ä‘áº¿n server!\n\nVui lÃ²ng kiá»ƒm tra:\n1. Server cÃ³ Ä‘ang cháº¡y khÃ´ng? (Port 8080)\n2. Káº¿t ná»‘i internet\n3. Thá»­ refresh trang\n4. Kiá»ƒm tra console Ä‘á»ƒ xem chi tiáº¿t lá»—i');
       } else if (error.message.includes('500') || error.message.includes('Internal server error')) {
-        alert('❌ Lỗi server!\n\nVui lòng thử lại sau hoặc liên hệ admin.');
+        alert('âŒ Lá»—i server!\n\nVui lÃ²ng thá»­ láº¡i sau hoáº·c liÃªn há»‡ admin.');
       } else if (error.message.includes('Server not responding properly')) {
-        alert('❌ Server không phản hồi đúng cách!\n\nVui lòng kiểm tra server có đang chạy không.');
+        alert('âŒ Server khÃ´ng pháº£n há»“i Ä‘Ãºng cÃ¡ch!\n\nVui lÃ²ng kiá»ƒm tra server cÃ³ Ä‘ang cháº¡y khÃ´ng.');
       } else {
-        alert('❌ Lỗi khi cập nhật món ăn: ' + error.message + '\n\nVui lòng thử lại hoặc liên hệ admin.');
+        alert('âŒ Lá»—i khi cáº­p nháº­t mÃ³n Äƒn: ' + error.message + '\n\nVui lÃ²ng thá»­ láº¡i hoáº·c liÃªn há»‡ admin.');
       }
     }
   });
-
   const deleteProductMutation = useMutation({
     mutationFn: productAPI.deleteProduct,
     onSuccess: () => {
       queryClient.invalidateQueries(['products']);
     }
   });
-
   const updateShopMutation = useMutation({
     mutationFn: ({ id, data }) => {
-      console.log('📤 Updating shop:', id, 'with data:', data);
+      console.log('ðŸ“¤ Updating shop:', id, 'with data:', data);
       return shopAPI.updateShop(id, data);
     },
     onSuccess: () => {
-      console.log('✅ Shop updated successfully');
+      console.log('âœ… Shop updated successfully');
       queryClient.invalidateQueries(['shop']);
       setShowShopForm(false);
-      alert('✅ Cập nhật thông tin cửa hàng thành công!');
+      alert('âœ… Cáº­p nháº­t thÃ´ng tin cá»­a hÃ ng thÃ nh cÃ´ng!');
     },
     onError: (error) => {
-      console.error('❌ Update shop error:', error);
-      alert('❌ Lỗi khi cập nhật thông tin cửa hàng: ' + error.message);
+      console.error('âŒ Update shop error:', error);
+      alert('âŒ Lá»—i khi cáº­p nháº­t thÃ´ng tin cá»­a hÃ ng: ' + error.message);
     }
   });
-
   // Load shop data into form
   useEffect(() => {
     if (shopData?.data) {
@@ -236,21 +302,20 @@ const ShopManagement = () => {
       });
     }
   }, [shopData]);
-
   const handleProductSubmit = async (e) => {
     e.preventDefault();
     
     // Validation
     if (!productForm.name.trim()) {
-      alert('❌ Vui lòng nhập tên món ăn');
+      alert('âŒ Vui lÃ²ng nháº­p tÃªn mÃ³n Äƒn');
       return;
     }
     if (!productForm.price || parseFloat(productForm.price) <= 0) {
-      alert('❌ Vui lòng nhập giá hợp lệ');
+      alert('âŒ Vui lÃ²ng nháº­p giÃ¡ há»£p lá»‡');
       return;
     }
     if (!productForm.categoryId) {
-      alert('❌ Vui lòng chọn danh mục');
+      alert('âŒ Vui lÃ²ng chá»n danh má»¥c');
       return;
     }
     
@@ -263,15 +328,12 @@ const ShopManagement = () => {
       is_available: productForm.is_available,
       status: productForm.status
     };
-
     // Validate data before sending
     if (!productData.name || !productData.price || !productData.categoryId || !productData.shopId) {
-      alert('❌ Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các trường bắt buộc.');
+      alert('âŒ Dá»¯ liá»‡u khÃ´ng há»£p lá»‡. Vui lÃ²ng kiá»ƒm tra láº¡i cÃ¡c trÆ°á»ng báº¯t buá»™c.');
       return;
     }
-
-    console.log('📤 Sending product data:', productData);
-
+    console.log('ðŸ“¤ Sending product data:', productData);
     try {
       let productResult;
       
@@ -285,15 +347,15 @@ const ShopManagement = () => {
       
       // Upload image if provided
       if (productForm.image && productResult?.data?.id) {
-        console.log('📤 Uploading image for product:', productResult.data.id);
+        console.log('ðŸ“¤ Uploading image for product:', productResult.data.id);
         setIsUploadingImage(true);
         try {
           const uploadResult = await productAPI.uploadProductImage(productResult.data.id, productForm.image);
-          console.log('✅ Image uploaded successfully:', uploadResult);
+          console.log('âœ… Image uploaded successfully:', uploadResult);
           setProductImageUrl(uploadResult.data?.imageUrl);
         } catch (imageError) {
-          console.error('❌ Image upload failed:', imageError);
-          alert('⚠️ Sản phẩm đã được tạo/cập nhật nhưng không thể tải ảnh lên. Vui lòng thử lại sau.');
+          console.error('âŒ Image upload failed:', imageError);
+          alert('âš ï¸ Sáº£n pháº©m Ä‘Ã£ Ä‘Æ°á»£c táº¡o/cáº­p nháº­t nhÆ°ng khÃ´ng thá»ƒ táº£i áº£nh lÃªn. Vui lÃ²ng thá»­ láº¡i sau.');
         } finally {
           setIsUploadingImage(false);
         }
@@ -306,25 +368,24 @@ const ShopManagement = () => {
       setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, is_available: true, status: 'active' });
       setProductImageUrl(null);
       setIsUploadingImage(false);
-      alert('✅ ' + (editingProduct ? 'Cập nhật' : 'Thêm') + ' món ăn thành công!');
+      alert('âœ… ' + (editingProduct ? 'Cáº­p nháº­t' : 'ThÃªm') + ' mÃ³n Äƒn thÃ nh cÃ´ng!');
       
     } catch (error) {
-      console.error('❌ Product operation failed:', error);
-      alert('❌ Lỗi khi ' + (editingProduct ? 'cập nhật' : 'thêm') + ' món ăn: ' + error.message);
+      console.error('âŒ Product operation failed:', error);
+      alert('âŒ Lá»—i khi ' + (editingProduct ? 'cáº­p nháº­t' : 'thÃªm') + ' mÃ³n Äƒn: ' + error.message);
     }
   };
-
   const handleShopSubmit = async (e) => {
     e.preventDefault();
     
     // Validation
     if (!shopForm.name.trim()) {
-      alert('❌ Vui lòng nhập tên cửa hàng');
+      alert('âŒ Vui lÃ²ng nháº­p tÃªn cá»­a hÃ ng');
       return;
     }
     
     if (!shopForm.address.trim()) {
-      alert('❌ Vui lòng nhập địa chỉ');
+      alert('âŒ Vui lÃ²ng nháº­p Ä‘á»‹a chá»‰');
       return;
     }
     
@@ -336,19 +397,18 @@ const ShopManagement = () => {
       opening_hours: shopForm.opening_hours.trim()
     };
     
-    console.log('📤 Submitting shop update:', updateData);
+    console.log('ðŸ“¤ Submitting shop update:', updateData);
     updateShopMutation.mutate({ id: shopData?.data?.id, data: updateData });
   };
-
   const handleEditProduct = async (product) => {
-    console.log('🔍 Editing product:', product);
-    console.log('📦 Product status:', product.status);
-    console.log('📦 Product is_available:', product.is_available);
+    console.log('ðŸ” Editing product:', product);
+    console.log('ðŸ“¦ Product status:', product.status);
+    console.log('ðŸ“¦ Product is_available:', product.is_available);
     
     try {
       // Fetch detailed product info from database
       const detailedProduct = await productAPI.getProductById(product.id);
-      console.log('📦 Detailed product from API:', detailedProduct);
+      console.log('ðŸ“¦ Detailed product from API:', detailedProduct);
       
       const productData = detailedProduct.data || detailedProduct;
       
@@ -360,7 +420,7 @@ const ShopManagement = () => {
         statusValue = product.status;
       }
       
-      console.log('📦 Final status value:', statusValue);
+      console.log('ðŸ“¦ Final status value:', statusValue);
       
       setEditingProduct(productData);
       setProductForm({
@@ -375,7 +435,7 @@ const ShopManagement = () => {
       setProductImageUrl(productData.imageUrl || product.imageUrl);
       setShowProductForm(true);
     } catch (error) {
-      console.error('❌ Error fetching product details:', error);
+      console.error('âŒ Error fetching product details:', error);
       // Fallback to original product data
       setEditingProduct(product);
       setProductForm({
@@ -389,20 +449,18 @@ const ShopManagement = () => {
       setShowProductForm(true);
     }
   };
-
   const handleDeleteProduct = (productId) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa món ăn này?')) {
+    if (window.confirm('Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a mÃ³n Äƒn nÃ y?')) {
       deleteProductMutation.mutate(productId);
     }
   };
-
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     
     if (file) {
       // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
-        alert('❌ Kích thước file quá lớn. Tối đa 5MB.');
+        alert('âŒ KÃ­ch thÆ°á»›c file quÃ¡ lá»›n. Tá»‘i Ä‘a 5MB.');
         e.target.value = ''; // Clear the input
         return;
       }
@@ -410,74 +468,69 @@ const ShopManagement = () => {
       // Validate file type
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
-        alert('❌ Định dạng file không hợp lệ. Chỉ chấp nhận JPEG, PNG, GIF, WebP.');
+        alert('âŒ Äá»‹nh dáº¡ng file khÃ´ng há»£p lá»‡. Chá»‰ cháº¥p nháº­n JPEG, PNG, GIF, WebP.');
         e.target.value = ''; // Clear the input
         return;
       }
       
-      console.log('📁 Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
+      console.log('ðŸ“ Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
     }
     
     setProductForm({ ...productForm, image: file });
   };
-
   if (shopLoading) {
-    return <div className="loading">Đang tải thông tin cửa hàng...</div>;
+    return <div className="loading">Äang táº£i thÃ´ng tin cá»­a hÃ ng...</div>;
   }
-
   if (!shopData?.data) {
     return (
       <div className="shop-management">
         <div className="no-shop">
-          <h2>Bạn chưa có cửa hàng</h2>
-          <p>Vui lòng đăng ký cửa hàng trước khi sử dụng chức năng quản lý.</p>
+          <h2>Báº¡n chÆ°a cÃ³ cá»­a hÃ ng</h2>
+          <p>Vui lÃ²ng Ä‘Äƒng kÃ½ cá»­a hÃ ng trÆ°á»›c khi sá»­ dá»¥ng chá»©c nÄƒng quáº£n lÃ½.</p>
         </div>
       </div>
     );
   }
-
   return (
     <div className="shop-management">
       <div className="shop-header">
-        <h1>Quản lý cửa hàng: {shopData.data.name}</h1>
+        <h1>{'Qu\u1ea3n l\u00fd c\u1eeda h\u00e0ng'}: {shopData.data.name}</h1>
         <div className="shop-stats">
           <div className="stat-item">
-            <span className="stat-label">Đánh giá:</span>
-            <span className="stat-value">{shopData.data.rating || 0} ⭐</span>
+            <span className="stat-label">{'\u0110\u00e1nh gi\u00e1'}:</span>
+            <span className="stat-value">{(reviewStatsData?.data?.averageRating ?? shopData.data.rating ?? 0).toFixed ? (reviewStatsData?.data?.averageRating ?? shopData.data.rating ?? 0).toFixed(1) : (reviewStatsData?.data?.averageRating ?? shopData.data.rating ?? 0)}</span>
           </div>
           <div className="stat-item">
-            <span className="stat-label">Số món ăn:</span>
+            <span className="stat-label">{'S\u1ed1 m\u00f3n \u0103n'}:</span>
             <span className="stat-value">{productsData?.data?.length || 0}</span>
           </div>
         </div>
       </div>
-
       <div className="management-tabs">
-        <button 
+        <button
           className={`tab-btn ${activeTab === 'products' ? 'active' : ''}`}
           onClick={() => setActiveTab('products')}
         >
-          🍽️ Quản lý món ăn
+          {'Qu\u1ea3n l\u00fd m\u00f3n \u0103n'}
         </button>
-        <button 
+        <button
           className={`tab-btn ${activeTab === 'shop' ? 'active' : ''}`}
           onClick={() => setActiveTab('shop')}
         >
-          🏪 Thông tin cửa hàng
+          {'Th\u00f4ng tin c\u1eeda h\u00e0ng'}
         </button>
-        <button 
+        <button
           className={`tab-btn ${activeTab === 'ratings' ? 'active' : ''}`}
           onClick={() => setActiveTab('ratings')}
         >
-          ⭐ Đánh giá khách hàng
+          {'\u0110\u00e1nh gi\u00e1 kh\u00e1ch h\u00e0ng'}
         </button>
       </div>
-
       {activeTab === 'products' && (
         <div className="products-section">
           <div className="section-header">
-            <h2>Danh sách món ăn</h2>
-            <button 
+            <h2>{'Danh s\u00e1ch m\u00f3n \u0103n'}</h2>
+            <button
               className="btn btn-primary"
               onClick={() => {
                 setEditingProduct(null);
@@ -485,17 +538,16 @@ const ShopManagement = () => {
                 setShowProductForm(true);
               }}
             >
-              ➕ Thêm món ăn
+              {'Th\u00eam m\u00f3n \u0103n'}
             </button>
           </div>
-
           {showProductForm && (
             <div className="modal-overlay" onClick={() => setShowProductForm(false)}>
               <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <h3>{editingProduct ? 'Sửa món ăn' : 'Thêm món ăn mới'}</h3>
+                <h3>{editingProduct ? 'Sá»­a mÃ³n Äƒn' : 'ThÃªm mÃ³n Äƒn má»›i'}</h3>
                 <form onSubmit={handleProductSubmit}>
                   <div className="form-group">
-                    <label>Tên món ăn:</label>
+                    <label>TÃªn mÃ³n Äƒn:</label>
                     <input
                       type="text"
                       value={productForm.name}
@@ -504,7 +556,7 @@ const ShopManagement = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Mô tả:</label>
+                    <label>MÃ´ táº£:</label>
                     <textarea
                       value={productForm.description}
                       onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
@@ -512,7 +564,7 @@ const ShopManagement = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Giá (VNĐ):</label>
+                    <label>GiÃ¡ (VNÄ):</label>
                     <input
                       type="number"
                       value={productForm.price}
@@ -521,7 +573,7 @@ const ShopManagement = () => {
                     />
                   </div>
                    <div className="form-group">
-                     <label>Danh mục:</label>
+                     <label>Danh má»¥c:</label>
                      <select
                        value={productForm.categoryId}
                        onChange={(e) => setProductForm({ ...productForm, categoryId: e.target.value })}
@@ -529,7 +581,7 @@ const ShopManagement = () => {
                        disabled={categoriesLoading}
                      >
                        <option value="">
-                         {categoriesLoading ? 'Đang tải danh mục...' : 'Chọn danh mục'}
+                         {categoriesLoading ? 'Äang táº£i danh má»¥c...' : 'Chá»n danh má»¥c'}
                        </option>
                        {categoriesData?.data?.map(category => (
                          <option key={category.id} value={category.id}>
@@ -539,12 +591,12 @@ const ShopManagement = () => {
                      </select>
                      {categoriesError && (
                        <div className="error-message">
-                         ⚠️ Lỗi khi tải danh mục từ server. Đang sử dụng danh mục mặc định.
+                         âš ï¸ Lá»—i khi táº£i danh má»¥c tá»« server. Äang sá»­ dá»¥ng danh má»¥c máº·c Ä‘á»‹nh.
                        </div>
                      )}
                    </div>
                   <div className="form-group">
-                    <label>Ảnh món ăn:</label>
+                    <label>áº¢nh mÃ³n Äƒn:</label>
                     {editingProduct ? (
                       <ImageUpload
                         productId={editingProduct.id}
@@ -564,47 +616,47 @@ const ShopManagement = () => {
                         />
                         {productForm.image && (
                           <div className="file-info">
-                            <p>📁 File đã chọn: {productForm.image.name}</p>
-                            <p>📏 Kích thước: {(productForm.image.size / 1024 / 1024).toFixed(2)} MB</p>
+                            <p>ðŸ“ File Ä‘Ã£ chá»n: {productForm.image.name}</p>
+                            <p>ðŸ“ KÃ­ch thÆ°á»›c: {(productForm.image.size / 1024 / 1024).toFixed(2)} MB</p>
                           </div>
                         )}
                         {isUploadingImage && (
                           <div className="upload-status">
-                            <p>⏳ Đang upload ảnh...</p>
+                            <p>â³ Äang upload áº£nh...</p>
                           </div>
                         )}
                       </div>
                     )}
                   </div>
                   <div className="form-group">
-                    <label>Tình trạng sẵn có:</label>
+                    <label>TÃ¬nh tráº¡ng sáºµn cÃ³:</label>
                     <select
                       value={productForm.is_available}
                       onChange={(e) => setProductForm({ ...productForm, is_available: e.target.value === 'true' })}
                     >
-                      <option value={true}>✅ Có sẵn</option>
-                      <option value={false}>❌ Không có sẵn</option>
+                      <option value={true}>âœ… CÃ³ sáºµn</option>
+                      <option value={false}>âŒ KhÃ´ng cÃ³ sáºµn</option>
                     </select>
                   </div>
                   <div className="form-group">
-                    <label>Trạng thái bán hàng:</label>
+                    <label>Tráº¡ng thÃ¡i bÃ¡n hÃ ng:</label>
                     <select
                       value={productForm.status}
                       onChange={(e) => setProductForm({ ...productForm, status: e.target.value })}
                     >
-                      <option value="active">✅ Đang bán</option>
-                      <option value="inactive">⏸️ Tạm ngừng bán</option>
-                      <option value="out_of_stock">❌ Hết hàng</option>
+                      <option value="active">âœ… Äang bÃ¡n</option>
+                      <option value="inactive">â¸ï¸ Táº¡m ngá»«ng bÃ¡n</option>
+                      <option value="out_of_stock">âŒ Háº¿t hÃ ng</option>
                     </select>
                   </div>
                   <div className="form-actions">
                     <button type="button" onClick={() => setShowProductForm(false)}>
-                      Hủy
+                      Há»§y
                     </button>
                     <button type="submit" disabled={createProductMutation.isPending || updateProductMutation.isPending}>
                       {createProductMutation.isPending || updateProductMutation.isPending ? 
-                        '⏳ Đang xử lý...' : 
-                        (editingProduct ? 'Cập nhật' : 'Thêm món')
+                        'â³ Äang xá»­ lÃ½...' : 
+                        (editingProduct ? 'Cáº­p nháº­t' : 'ThÃªm mÃ³n')
                       }
                     </button>
                   </div>
@@ -612,10 +664,9 @@ const ShopManagement = () => {
               </div>
             </div>
           )}
-
           <div className="products-list">
             {productsLoading ? (
-              <div className="loading">Đang tải danh sách món ăn...</div>
+              <div className="loading">Äang táº£i danh sÃ¡ch mÃ³n Äƒn...</div>
             ) : productsData?.data?.length > 0 ? (
               productsData.data.map(product => (
                 <div 
@@ -629,7 +680,7 @@ const ShopManagement = () => {
                         src={product.imageUrl || product.image_url || product.image} 
                         alt={product.name}
                         onError={(e) => {
-                          console.log('❌ Image load error in shop management:', product.name);
+                          console.log('âŒ Image load error in shop management:', product.name);
                           e.target.style.display = 'none';
                           e.target.nextSibling.style.display = 'flex';
                         }}
@@ -640,8 +691,8 @@ const ShopManagement = () => {
                       style={{ display: product.imageUrl || product.image_url || product.image ? 'none' : 'flex' }}
                     >
                       <div className="no-image-content">
-                        <div className="no-image-icon">🍽️</div>
-                        <span>Không có ảnh</span>
+                        <div className="no-image-icon">ðŸ½ï¸</div>
+                        <span>KhÃ´ng cÃ³ áº£nh</span>
                       </div>
                     </div>
                   </div>
@@ -649,14 +700,14 @@ const ShopManagement = () => {
                     <h3>{product.name}</h3>
                     <p>{product.description}</p>
                     <div className="product-details">
-                      <span className="price">{product.price.toLocaleString()} VNĐ</span>
+                      <span className="price">{product.price.toLocaleString()} VNÄ</span>
                       <span className="category">{product.category?.name}</span>
                     </div>
                     <div className="product-status">
                       <span className={`status ${product.status === 'active' ? 'available' : 'unavailable'}`}>
-                        {product.status === 'active' ? '✅ Còn hàng' : 
-                         product.status === 'inactive' ? '⏸️ Tạm ngừng' : 
-                         product.status === 'out_of_stock' ? '❌ Hết hàng' : '❌ Không xác định'}
+                        {product.status === 'active' ? 'âœ… CÃ²n hÃ ng' : 
+                         product.status === 'inactive' ? 'â¸ï¸ Táº¡m ngá»«ng' : 
+                         product.status === 'out_of_stock' ? 'âŒ Háº¿t hÃ ng' : 'âŒ KhÃ´ng xÃ¡c Ä‘á»‹nh'}
                       </span>
                     </div>
                   </div>
@@ -668,7 +719,7 @@ const ShopManagement = () => {
                         handleEditProduct(product);
                       }}
                     >
-                      ✏️ Sửa
+                      âœï¸ Sá»­a
                     </button>
                     <button 
                       className="btn btn-delete"
@@ -677,39 +728,34 @@ const ShopManagement = () => {
                         handleDeleteProduct(product.id);
                       }}
                     >
-                      🗑️ Xóa
+                      ðŸ—‘ï¸ XÃ³a
                     </button>
                   </div>
                 </div>
               ))
             ) : (
               <div className="no-products">
-                <p>Chưa có món ăn nào. Hãy thêm món ăn đầu tiên!</p>
+                <p>ChÆ°a cÃ³ mÃ³n Äƒn nÃ o. HÃ£y thÃªm mÃ³n Äƒn Ä‘áº§u tiÃªn!</p>
               </div>
             )}
           </div>
         </div>
       )}
-
       {activeTab === 'shop' && (
         <div className="shop-section">
           <div className="section-header">
-            <h2>Thông tin cửa hàng</h2>
+            <h2>{'Th\u00f4ng tin c\u1eeda h\u00e0ng'}</h2>
             <button 
               className="btn btn-primary"
-              onClick={() => setShowShopForm(true)}
-            >
-              ✏️ Cập nhật thông tin
-            </button>
+              onClick={() => setShowShopForm(true)}>{'C\u1eadp nh\u1eadt th\u00f4ng tin'}</button>
           </div>
-
           {showShopForm && (
             <div className="modal-overlay" onClick={() => setShowShopForm(false)}>
               <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <h3>Cập nhật thông tin cửa hàng</h3>
+                <h3>Cáº­p nháº­t thÃ´ng tin cá»­a hÃ ng</h3>
                 <form onSubmit={handleShopSubmit}>
                   <div className="form-group">
-                    <label>Tên cửa hàng:</label>
+                    <label>TÃªn cá»­a hÃ ng:</label>
                     <input
                       type="text"
                       value={shopForm.name}
@@ -718,14 +764,14 @@ const ShopManagement = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Mô tả:</label>
+                    <label>MÃ´ táº£:</label>
                     <textarea
                       value={shopForm.description}
                       onChange={(e) => setShopForm({ ...shopForm, description: e.target.value })}
                     />
                   </div>
                   <div className="form-group">
-                    <label>Địa chỉ:</label>
+                    <label>Äá»‹a chá»‰:</label>
                     <input
                       type="text"
                       value={shopForm.address}
@@ -734,82 +780,122 @@ const ShopManagement = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Giờ mở cửa:</label>
+                    <label>Giá» má»Ÿ cá»­a:</label>
                     <input
                       type="text"
                       value={shopForm.opening_hours}
                       onChange={(e) => setShopForm({ ...shopForm, opening_hours: e.target.value })}
-                      placeholder="Ví dụ: 8AM-10PM"
+                      placeholder="VÃ­ dá»¥: 8AM-10PM"
                     />
                   </div>
                   <div className="form-actions">
                     <button type="button" onClick={() => setShowShopForm(false)}>
-                      Hủy
+                      Há»§y
                     </button>
                     <button type="submit" disabled={updateShopMutation.isPending}>
-                      Cập nhật
+                      Cáº­p nháº­t
                     </button>
                   </div>
                 </form>
               </div>
             </div>
           )}
-
           <div className="shop-info">
             <div className="info-card">
-              <h3>Thông tin cơ bản</h3>
+              <h3>{'Th\u00f4ng tin c\u01a1 b\u1ea3n'}</h3>
               <div className="info-item">
-                <span className="label">Tên cửa hàng:</span>
+                <span className="label">{'T\u00ean c\u1eeda h\u00e0ng:'}</span>
                 <span className="value">{shopData.data.name}</span>
               </div>
               <div className="info-item">
-                <span className="label">Mô tả:</span>
-                <span className="value">{shopData.data.description || 'Chưa có mô tả'}</span>
+                <span className="label">{'M\u00f4 t\u1ea3:'}</span>
+                <span className="value">{shopData.data.description}</span>
               </div>
               <div className="info-item">
-                <span className="label">Địa chỉ:</span>
+                <span className="label">{'\u0110\u1ecba ch\u1ec9:'}</span>
                 <span className="value">{shopData.data.address}</span>
               </div>
               <div className="info-item">
-                <span className="label">Giờ mở cửa:</span>
-                <span className="value">{shopData.data.opening_hours || 'Chưa cập nhật'}</span>
+                <span className="label">{'Gi\u1edd m\u1edf c\u1eeda:'}</span>
+                <span className="value">{shopData.data.opening_hours || 'Ch\u01b0a c\u1eadp nh\u1eadt'}</span>
               </div>
               <div className="info-item">
-                <span className="label">Đánh giá trung bình:</span>
-                <span className="value">{shopData.data.rating || 0} ⭐</span>
+                <span className="label">{'\u0110\u00e1nh gi\u00e1 trung b\u00ecnh:'}</span>
+                <span className="value">{(reviewStatsData?.data?.averageRating ?? shopData.data.rating ?? 0).toFixed ? (reviewStatsData?.data?.averageRating ?? shopData.data.rating ?? 0).toFixed(1) : (reviewStatsData?.data?.averageRating ?? shopData.data.rating ?? 0)}</span>
               </div>
             </div>
           </div>
         </div>
       )}
-
       {activeTab === 'ratings' && (
         <div className="ratings-section">
           <div className="section-header">
-            <h2>Đánh giá từ khách hàng</h2>
+            <h2>{'\u0110\u00e1nh gi\u00e1 t\u1eeb kh\u00e1ch h\u00e0ng'}</h2>
+          </div>
+          {/* Real data summary + list */}
+          <div className="ratings-summary real">
+            <div className="rating-card">
+              <h3>{'\u0110\u00e1nh gi\u00e1 t\u1ed5ng quan'}</h3>
+              <div className="rating-stats">
+                <div className="rating-item">
+                  <span className="rating-label">{'T\u1ed5ng s\u1ed1 \u0111\u00e1nh gi\u00e1'}</span>
+                  <span className="rating-value">{(reviewStatsData?.data?.averageRating ?? 0).toFixed ? (reviewStatsData?.data?.averageRating ?? 0).toFixed(1) : (reviewStatsData?.data?.averageRating ?? 0)}</span>
+                </div>
+                <div className="rating-item">
+                  <span className="rating-label">Tá»•ng sá»‘ Ä‘Ã¡nh giÃ¡:</span>
+                  <span className="rating-value">{reviewStatsData?.data?.reviewCount ?? 0}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="ratings-list real">
+            {shopReviewsLoading ? (
+              <p>Äang táº£i Ä‘Ã¡nh giÃ¡...</p>
+            ) : !shopReviewsData?.data || shopReviewsData.data.length === 0 ? (
+              <p>ChÆ°a cÃ³ Ä‘Ã¡nh giÃ¡ nÃ o.</p>
+            ) : (
+              shopReviewsData.data.map((rv) => (
+                <div key={rv.id} className="rating-item-row">
+                  <div className="rating-left">
+                    <StarRating rating={rv.rating} readOnly />
+                    <span className="rating-score">{rv.rating?.toFixed ? rv.rating.toFixed(1) : rv.rating}</span>
+                  </div>
+                  <div className="rating-right">
+                    <div className="rating-meta">
+                      <span className="reviewer">KhÃ¡ch #{rv.customerId}</span>
+                      <span className="date">{new Date(rv.createdAt).toLocaleString('vi-VN')}</span>
+                    </div>
+                    {rv.productId && rv.productId > 0 && (
+                      <div className="rating-product">{'M\u00f3n:'} {reviewProductMap[rv.productId] || `#${rv.productId}`}</div>
+                    )}
+                    <div className="rating-content">{rv.content}</div>
+                    <ReviewReply reviewId={rv.id} userRole={(user?.role || '').toUpperCase()} onReply={handleReplyToReview} />
+                  </div>
+                </div>
+              ))
+            )}
           </div>
           <div className="ratings-summary">
             <div className="rating-card">
-              <h3>Đánh giá tổng quan</h3>
+              <h3>ÄÃ¡nh giÃ¡ tá»•ng quan</h3>
               <div className="rating-stats">
                 <div className="rating-item">
-                  <span className="rating-label">Đánh giá trung bình:</span>
-                  <span className="rating-value">{shopData.data.rating || 0} ⭐</span>
+                  <span className="rating-label">ÄÃ¡nh giÃ¡ trung bÃ¬nh:</span>
+                  <span className="rating-value">{(reviewStatsData?.data?.averageRating ?? shopData.data.rating ?? 0).toFixed ? (reviewStatsData?.data?.averageRating ?? shopData.data.rating ?? 0).toFixed(1) : (reviewStatsData?.data?.averageRating ?? shopData.data.rating ?? 0)}</span>
                 </div>
                 <div className="rating-item">
-                  <span className="rating-label">Tổng số đánh giá:</span>
+                  <span className="rating-label">Tá»•ng sá»‘ Ä‘Ã¡nh giÃ¡:</span>
                   <span className="rating-value">{shopData.data.totalRatings || 0}</span>
                 </div>
               </div>
             </div>
           </div>
           <div className="ratings-list">
-            <p>Chức năng xem chi tiết đánh giá sẽ được phát triển trong tương lai.</p>
+            <p>Chá»©c nÄƒng xem chi tiáº¿t Ä‘Ã¡nh giÃ¡ sáº½ Ä‘Æ°á»£c phÃ¡t triá»ƒn trong tÆ°Æ¡ng lai.</p>
           </div>
         </div>
       )}
     </div>
   );
 };
-
 export default ShopManagement;

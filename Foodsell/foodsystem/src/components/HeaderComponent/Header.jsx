@@ -138,6 +138,8 @@ const Header = ({ toggleSidebar }) => {
         <div className="header-actions">
           {isAuthenticated && <NotificationBell />}
 
+          <button className="action-btn" onClick={() => navigate('/chat')}>Chat</button>
+
           <button className="action-btn contact-btn">📞 Liên hệ</button>
 
           <button 
