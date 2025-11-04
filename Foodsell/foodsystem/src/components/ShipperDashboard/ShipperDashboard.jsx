@@ -37,16 +37,34 @@ export default function ShipperDashboard() {
         shipperAPI.getDashboard()
       ])
 
-      if (ordersResponse.success) {
+      // Debugging: log raw responses so we can inspect the API shape in the browser console
+      console.debug('shipperAPI.getOrders response:', ordersResponse)
+      console.debug('shipperAPI.getDashboard response:', dashboardResponse)
+
+      if (ordersResponse && ordersResponse.success) {
         setOrders(ordersResponse.data || [])
       } else {
-        setError(ordersResponse.message || 'Không thể tải danh sách đơn hàng')
+        // Support alternative response shapes: if backend returns an array directly or {data: [...]}
+        if (Array.isArray(ordersResponse)) {
+          setOrders(ordersResponse)
+        } else if (ordersResponse && ordersResponse.data && Array.isArray(ordersResponse.data)) {
+          setOrders(ordersResponse.data)
+        } else {
+          setError((ordersResponse && ordersResponse.message) || 'Không thể tải danh sách đơn hàng')
+        }
       }
 
-      if (dashboardResponse.success) {
+      if (dashboardResponse && dashboardResponse.success) {
         setDashboardData(dashboardResponse.data)
       } else {
-        console.error('Error loading dashboard:', dashboardResponse.message)
+        // also support when dashboardResponse is the raw dashboard object or {data: {...}}
+        if (dashboardResponse && dashboardResponse.data) {
+          setDashboardData(dashboardResponse.data)
+        } else if (dashboardResponse && !dashboardResponse.success) {
+          console.error('Error loading dashboard:', dashboardResponse.message)
+        } else {
+          setDashboardData(dashboardResponse)
+        }
       }
     } catch (err) {
       console.error('Error loading shipper data:', err)
@@ -116,9 +134,20 @@ export default function ShipperDashboard() {
     { id: 'delivered', label: 'Đã giao', count: orders.filter(o => o.status === 'delivered').length }
   ]
 
-  const filteredOrders = activeTab === 'all' 
-    ? orders 
+  // Orders matching the active tab (based on order.status)
+  const filteredOrders = activeTab === 'all'
+    ? orders
     : orders.filter(order => order.status === activeTab)
+
+  // Bring orders that have an assignment status of 'accepted' to the top
+  // Support both camelCase and snake_case property names from backend
+  const acceptedOrders = orders.filter(o => (o.assignmentStatus === 'accepted' || o.assignment_status === 'accepted'))
+
+  // Build the final list to display: accepted orders first, then the rest (deduplicated)
+  const displayOrders = [
+    ...acceptedOrders,
+    ...filteredOrders.filter(o => !(o.assignmentStatus === 'accepted' || o.assignment_status === 'accepted'))
+  ]
 
   const getStatusLabel = (status) => {
     switch (status) {
@@ -235,7 +264,7 @@ export default function ShipperDashboard() {
 
       {/* Orders List */}
       <div className="orders-container">
-        {filteredOrders.map(order => (
+  {displayOrders.map(order => (
           <div key={order.id} className="order-card">
             {/* Order Header */}
             <div className="order-header">

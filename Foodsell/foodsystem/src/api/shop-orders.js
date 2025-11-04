@@ -43,10 +43,22 @@ export const shopOrdersAPI = {
 
   // Update basic order details (recipient info, phone, address) from seller side
   updateOrderDetails: async (orderId, data) => {
+    // Map frontend field names to backend expected keys
+    const payload = {
+      recipientName: data.recipientName,
+      recipientPhone: data.recipientPhone,
+      // backend expects `addressText` column name
+      addressText: data.recipientAddress,
+      // allow frontend to request changing assignment status
+      assignmentStatus: data.assignmentStatus
+    };
+    // Debug log to verify payload
+    console.debug('updateOrderDetails - payload:', payload);
+
     const res = await fetch(`${API_BASE_URL}/seller/orders/${orderId}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => null);
@@ -68,9 +80,9 @@ export const shopOrdersAPI = {
     return res.json();
   },
 
-  // Chấp nhận đơn hàng
+  // Chấp nhận đơn hàng (calls OrderAssignmentController)
   acceptOrder: async (orderId) => {
-    const res = await fetch(`${API_BASE_URL}/orders/${orderId}/accept`, {
+    const res = await fetch(`${API_BASE_URL}/orders/assignment/${orderId}/accept`, {
       method: 'POST',
       headers: getAuthHeaders()
     });

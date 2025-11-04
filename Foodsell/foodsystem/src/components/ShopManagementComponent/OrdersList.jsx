@@ -15,6 +15,9 @@ const OrdersList = ({ shopId, status }) => {
   });
 
   const orders = ordersResp?.data || [];
+  // Debug: log payload to inspect assignmentStatus values
+  // (temporary, remove after verification)
+  console.debug('OrdersList - ordersResp:', ordersResp);
 
   // Seller updates order details (optional small edits)
   const updateDetailsMutation = useMutation({
@@ -32,7 +35,8 @@ const OrdersList = ({ shopId, status }) => {
       id: order.id,
       recipientName: order.recipientName || '',
       recipientPhone: order.recipientPhone || order.recipient_phone || '',
-      recipientAddress: order.recipientAddress || order.recipient_address || ''
+      recipientAddress: order.recipientAddress || order.recipient_address || '',
+      assignmentStatus: order.assignmentStatus || order.assignment_status || 'pending'
     });
   };
 
@@ -60,7 +64,8 @@ const OrdersList = ({ shopId, status }) => {
       data: {
         recipientName: editingOrder.recipientName,
         recipientPhone: editingOrder.recipientPhone,
-        recipientAddress: editingOrder.recipientAddress
+        recipientAddress: editingOrder.recipientAddress,
+        assignmentStatus: editingOrder.assignmentStatus
       }
     }, {
       onSuccess: () => {
@@ -88,6 +93,12 @@ const OrdersList = ({ shopId, status }) => {
   if (error) return <div>Lỗi khi tải đơn hàng: {error.message}</div>;
 
   const handleAccept = (order) => {
+    console.debug('handleAccept called for order:', order.id, 'assignmentStatus:', order.assignmentStatus);
+    // If already accepted, inform user and suggest Edit modal for changes
+    if (order.assignmentStatus === 'accepted') {
+      window.alert('Đơn hàng này đang có assignmentStatus = "accepted". Nếu bạn muốn thay đổi trạng thái phân phối, nhấn "Edit" để chỉnh sửa.');
+      return;
+    }
     if (!window.confirm(`Xác nhận chấp nhận đơn hàng #${order.id}?`)) return;
     // Call acceptOrder API
     acceptOrderMutation.mutate(order.id);
@@ -97,36 +108,7 @@ const OrdersList = ({ shopId, status }) => {
     <div className="orders-list">
       <div className="section-header">
         <h3>Đơn hàng của cửa hàng</h3>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>#ID</th>
-            <th>Người nhận</th>
-            <th>Tổng</th>
-            <th>Trạng thái</th>
-            <th>Trạng thái xử lý</th>
-            <th>Ngày</th>
-            <th>Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.map(order => (
-            <tr key={order.id}>
-              <td>{order.id}</td>
-              <td>{order.recipientName}</td>
-              <td>{order.totalAmount}</td>
-              <td>{order.status}</td>
-              <td>{order.assignmentStatus || 'Chưa xử lý'}</td>
-              <td>{new Date(order.createdAt).toLocaleString()}</td>
-              <td>
-                <button onClick={() => handleAccept(order)}>Chấp nhận</button>
-                <button onClick={() => openEditModal(order)}>Sửa</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>      {/* Edit Modal */}
+      </div>      {/* Edit Modal */}
       {editingOrder && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -160,6 +142,19 @@ const OrdersList = ({ shopId, status }) => {
                 onChange={(e) => setEditingOrder({...editingOrder, recipientAddress: e.target.value})}
                 placeholder="Nhập địa chỉ"
               />
+            </div>
+
+            <div className="form-group">
+              <label>Trạng thái phân phối (assignmentStatus):</label>
+              <select
+                value={editingOrder.assignmentStatus}
+                onChange={(e) => setEditingOrder({...editingOrder, assignmentStatus: e.target.value})}
+              >
+                <option value="pending">pending</option>
+                <option value="assigned">assigned</option>
+                <option value="accepted">accepted</option>
+                <option value="rejected">rejected</option>
+              </select>
             </div>
 
             <div className="modal-actions">
@@ -215,9 +210,10 @@ const OrdersList = ({ shopId, status }) => {
                     ✏️ Edit
                   </button>
                   {' '}
-                  <button 
-                    onClick={() => handleAccept(o)} 
-                    disabled={acceptOrderMutation.isLoading || o.assignmentStatus === 'accepted'}
+                  {/* Always render accept button, but disable if already accepted */}
+                  <button
+                    onClick={() => handleAccept(o)}
+                    disabled={acceptOrderMutation.isLoading}
                     className="accept-btn"
                   >
                     ✅ Chấp nhận

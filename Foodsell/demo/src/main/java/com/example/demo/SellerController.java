@@ -122,4 +122,19 @@ public class SellerController {
         
         return ResponseEntity.ok(stats);
     }
+    
+    // PUT: Cập nhật thông tin đơn hàng (recipient, phone, address, ...)
+    @PutMapping("/orders/{orderId}")
+    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
+    public ResponseEntity<?> updateOrderInfo(
+            @PathVariable Integer orderId,
+            @RequestBody Map<String, Object> request) {
+        try {
+            OrderDTO updatedOrder = orderService.updateOrderInfo(orderId, request);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Order info updated successfully", updatedOrder));
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body(new ApiResponse<>(false, "Failed to update order info: " + e.getMessage(), null));
+        }
+    }
 }

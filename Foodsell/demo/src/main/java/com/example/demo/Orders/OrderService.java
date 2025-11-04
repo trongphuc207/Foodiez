@@ -17,6 +17,48 @@ import java.util.Optional;
 
 @Service
 public class OrderService {
+
+    @Transactional
+    public OrderDTO updateOrderInfo(Integer orderId, Map<String, Object> request) {
+        System.out.println("updateOrderInfo - request: " + request); // Debug log
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // Cập nhật các trường cho phép
+        if (request.containsKey("recipientName")) {
+            order.setRecipientName((String) request.get("recipientName"));
+        }
+        if (request.containsKey("recipientPhone")) {
+            order.setRecipientPhone((String) request.get("recipientPhone"));
+        }
+        if (request.containsKey("addressText")) {
+            order.setAddressText((String) request.get("addressText"));
+        }
+        // Allow updating assignment status (seller/admin can edit)
+        if (request.containsKey("assignmentStatus")) {
+            try {
+                String newAssignStatus = (String) request.get("assignmentStatus");
+                System.out.println("Updating assignmentStatus - current: " + order.getAssignmentStatus() + ", new: " + newAssignStatus);
+                order.setAssignmentStatus(newAssignStatus);
+                if ("assigned".equalsIgnoreCase(newAssignStatus)) {
+                    order.setAssignedAt(LocalDateTime.now());
+                }
+                if ("accepted".equalsIgnoreCase(newAssignStatus)) {
+                    order.setAcceptedAt(LocalDateTime.now());
+                }
+                System.out.println("Assignment status update complete - current value: " + order.getAssignmentStatus());
+            } catch (Exception ex) {
+                System.out.println("Warning: invalid assignmentStatus provided: " + ex.getMessage());
+                ex.printStackTrace(); // Print full stack trace for debugging
+            }
+        }
+        // Có thể bổ sung các trường khác nếu cần
+
+        order.setUpdatedAt(LocalDateTime.now());
+        Order savedOrder = orderRepository.save(order);
+        savedOrder.setOrderItems(orderItemRepository.findByOrderId(savedOrder.getId()));
+        return convertToOrderDTO(savedOrder);
+    }
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final OrderHistoryRepository orderHistoryRepository;
@@ -380,7 +422,8 @@ public class OrderService {
         dto.setLatitude(order.getLatitude());
         dto.setLongitude(order.getLongitude());
         dto.setCreatedAt(order.getCreatedAt());
-        
+        dto.setUpdatedAt(order.getUpdatedAt());
+        dto.setAssignmentStatus(order.getAssignmentStatus());
         // Convert order items
         if (order.getOrderItems() != null) {
             List<OrderItemDTO> itemDTOs = order.getOrderItems().stream()
@@ -388,7 +431,6 @@ public class OrderService {
                     .collect(Collectors.toList());
             dto.setOrderItems(itemDTOs);
         }
-        
         return dto;
     }
     

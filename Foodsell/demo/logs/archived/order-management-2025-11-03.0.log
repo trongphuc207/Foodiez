@@ -1,0 +1,261 @@
+2025-11-03 00:46:28 [http-nio-8080-exec-3] INFO  c.e.d.Orders.OrderAssignmentService - Processing order acceptance request - Order ID: 28, User ID: 17
+2025-11-03 00:46:28 [http-nio-8080-exec-3] DEBUG c.e.d.Orders.OrderAssignmentService - Current order state - ID: 28, Status: confirmed, Assignment Status: null, Seller ID: null, Shipper ID: null
+2025-11-03 00:46:28 [http-nio-8080-exec-3] ERROR c.e.d.Orders.OrderAssignmentService - Order 28 cannot be accepted because its assignment status is null instead of 'assigned'
+2025-11-03 00:51:33 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Processing order acceptance request - Order ID: 28, User ID: 17
+2025-11-03 00:51:33 [http-nio-8080-exec-6] DEBUG c.e.d.Orders.OrderAssignmentService - Current order state - ID: 28, Status: confirmed, Assignment Status: null, Seller ID: null, Shipper ID: null
+2025-11-03 00:51:33 [http-nio-8080-exec-6] ERROR c.e.d.Orders.OrderAssignmentService - Order 28 cannot be accepted because its assignment status is null instead of 'assigned'
+2025-11-03 00:51:34 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Processing order acceptance request - Order ID: 28, User ID: 17
+2025-11-03 00:51:34 [http-nio-8080-exec-5] DEBUG c.e.d.Orders.OrderAssignmentService - Current order state - ID: 28, Status: confirmed, Assignment Status: null, Seller ID: null, Shipper ID: null
+2025-11-03 00:51:34 [http-nio-8080-exec-5] ERROR c.e.d.Orders.OrderAssignmentService - Order 28 cannot be accepted because its assignment status is null instead of 'assigned'
+2025-11-03 00:56:39 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - Processing order acceptance request - Order ID: 28, User ID: 17
+2025-11-03 00:56:39 [http-nio-8080-exec-10] DEBUG c.e.d.Orders.OrderAssignmentService - Current order state - ID: 28, Status: confirmed, Assignment Status: null, Seller ID: null, Shipper ID: null
+2025-11-03 00:56:39 [http-nio-8080-exec-10] ERROR c.e.d.Orders.OrderAssignmentService - Order 28 cannot be accepted because its assignment status is null instead of 'assigned'
+2025-11-03 00:56:40 [http-nio-8080-exec-2] INFO  c.e.d.Orders.OrderAssignmentService - Processing order acceptance request - Order ID: 28, User ID: 17
+2025-11-03 00:56:40 [http-nio-8080-exec-2] DEBUG c.e.d.Orders.OrderAssignmentService - Current order state - ID: 28, Status: confirmed, Assignment Status: null, Seller ID: null, Shipper ID: null
+2025-11-03 00:56:40 [http-nio-8080-exec-2] ERROR c.e.d.Orders.OrderAssignmentService - Order 28 cannot be accepted because its assignment status is null instead of 'assigned'
+2025-11-03 00:59:08 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - Processing order acceptance request - Order ID: 28, User ID: 17
+2025-11-03 00:59:08 [http-nio-8080-exec-10] DEBUG c.e.d.Orders.OrderAssignmentService - Current order state - ID: 28, Status: confirmed, Assignment Status: null, Seller ID: null, Shipper ID: null
+2025-11-03 00:59:08 [http-nio-8080-exec-10] ERROR c.e.d.Orders.OrderAssignmentService - Order 28 cannot be accepted because its assignment status is null instead of 'assigned'
+2025-11-03 00:59:10 [http-nio-8080-exec-7] INFO  c.e.d.Orders.OrderAssignmentService - Processing order acceptance request - Order ID: 28, User ID: 17
+2025-11-03 00:59:10 [http-nio-8080-exec-7] DEBUG c.e.d.Orders.OrderAssignmentService - Current order state - ID: 28, Status: confirmed, Assignment Status: null, Seller ID: null, Shipper ID: null
+2025-11-03 00:59:10 [http-nio-8080-exec-7] ERROR c.e.d.Orders.OrderAssignmentService - Order 28 cannot be accepted because its assignment status is null instead of 'assigned'
+2025-11-03 01:00:04 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - === START ACCEPT ORDER FLOW ===
+2025-11-03 01:00:04 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Processing order acceptance request - Order ID: 28, User ID: 17
+2025-11-03 01:00:04 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - 1. Looking up order in database...
+2025-11-03 01:00:04 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Order found - Current status: confirmed, Assignment status: null
+2025-11-03 01:00:04 [http-nio-8080-exec-4] DEBUG c.e.d.Orders.OrderAssignmentService - Current order state - ID: 28, Status: confirmed, Assignment Status: null, Seller ID: null, Shipper ID: null
+2025-11-03 01:00:04 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - 2. Current order state:
+2025-11-03 01:00:04 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Status: confirmed, Assignment status: null
+2025-11-03 01:00:04 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Checking user permissions for order acceptance - User Role: seller, Order ID: 28
+2025-11-03 01:00:04 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - 3. Checking seller permissions...
+2025-11-03 01:00:04 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - User ID: 17, Order ID: 28, User Role: seller
+2025-11-03 01:00:04 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Bypassing assignment check for sellers
+2025-11-03 01:00:04 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Shop information found - Shop ID: 7
+2025-11-03 01:00:04 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Checking shop ownership - Shop Seller ID: 17, User ID: 17
+2025-11-03 01:00:04 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Is shop owner? true
+2025-11-03 01:00:04 [http-nio-8080-exec-4] DEBUG c.e.d.Orders.OrderAssignmentService - User 17 (seller) is allowed to accept order 28 (assignedSeller=true, shopOwner=true)
+2025-11-03 01:00:04 [http-nio-8080-exec-4] DEBUG c.e.d.Orders.OrderAssignmentService - Order assignment status transition - Order ID: 28, Old Assignment Status: not_required, New Assignment Status: accepted
+2025-11-03 01:00:04 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Attempting to save order changes - Order ID: 28, Status: confirmed, New Assignment Status: accepted, Accepted At: 2025-11-03T01:00:04.950946900
+2025-11-03 01:00:05 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Order successfully updated in database - Order ID: 28, Status: confirmed, Assignment Status: accepted, Updated At: 2025-11-03T01:00:04.972082400, Accepted At: 2025-11-03T01:00:04.950946900
+2025-11-03 01:00:05 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Verified order state after save - Order ID: 28, Status: confirmed, Assignment Status: accepted, Accepted At: 2025-11-03T01:00:04.950946900
+2025-11-03 01:00:05 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Creating order history entry - Order ID: 28, Status From: null, Status To: null, Action: order_accepted_by_seller, Created By: tvdong01032004@gmail.com
+2025-11-03 01:00:05 [http-nio-8080-exec-4] DEBUG c.e.d.Orders.OrderAssignmentService - Order history details - Description: Seller đã chấp nhận đơn hàng
+2025-11-03 01:00:05 [http-nio-8080-exec-4] ERROR c.e.d.Orders.OrderAssignmentService - Error creating order history for order 28: could not execute statement [Cannot insert the value NULL into column 'status_to', table 'food_delivery_db10.dbo.order_history'; column does not allow nulls. INSERT fails.] [insert into order_history (action,created_at,created_by,description,order_id,status_from,status_to) values (?,?,?,?,?,?,?)]; SQL [insert into order_history (action,created_at,created_by,description,order_id,status_from,status_to) values (?,?,?,?,?,?,?)]; constraint [null]
+2025-11-03 01:00:05 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Successfully created order history for order 28
+2025-11-03 01:00:05 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Order 28 successfully accepted by seller (ID: 17)
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - === START ACCEPT ORDER FLOW ===
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - Processing order acceptance request - Order ID: 28, User ID: 17
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - 1. Looking up order in database...
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - Order found - Current status: confirmed, Assignment status: null
+2025-11-03 01:00:06 [http-nio-8080-exec-10] DEBUG c.e.d.Orders.OrderAssignmentService - Current order state - ID: 28, Status: confirmed, Assignment Status: null, Seller ID: null, Shipper ID: null
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - 2. Current order state:
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - Status: confirmed, Assignment status: null
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - Checking user permissions for order acceptance - User Role: seller, Order ID: 28
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - 3. Checking seller permissions...
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - User ID: 17, Order ID: 28, User Role: seller
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - Bypassing assignment check for sellers
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - Shop information found - Shop ID: 7
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - Checking shop ownership - Shop Seller ID: 17, User ID: 17
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - Is shop owner? true
+2025-11-03 01:00:06 [http-nio-8080-exec-10] DEBUG c.e.d.Orders.OrderAssignmentService - User 17 (seller) is allowed to accept order 28 (assignedSeller=true, shopOwner=true)
+2025-11-03 01:00:06 [http-nio-8080-exec-10] DEBUG c.e.d.Orders.OrderAssignmentService - Order assignment status transition - Order ID: 28, Old Assignment Status: not_required, New Assignment Status: accepted
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - Attempting to save order changes - Order ID: 28, Status: confirmed, New Assignment Status: accepted, Accepted At: 2025-11-03T01:00:06.246995200
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - Order successfully updated in database - Order ID: 28, Status: confirmed, Assignment Status: accepted, Updated At: 2025-11-03T01:00:06.252146200, Accepted At: 2025-11-03T01:00:06.246995200
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - Verified order state after save - Order ID: 28, Status: confirmed, Assignment Status: accepted, Accepted At: 2025-11-03T01:00:06.246995200
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - Creating order history entry - Order ID: 28, Status From: null, Status To: null, Action: order_accepted_by_seller, Created By: tvdong01032004@gmail.com
+2025-11-03 01:00:06 [http-nio-8080-exec-10] DEBUG c.e.d.Orders.OrderAssignmentService - Order history details - Description: Seller đã chấp nhận đơn hàng
+2025-11-03 01:00:06 [http-nio-8080-exec-10] ERROR c.e.d.Orders.OrderAssignmentService - Error creating order history for order 28: could not execute statement [Cannot insert the value NULL into column 'status_to', table 'food_delivery_db10.dbo.order_history'; column does not allow nulls. INSERT fails.] [insert into order_history (action,created_at,created_by,description,order_id,status_from,status_to) values (?,?,?,?,?,?,?)]; SQL [insert into order_history (action,created_at,created_by,description,order_id,status_from,status_to) values (?,?,?,?,?,?,?)]; constraint [null]
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - Successfully created order history for order 28
+2025-11-03 01:00:06 [http-nio-8080-exec-10] INFO  c.e.d.Orders.OrderAssignmentService - Order 28 successfully accepted by seller (ID: 17)
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - === START ACCEPT ORDER FLOW ===
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Processing order acceptance request - Order ID: 29, User ID: 17
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - 1. Looking up order in database...
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Order found - Current status: confirmed, Assignment status: accepted
+2025-11-03 01:01:36 [http-nio-8080-exec-5] DEBUG c.e.d.Orders.OrderAssignmentService - Current order state - ID: 29, Status: confirmed, Assignment Status: accepted, Seller ID: 2, Shipper ID: 11
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - 2. Current order state:
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Status: confirmed, Assignment status: accepted
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Checking user permissions for order acceptance - User Role: seller, Order ID: 29
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - 3. Checking seller permissions...
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - User ID: 17, Order ID: 29, User Role: seller
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Bypassing assignment check for sellers
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Shop information found - Shop ID: 7
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Checking shop ownership - Shop Seller ID: 17, User ID: 17
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Is shop owner? true
+2025-11-03 01:01:36 [http-nio-8080-exec-5] DEBUG c.e.d.Orders.OrderAssignmentService - User 17 (seller) is allowed to accept order 29 (assignedSeller=true, shopOwner=true)
+2025-11-03 01:01:36 [http-nio-8080-exec-5] DEBUG c.e.d.Orders.OrderAssignmentService - Order assignment status transition - Order ID: 29, Old Assignment Status: not_required, New Assignment Status: accepted
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Attempting to save order changes - Order ID: 29, Status: confirmed, New Assignment Status: accepted, Accepted At: 2025-11-03T01:01:36.489337100
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Order successfully updated in database - Order ID: 29, Status: confirmed, Assignment Status: accepted, Updated At: 2025-11-03T01:01:36.492474900, Accepted At: 2025-11-03T01:01:36.489337100
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Verified order state after save - Order ID: 29, Status: confirmed, Assignment Status: accepted, Accepted At: 2025-11-03T01:01:36.489337100
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Creating order history entry - Order ID: 29, Status From: null, Status To: null, Action: order_accepted_by_seller, Created By: tvdong01032004@gmail.com
+2025-11-03 01:01:36 [http-nio-8080-exec-5] DEBUG c.e.d.Orders.OrderAssignmentService - Order history details - Description: Seller đã chấp nhận đơn hàng
+2025-11-03 01:01:36 [http-nio-8080-exec-5] ERROR c.e.d.Orders.OrderAssignmentService - Error creating order history for order 29: could not execute statement [Cannot insert the value NULL into column 'status_to', table 'food_delivery_db10.dbo.order_history'; column does not allow nulls. INSERT fails.] [insert into order_history (action,created_at,created_by,description,order_id,status_from,status_to) values (?,?,?,?,?,?,?)]; SQL [insert into order_history (action,created_at,created_by,description,order_id,status_from,status_to) values (?,?,?,?,?,?,?)]; constraint [null]
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Successfully created order history for order 29
+2025-11-03 01:01:36 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Order 29 successfully accepted by seller (ID: 17)
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - === START ACCEPT ORDER FLOW ===
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Processing order acceptance request - Order ID: 29, User ID: 17
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - 1. Looking up order in database...
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Order found - Current status: confirmed, Assignment status: accepted
+2025-11-03 01:01:37 [http-nio-8080-exec-4] DEBUG c.e.d.Orders.OrderAssignmentService - Current order state - ID: 29, Status: confirmed, Assignment Status: accepted, Seller ID: 2, Shipper ID: 11
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - 2. Current order state:
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Status: confirmed, Assignment status: accepted
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Checking user permissions for order acceptance - User Role: seller, Order ID: 29
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - 3. Checking seller permissions...
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - User ID: 17, Order ID: 29, User Role: seller
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Bypassing assignment check for sellers
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Shop information found - Shop ID: 7
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Checking shop ownership - Shop Seller ID: 17, User ID: 17
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Is shop owner? true
+2025-11-03 01:01:37 [http-nio-8080-exec-4] DEBUG c.e.d.Orders.OrderAssignmentService - User 17 (seller) is allowed to accept order 29 (assignedSeller=true, shopOwner=true)
+2025-11-03 01:01:37 [http-nio-8080-exec-4] DEBUG c.e.d.Orders.OrderAssignmentService - Order assignment status transition - Order ID: 29, Old Assignment Status: not_required, New Assignment Status: accepted
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Attempting to save order changes - Order ID: 29, Status: confirmed, New Assignment Status: accepted, Accepted At: 2025-11-03T01:01:37.587340400
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Order successfully updated in database - Order ID: 29, Status: confirmed, Assignment Status: accepted, Updated At: 2025-11-03T01:01:37.591441300, Accepted At: 2025-11-03T01:01:37.587340400
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Verified order state after save - Order ID: 29, Status: confirmed, Assignment Status: accepted, Accepted At: 2025-11-03T01:01:37.587340400
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Creating order history entry - Order ID: 29, Status From: null, Status To: null, Action: order_accepted_by_seller, Created By: tvdong01032004@gmail.com
+2025-11-03 01:01:37 [http-nio-8080-exec-4] DEBUG c.e.d.Orders.OrderAssignmentService - Order history details - Description: Seller đã chấp nhận đơn hàng
+2025-11-03 01:01:37 [http-nio-8080-exec-4] ERROR c.e.d.Orders.OrderAssignmentService - Error creating order history for order 29: could not execute statement [Cannot insert the value NULL into column 'status_to', table 'food_delivery_db10.dbo.order_history'; column does not allow nulls. INSERT fails.] [insert into order_history (action,created_at,created_by,description,order_id,status_from,status_to) values (?,?,?,?,?,?,?)]; SQL [insert into order_history (action,created_at,created_by,description,order_id,status_from,status_to) values (?,?,?,?,?,?,?)]; constraint [null]
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Successfully created order history for order 29
+2025-11-03 01:01:37 [http-nio-8080-exec-4] INFO  c.e.d.Orders.OrderAssignmentService - Order 29 successfully accepted by seller (ID: 17)
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - === START ACCEPT ORDER FLOW ===
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - Processing order acceptance request - Order ID: 28, User ID: 17
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - 1. Looking up order in database...
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - Order found - Current status: confirmed, Assignment status: null
+2025-11-03 01:03:00 [http-nio-8080-exec-8] DEBUG c.e.d.Orders.OrderAssignmentService - Current order state - ID: 28, Status: confirmed, Assignment Status: null, Seller ID: null, Shipper ID: null
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - 2. Current order state:
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - Status: confirmed, Assignment status: null
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - Checking user permissions for order acceptance - User Role: seller, Order ID: 28
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - 3. Checking seller permissions...
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - User ID: 17, Order ID: 28, User Role: seller
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - Bypassing assignment check for sellers
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - Shop information found - Shop ID: 7
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - Checking shop ownership - Shop Seller ID: 17, User ID: 17
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - Is shop owner? true
+2025-11-03 01:03:00 [http-nio-8080-exec-8] DEBUG c.e.d.Orders.OrderAssignmentService - User 17 (seller) is allowed to accept order 28 (assignedSeller=true, shopOwner=true)
+2025-11-03 01:03:00 [http-nio-8080-exec-8] DEBUG c.e.d.Orders.OrderAssignmentService - Order assignment status transition - Order ID: 28, Old Assignment Status: not_required, New Assignment Status: accepted
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - Attempting to save order changes - Order ID: 28, Status: confirmed, New Assignment Status: accepted, Accepted At: 2025-11-03T01:03:00.046705200
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - Order successfully updated in database - Order ID: 28, Status: confirmed, Assignment Status: accepted, Updated At: 2025-11-03T01:03:00.062553, Accepted At: 2025-11-03T01:03:00.046705200
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - Verified order state after save - Order ID: 28, Status: confirmed, Assignment Status: accepted, Accepted At: 2025-11-03T01:03:00.046705200
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - Creating order history entry - Order ID: 28, Status From: confirmed, Status To: confirmed, Action: order_accepted_by_seller, Created By: tvdong01032004@gmail.com
+2025-11-03 01:03:00 [http-nio-8080-exec-8] DEBUG c.e.d.Orders.OrderAssignmentService - Order history details - Description: Seller đã chấp nhận đơn hàng
+2025-11-03 01:03:00 [http-nio-8080-exec-8] DEBUG c.e.d.Orders.OrderAssignmentService - Order history created - ID: 90, Order ID: 28, Action: order_accepted_by_seller
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - Successfully created order history for order 28
+2025-11-03 01:03:00 [http-nio-8080-exec-8] INFO  c.e.d.Orders.OrderAssignmentService - Order 28 successfully accepted by seller (ID: 17)
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - === START ACCEPT ORDER FLOW ===
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - Processing order acceptance request - Order ID: 29, User ID: 17
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - 1. Looking up order in database...
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - Order found - Current status: confirmed, Assignment status: accepted
+2025-11-03 01:03:02 [http-nio-8080-exec-1] DEBUG c.e.d.Orders.OrderAssignmentService - Current order state - ID: 29, Status: confirmed, Assignment Status: accepted, Seller ID: 2, Shipper ID: 11
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - 2. Current order state:
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - Status: confirmed, Assignment status: accepted
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - Checking user permissions for order acceptance - User Role: seller, Order ID: 29
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - 3. Checking seller permissions...
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - User ID: 17, Order ID: 29, User Role: seller
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - Bypassing assignment check for sellers
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - Shop information found - Shop ID: 7
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - Checking shop ownership - Shop Seller ID: 17, User ID: 17
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - Is shop owner? true
+2025-11-03 01:03:02 [http-nio-8080-exec-1] DEBUG c.e.d.Orders.OrderAssignmentService - User 17 (seller) is allowed to accept order 29 (assignedSeller=true, shopOwner=true)
+2025-11-03 01:03:02 [http-nio-8080-exec-1] DEBUG c.e.d.Orders.OrderAssignmentService - Order assignment status transition - Order ID: 29, Old Assignment Status: not_required, New Assignment Status: accepted
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - Attempting to save order changes - Order ID: 29, Status: confirmed, New Assignment Status: accepted, Accepted At: 2025-11-03T01:03:02.740428100
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - Order successfully updated in database - Order ID: 29, Status: confirmed, Assignment Status: accepted, Updated At: 2025-11-03T01:03:02.742512, Accepted At: 2025-11-03T01:03:02.740428100
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - Verified order state after save - Order ID: 29, Status: confirmed, Assignment Status: accepted, Accepted At: 2025-11-03T01:03:02.740428100
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - Creating order history entry - Order ID: 29, Status From: confirmed, Status To: confirmed, Action: order_accepted_by_seller, Created By: tvdong01032004@gmail.com
+2025-11-03 01:03:02 [http-nio-8080-exec-1] DEBUG c.e.d.Orders.OrderAssignmentService - Order history details - Description: Seller đã chấp nhận đơn hàng
+2025-11-03 01:03:02 [http-nio-8080-exec-1] DEBUG c.e.d.Orders.OrderAssignmentService - Order history created - ID: 91, Order ID: 29, Action: order_accepted_by_seller
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - Successfully created order history for order 29
+2025-11-03 01:03:02 [http-nio-8080-exec-1] INFO  c.e.d.Orders.OrderAssignmentService - Order 29 successfully accepted by seller (ID: 17)
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - === START ACCEPT ORDER FLOW ===
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Processing order acceptance request - Order ID: 28, User ID: 17
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - 1. Looking up order in database...
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Order found - Current status: confirmed, Assignment status: accepted
+2025-11-03 01:08:44 [http-nio-8080-exec-6] DEBUG c.e.d.Orders.OrderAssignmentService - Current order state - ID: 28, Status: confirmed, Assignment Status: accepted, Seller ID: null, Shipper ID: null
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - 2. Current order state:
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Status: confirmed, Assignment status: accepted
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Checking user permissions for order acceptance - User Role: seller, Order ID: 28
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - 3. Checking seller permissions...
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - User ID: 17, Order ID: 28, User Role: seller
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Bypassing assignment check for sellers
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Shop information found - Shop ID: 7
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Checking shop ownership - Shop Seller ID: 17, User ID: 17
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Is shop owner? true
+2025-11-03 01:08:44 [http-nio-8080-exec-6] DEBUG c.e.d.Orders.OrderAssignmentService - User 17 (seller) is allowed to accept order 28 (assignedSeller=true, shopOwner=true)
+2025-11-03 01:08:44 [http-nio-8080-exec-6] DEBUG c.e.d.Orders.OrderAssignmentService - Order assignment status transition - Order ID: 28, Old Assignment Status: not_required, New Assignment Status: accepted
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Attempting to save order changes - Order ID: 28, Status: confirmed, New Assignment Status: accepted, Accepted At: 2025-11-03T01:08:44.145735600
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Order successfully updated in database - Order ID: 28, Status: confirmed, Assignment Status: accepted, Updated At: 2025-11-03T01:08:44.147786100, Accepted At: 2025-11-03T01:08:44.145735600
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Verified order state after save - Order ID: 28, Status: confirmed, Assignment Status: accepted, Accepted At: 2025-11-03T01:08:44.145735600
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Creating order history entry - Order ID: 28, Status From: confirmed, Status To: confirmed, Action: order_accepted_by_seller, Created By: tvdong01032004@gmail.com
+2025-11-03 01:08:44 [http-nio-8080-exec-6] DEBUG c.e.d.Orders.OrderAssignmentService - Order history details - Description: Seller đã chấp nhận đơn hàng
+2025-11-03 01:08:44 [http-nio-8080-exec-6] DEBUG c.e.d.Orders.OrderAssignmentService - Order history created - ID: 92, Order ID: 28, Action: order_accepted_by_seller
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Successfully created order history for order 28
+2025-11-03 01:08:44 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Order 28 successfully accepted by seller (ID: 17)
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - === START ACCEPT ORDER FLOW ===
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Processing order acceptance request - Order ID: 29, User ID: 17
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - 1. Looking up order in database...
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Order found - Current status: confirmed, Assignment status: accepted
+2025-11-03 01:08:46 [http-nio-8080-exec-6] DEBUG c.e.d.Orders.OrderAssignmentService - Current order state - ID: 29, Status: confirmed, Assignment Status: accepted, Seller ID: 2, Shipper ID: 11
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - 2. Current order state:
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Status: confirmed, Assignment status: accepted
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Checking user permissions for order acceptance - User Role: seller, Order ID: 29
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - 3. Checking seller permissions...
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - User ID: 17, Order ID: 29, User Role: seller
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Bypassing assignment check for sellers
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Shop information found - Shop ID: 7
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Checking shop ownership - Shop Seller ID: 17, User ID: 17
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Is shop owner? true
+2025-11-03 01:08:46 [http-nio-8080-exec-6] DEBUG c.e.d.Orders.OrderAssignmentService - User 17 (seller) is allowed to accept order 29 (assignedSeller=true, shopOwner=true)
+2025-11-03 01:08:46 [http-nio-8080-exec-6] DEBUG c.e.d.Orders.OrderAssignmentService - Order assignment status transition - Order ID: 29, Old Assignment Status: not_required, New Assignment Status: accepted
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Attempting to save order changes - Order ID: 29, Status: confirmed, New Assignment Status: accepted, Accepted At: 2025-11-03T01:08:46.970332600
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Order successfully updated in database - Order ID: 29, Status: confirmed, Assignment Status: accepted, Updated At: 2025-11-03T01:08:46.973580300, Accepted At: 2025-11-03T01:08:46.970332600
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Verified order state after save - Order ID: 29, Status: confirmed, Assignment Status: accepted, Accepted At: 2025-11-03T01:08:46.970332600
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Creating order history entry - Order ID: 29, Status From: confirmed, Status To: confirmed, Action: order_accepted_by_seller, Created By: tvdong01032004@gmail.com
+2025-11-03 01:08:46 [http-nio-8080-exec-6] DEBUG c.e.d.Orders.OrderAssignmentService - Order history details - Description: Seller đã chấp nhận đơn hàng
+2025-11-03 01:08:46 [http-nio-8080-exec-6] DEBUG c.e.d.Orders.OrderAssignmentService - Order history created - ID: 93, Order ID: 29, Action: order_accepted_by_seller
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Successfully created order history for order 29
+2025-11-03 01:08:46 [http-nio-8080-exec-6] INFO  c.e.d.Orders.OrderAssignmentService - Order 29 successfully accepted by seller (ID: 17)
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - === START ACCEPT ORDER FLOW ===
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Processing order acceptance request - Order ID: 28, User ID: 17
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - 1. Looking up order in database...
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Order found - Current status: confirmed, Assignment status: accepted
+2025-11-03 01:09:45 [http-nio-8080-exec-5] DEBUG c.e.d.Orders.OrderAssignmentService - Current order state - ID: 28, Status: confirmed, Assignment Status: accepted, Seller ID: null, Shipper ID: null
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - 2. Current order state:
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Status: confirmed, Assignment status: accepted
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Checking user permissions for order acceptance - User Role: seller, Order ID: 28
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - 3. Checking seller permissions...
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - User ID: 17, Order ID: 28, User Role: seller
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Bypassing assignment check for sellers
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Shop information found - Shop ID: 7
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Checking shop ownership - Shop Seller ID: 17, User ID: 17
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Is shop owner? true
+2025-11-03 01:09:45 [http-nio-8080-exec-5] DEBUG c.e.d.Orders.OrderAssignmentService - User 17 (seller) is allowed to accept order 28 (assignedSeller=true, shopOwner=true)
+2025-11-03 01:09:45 [http-nio-8080-exec-5] DEBUG c.e.d.Orders.OrderAssignmentService - Order assignment status transition - Order ID: 28, Old Assignment Status: not_required, New Assignment Status: accepted
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Attempting to save order changes - Order ID: 28, Status: confirmed, New Assignment Status: accepted, Accepted At: 2025-11-03T01:09:45.670012
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Order successfully updated in database - Order ID: 28, Status: confirmed, Assignment Status: accepted, Updated At: 2025-11-03T01:09:45.686822700, Accepted At: 2025-11-03T01:09:45.670012
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Verified order state after save - Order ID: 28, Status: confirmed, Assignment Status: accepted, Accepted At: 2025-11-03T01:09:45.670012
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Creating order history entry - Order ID: 28, Status From: accepted, Status To: accepted, Action: order_accepted_by_seller, Created By: tvdong01032004@gmail.com
+2025-11-03 01:09:45 [http-nio-8080-exec-5] DEBUG c.e.d.Orders.OrderAssignmentService - Order history details - Description: Seller đã chấp nhận đơn hàng
+2025-11-03 01:09:45 [http-nio-8080-exec-5] DEBUG c.e.d.Orders.OrderAssignmentService - Order history created - ID: 94, Order ID: 28, Action: order_accepted_by_seller
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Successfully created order history for order 28
+2025-11-03 01:09:45 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Order 28 successfully accepted by seller (ID: 17)
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - === START ACCEPT ORDER FLOW ===
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Processing order acceptance request - Order ID: 29, User ID: 17
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - 1. Looking up order in database...
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Order found - Current status: confirmed, Assignment status: accepted
+2025-11-03 01:09:49 [http-nio-8080-exec-5] DEBUG c.e.d.Orders.OrderAssignmentService - Current order state - ID: 29, Status: confirmed, Assignment Status: accepted, Seller ID: 2, Shipper ID: 11
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - 2. Current order state:
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Status: confirmed, Assignment status: accepted
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Checking user permissions for order acceptance - User Role: seller, Order ID: 29
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - 3. Checking seller permissions...
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - User ID: 17, Order ID: 29, User Role: seller
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Bypassing assignment check for sellers
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Shop information found - Shop ID: 7
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Checking shop ownership - Shop Seller ID: 17, User ID: 17
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Is shop owner? true
+2025-11-03 01:09:49 [http-nio-8080-exec-5] DEBUG c.e.d.Orders.OrderAssignmentService - User 17 (seller) is allowed to accept order 29 (assignedSeller=true, shopOwner=true)
+2025-11-03 01:09:49 [http-nio-8080-exec-5] DEBUG c.e.d.Orders.OrderAssignmentService - Order assignment status transition - Order ID: 29, Old Assignment Status: not_required, New Assignment Status: accepted
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Attempting to save order changes - Order ID: 29, Status: confirmed, New Assignment Status: accepted, Accepted At: 2025-11-03T01:09:49.299997700
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Order successfully updated in database - Order ID: 29, Status: confirmed, Assignment Status: accepted, Updated At: 2025-11-03T01:09:49.302090500, Accepted At: 2025-11-03T01:09:49.299997700
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Verified order state after save - Order ID: 29, Status: confirmed, Assignment Status: accepted, Accepted At: 2025-11-03T01:09:49.299997700
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Creating order history entry - Order ID: 29, Status From: accepted, Status To: accepted, Action: order_accepted_by_seller, Created By: tvdong01032004@gmail.com
+2025-11-03 01:09:49 [http-nio-8080-exec-5] DEBUG c.e.d.Orders.OrderAssignmentService - Order history details - Description: Seller đã chấp nhận đơn hàng
+2025-11-03 01:09:49 [http-nio-8080-exec-5] DEBUG c.e.d.Orders.OrderAssignmentService - Order history created - ID: 95, Order ID: 29, Action: order_accepted_by_seller
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Successfully created order history for order 29
+2025-11-03 01:09:49 [http-nio-8080-exec-5] INFO  c.e.d.Orders.OrderAssignmentService - Order 29 successfully accepted by seller (ID: 17)

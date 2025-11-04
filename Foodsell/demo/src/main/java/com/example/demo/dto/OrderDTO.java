@@ -28,4 +28,7 @@ public class OrderDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<OrderItemDTO> orderItems;
+
+    // Thêm trường assignmentStatus để FE hiển thị trạng thái xử lý
+    private String assignmentStatus;
 }
