@@ -127,6 +127,8 @@ public class CategoryService {
             Category nuocUong = new Category("Nước uống", "Beverages including coffee, tea, and soft drinks");
             Category pizza = new Category("Pizza", "Món pizza phong cách Ý, nhiều loại topping đa dạng");
             Category bun = new Category("Bún", "Món bún Việt Nam truyền thống, dùng với thịt, chả");
+            Category mi = new Category("Mì", "Vietnamese noodles, ready to eat");
+            Category cuon = new Category("Cuốn", "Vietnamese spring rolls and wraps, ready to eat");
             
             categoryRepository.save(pho);
             categoryRepository.save(banhMi);
@@ -134,6 +136,8 @@ public class CategoryService {
             categoryRepository.save(nuocUong);
             categoryRepository.save(pizza);
             categoryRepository.save(bun);
+            categoryRepository.save(mi);
+            categoryRepository.save(cuon);
             
             return "Đã tạo " + categoryRepository.count() + " categories mẫu thành công!";
         } catch (Exception e) {

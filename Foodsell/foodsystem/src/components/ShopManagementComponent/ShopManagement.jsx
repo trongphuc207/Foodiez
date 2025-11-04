@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { productAPI, testServerConnection } from '../../api/product';
 import { shopAPI } from '../../api/shop';
 import categoryAPI from '../../api/category';
+import { categoryNames } from '../../constants/categoryNames';
 import ImageUpload from '../AdminComponent/ImageUpload';
 import './ShopManagement.css';
 
@@ -89,24 +90,46 @@ const ShopManagement = () => {
     enabled: !!shopData?.data?.id
   });
 
+  // Tạo danh mục mặc định từ constants
+  const getDefaultCategories = () => {
+    return {
+      success: true,
+      data: Object.entries(categoryNames).map(([id, name]) => ({
+        id: parseInt(id),
+        name: name
+      })),
+      message: "Sử dụng danh mục mặc định"
+    };
+  };
+
   // Fetch categories từ database
   const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError, refetch: refetchCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
       try {
         const result = await categoryAPI.getAllCategories();
-        console.log('✅ Categories loaded from database:', result);
-        return result;
+        // Kiểm tra response có hợp lệ không
+        if (result && result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
+          console.log('✅ Categories loaded from database:', result.data.length, 'categories');
+          return result;
+        } else {
+          // Nếu response rỗng hoặc không hợp lệ, sử dụng danh mục mặc định
+          console.warn('⚠️ Empty or invalid categories response. Using default categories.');
+          return getDefaultCategories();
+        }
       } catch (error) {
         console.error('❌ Categories API error:', error);
-        throw error; // Throw error để React Query retry
+        // Trả về danh mục mặc định thay vì throw error
+        console.warn('⚠️ Using default categories due to server error:', error.message);
+        return getDefaultCategories();
       }
     },
-    refetchOnWindowFocus: true, // Auto refresh khi focus lại window
-    retry: 1, // Chỉ retry 1 lần
+    refetchOnWindowFocus: false, // Không auto refresh để tránh spam request
+    retry: 2, // Retry 2 lần
     retryDelay: 1000, // Delay 1s giữa các retry
-    staleTime: 0, // Không cache để luôn fetch mới
-    cacheTime: 0 // Xóa cache ngay
+    staleTime: 5 * 60 * 1000, // Cache 5 phút
+    cacheTime: 10 * 60 * 1000, // Giữ cache 10 phút
+    refetchOnMount: true // Luôn fetch khi mount lại
   });
 
   // Debug log for categories
@@ -636,12 +659,12 @@ const ShopManagement = () => {
                          </option>
                        ))}
                      </select>
-                    {categoriesError && !categoriesData?.data && (
-                       <div className="error-message">
+                    {categoriesData?.message?.includes('mặc định') && (
+                       <div className="error-message" style={{color: '#ff9800', fontSize: '12px', marginTop: '5px'}}>
                          ⚠️ Lỗi khi tải danh mục từ server. Đang sử dụng danh mục mặc định.
                        </div>
                      )}
-                    {categoriesData?.data && (
+                    {categoriesData?.data && !categoriesData?.message?.includes('mặc định') && (
                       <div style={{fontSize: '12px', color: '#28a745', marginTop: '5px'}}>
                         ✅ Đã tải {categoriesData.data.length} danh mục từ database
                       </div>

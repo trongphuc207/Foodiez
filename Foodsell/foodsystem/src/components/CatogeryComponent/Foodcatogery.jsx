@@ -39,6 +39,18 @@ const FoodCategories = ({ onCategorySelect, selectedCategoryId }) => {
       image: "/bun.png",
       description: "Món bún Việt Nam truyền thống, dùng với thịt, chả",
     },
+    {
+      id: 7,
+      name: "Mì",
+      image: "/miquang.png",
+      description: "Vietnamese noodles, ready to eat",
+    },
+    {
+      id: 8,
+      name: "Cuốn",
+      image: "/banhtrangcuon.png",
+      description: "Vietnamese spring rolls and wraps, ready to eat",
+    },
   ]
 
   return (

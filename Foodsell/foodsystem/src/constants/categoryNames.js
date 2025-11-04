@@ -5,7 +5,9 @@ export const categoryNames = {
   3: "Cơm",
   4: "Nước uống",
   5: "Pizza",
-  6: "Bún"
+  6: "Bún",
+  7: "Mì",
+  8: "Cuốn"
 };
 
 export const getCategoryName = (categoryId) => {
