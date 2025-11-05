@@ -6,16 +6,48 @@ const getAuthToken = () => {
 };
 
 export const shipperAPI = {
+  // Nhận đơn hàng để giao
+  acceptOrder: async (orderId, note) => {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/shipper/orders/${orderId}/accept`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ note }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to accept order');
+    }
+    
+    return response.json();
+  },
+
   // Lấy danh sách đơn hàng cần giao
+  // NOTE: backend exposes a separate `/shipper/available` endpoint for "available" orders
+  // so map frontend status 'available' to that endpoint.
   getOrders: async (status) => {
     const token = getAuthToken();
     if (!token) {
       throw new Error('No authentication token found');
     }
 
-    const url = status 
-      ? `${API_BASE_URL}/shipper/orders?status=${status}`
-      : `${API_BASE_URL}/shipper/orders`;
+    let url;
+    if (status === 'available') {
+      // call the dedicated available-orders endpoint
+      url = `${API_BASE_URL}/shipper/available`;
+    } else if (status) {
+      url = `${API_BASE_URL}/shipper/orders?status=${status}`;
+    } else {
+      url = `${API_BASE_URL}/shipper/orders`;
+    }
 
     const response = await fetch(url, {
       method: 'GET',

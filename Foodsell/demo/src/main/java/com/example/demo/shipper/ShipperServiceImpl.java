@@ -10,6 +10,7 @@ import com.example.demo.Orders.OrderRepository;
 import com.example.demo.order.OrderStatusHistory;
 import com.example.demo.order.OrderStatusHistoryRepository;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
@@ -30,26 +31,34 @@ public class ShipperServiceImpl implements ShipperService {
 
     @Override
     public List<ShipperOrderDTO> getShipperOrders(String username, String status) {
-        User user = userRepository.findByEmail(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    // lookup user
+    User user = userRepository.findByEmail(username)
+        .orElseThrow(() -> new RuntimeException("User not found with email: " + username));
         Shipper shipper = shipperRepository.findByUserId(user.getId().longValue())
-            .orElseThrow(() -> new RuntimeException("Shipper not found"));
+            .orElseThrow(() -> new RuntimeException("Shipper not found for user: " + user.getId()));
 
-        List<Order> orders;
+        List<Order> orders = new ArrayList<>();
+
         if (status != null) {
-            // If a specific status is supplied, return orders assigned to this shipper with that status
-            orders = orderRepository.findByAssignedShipperIdAndStatus(shipper.getId().intValue(), status);
+            // Nếu truyền status, chỉ lấy đơn đã gán cho shipper với status đó
+            List<Order> assignedWithStatus = orderRepository.findByAssignedShipperIdAndStatus(shipper.getId().intValue(), status);
+            orders.addAll(assignedWithStatus);
         } else {
-            // Default: return orders assigned to this shipper AND orders that have been accepted by sellers
-            // (assignmentStatus = 'accepted' and not yet assigned to a shipper) so shippers can pick them up.
+            // Nếu không truyền status, lấy cả hai loại:
+            // 1. Đơn đã gán cho shipper hiện tại
             List<Order> assignedToShipper = orderRepository.findByAssignedShipperId(shipper.getId().intValue());
-            List<Order> sellerAccepted = orderRepository.findByAssignmentStatusAndAssignedShipperIdIsNullOrderByCreatedAtDesc("accepted");
-
-            assignedToShipper.addAll(sellerAccepted);
-            orders = assignedToShipper;
+            // 2. Đơn có assignment_status = 'accepted' và chưa gán shipper
+            List<Order> acceptedUnassigned = orderRepository.findByAssignmentStatusAndAssignedShipperIdIsNullOrderByCreatedAtDesc("accepted");
+            orders.addAll(assignedToShipper);
+            orders.addAll(acceptedUnassigned);
         }
 
-        return orders.stream()
+        // Loại bỏ trùng lặp theo order id
+        List<Order> uniqueOrders = orders.stream()
+            .collect(Collectors.toMap(Order::getId, o -> o, (o1, o2) -> o1))
+            .values().stream().collect(Collectors.toList());
+
+        return uniqueOrders.stream()
             .map(this::convertToShipperOrderDTO)
             .collect(Collectors.toList());
     }
@@ -141,7 +150,7 @@ public class ShipperServiceImpl implements ShipperService {
 
     @Override
     @Transactional
-    public void acceptOrder(Integer orderId, String username) {
+    public void acceptOrder(Integer orderId, String username, String note) {
         User user = userRepository.findByEmail(username)
             .orElseThrow(() -> new RuntimeException("User not found"));
         
@@ -167,6 +176,7 @@ public class ShipperServiceImpl implements ShipperService {
         history.setOrderId(orderId);
         history.setStatus("assigned");
         history.setChangedBy(user.getId().intValue());
+        history.setNotes(note);
         orderStatusHistoryRepository.save(history);
     }
 
@@ -220,6 +230,8 @@ public class ShipperServiceImpl implements ShipperService {
         dto.setCustomer(order.getRecipientName());
         dto.setPhone(order.getRecipientPhone());
         dto.setStatus(order.getStatus());
+        dto.setAssignmentStatus(order.getAssignmentStatus());
+        dto.setAssignedShipperId(order.getAssignedShipperId());
         dto.setTime(order.getCreatedAt());
         dto.setPickupAddress(order.getShop().getAddress());
         dto.setDeliveryAddress(order.getAddressText());

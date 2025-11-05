@@ -265,8 +265,14 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Email không tồn tại"));
 
+        // Check if OTP exists
+        if (user.getOtpCode() == null) {
+            throw new RuntimeException("Chưa có mã OTP hoặc mã đã được sử dụng. Vui lòng yêu cầu mã mới");
+        }
+
         // Check if OTP code matches
-        if (user.getOtpCode() == null || !user.getOtpCode().equals(otpCode)) {
+        if (!user.getOtpCode().equals(otpCode)) {
+            System.out.println("❌ OTP không khớp - Expected: " + user.getOtpCode() + ", Got: " + otpCode);
             throw new RuntimeException("Mã OTP không đúng");
         }
 

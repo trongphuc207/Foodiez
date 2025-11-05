@@ -84,8 +84,6 @@ public class OrderController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, Object>> createOrder(@RequestBody Map<String, Object> orderData) {
         try {
-            System.out.println("Creating order with data: " + orderData);
-            
             // Extract order information
             Map<String, Object> deliveryInfo = (Map<String, Object>) orderData.get("deliveryInfo");
             Map<String, Object> paymentInfo = (Map<String, Object>) orderData.get("paymentInfo");
@@ -119,24 +117,10 @@ public class OrderController {
             }
             
         } catch (Exception e) {
-            System.err.println("Error creating order: " + e.getMessage());
-            e.printStackTrace();
-            
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
             errorResponse.put("message", "Error creating order: " + e.getMessage());
             return ResponseEntity.internalServerError().body(errorResponse);
-        }
-    }
-    
-    // POST: Create test order data
-    @PostMapping("/create-test-data")
-    public String createTestData() {
-        try {
-            orderService.createTestData();
-            return "Test data created successfully!";
-        } catch (Exception e) {
-            return "Error creating test data: " + e.getMessage();
         }
     }
     
@@ -158,8 +142,6 @@ public class OrderController {
     @PostMapping("/payment-webhook")
     public ResponseEntity<Map<String, Object>> handlePaymentWebhook(@RequestBody Map<String, Object> webhookData) {
         try {
-            System.out.println("Received PayOS webhook: " + webhookData);
-            
             // Extract webhook data
             Integer orderCode = (Integer) webhookData.get("orderCode");
             String status = (String) webhookData.get("status");
@@ -183,9 +165,6 @@ public class OrderController {
             }
             
         } catch (Exception e) {
-            System.err.println("Error processing payment webhook: " + e.getMessage());
-            e.printStackTrace();
-            
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "message", "Internal server error",
@@ -211,8 +190,6 @@ public class OrderController {
                 return ResponseEntity.status(404).body(Map.of("success", false, "message", "Order not found"));
             }
         } catch (Exception e) {
-            System.err.println("❌ API Error: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of(
                 "success", false, 
                 "message", "Internal server error: " + e.getMessage(),

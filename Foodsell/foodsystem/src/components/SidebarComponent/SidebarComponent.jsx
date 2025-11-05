@@ -2,16 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { 
-  FiHome, 
-  FiPackage, 
-  FiBarChart,
-  FiUsers,
-  FiDollarSign,
-  FiSettings,
-  FiMapPin,
-  FiStar
-} from 'react-icons/fi'
+import {  FiHome, FiPackage, FiBarChart,FiUsers,FiDollarSign,FiSettings,FiMapPin,FiStar} from 'react-icons/fi'
 import './SidebarComponent.css'
 
 const SidebarComponent = ({ isOpen, onClose }) => {
@@ -58,7 +49,6 @@ const SidebarComponent = ({ isOpen, onClose }) => {
     { icon: <FiHome />, label: 'Trang chủ', path: '/' },
     { icon: <FiPackage />, label: 'Đơn hàng', path: '/shipper/orders' },
     { icon: <FiBarChart />, label: 'Dashboard', path: '/shipper/dashboard' },
-    { icon: <FiMapPin />, label: 'Tuyến đường', path: '/shipper/routes' },
     { icon: <FiDollarSign />, label: 'Thu nhập', path: '/shipper/earnings' },
     { icon: <FiStar />, label: 'Đánh giá', path: '/shipper/reviews' },
     { icon: <FiSettings />, label: 'Cài đặt', path: '/shipper/settings' }

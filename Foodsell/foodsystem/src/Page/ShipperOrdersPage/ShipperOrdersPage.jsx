@@ -2,73 +2,83 @@ import React, { useState } from 'react'
 import './ShipperOrdersPage.css'
 import SidebarComponent from '../../components/SidebarComponent/SidebarComponent'
 import { FiMenu } from 'react-icons/fi'
+import { useQuery } from '@tanstack/react-query'
+import { shipperAPI } from '../../api/shipper'
 
 export default function ShipperOrdersPage() {
   const [activeTab, setActiveTab] = useState('all')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  const orders = [
-    {
-      id: "#001",
-      customer: "Nguyễn Văn A",
-      address: "123 Đường ABC, Q1, TP.HCM",
-      amount: "250,000đ",
-      status: "delivering",
-      time: "10:30",
-      phone: "0123456789"
-    },
-    {
-      id: "#002", 
-      customer: "Trần Thị B",
-      address: "456 Đường XYZ, Q2, TP.HCM",
-      amount: "180,000đ",
-      status: "completed",
-      time: "09:45",
-      phone: "0987654321"
-    },
-    {
-      id: "#003",
-      customer: "Lê Văn C", 
-      address: "789 Đường DEF, Q3, TP.HCM",
-      amount: "320,000đ",
-      status: "pending",
-      time: "09:15",
-      phone: "0369852147"
-    },
-    {
-      id: "#004",
-      customer: "Phạm Thị D",
-      address: "321 Đường GHI, Q4, TP.HCM", 
-      amount: "150,000đ",
-      status: "delivering",
-      time: "08:30",
-      phone: "0741258963"
-    }
-  ]
+  // Fetch shipper orders from backend (uses auth token from localStorage)
+  const { data: ordersResp, isLoading, error } = useQuery({
+    queryKey: ['shipperOrders', activeTab],
+    queryFn: () => shipperAPI.getOrders(activeTab === 'all' ? undefined : activeTab),
+    refetchOnWindowFocus: false,
+  })
 
+  // Lọc ra chỉ những đơn hàng có assignment_status = 'accepted'
+  const orders = (ordersResp?.data || []).filter(order => 
+    order.assignment_status === 'accepted'
+  )
+
+  // Các đơn đang giao và đã hoàn thành sẽ được lọc theo status
+  const deliveringOrders = orders.filter(o => o.status === 'delivering')
+  const completedOrders = orders.filter(o => o.status === 'completed')
+  
   const tabs = [
     { id: 'all', label: 'Tất cả', count: orders.length },
-    { id: 'pending', label: 'Chờ nhận', count: orders.filter(o => o.status === 'pending').length },
-    { id: 'delivering', label: 'Đang giao', count: orders.filter(o => o.status === 'delivering').length },
-    { id: 'completed', label: 'Hoàn thành', count: orders.filter(o => o.status === 'completed').length }
+    { id: 'available', label: 'Chờ nhận', count: orders.length },
+    { id: 'delivering', label: 'Đang giao', count: deliveringOrders.length },
+    { id: 'completed', label: 'Hoàn thành', count: completedOrders.length }
   ]
 
-  const filteredOrders = activeTab === 'all' 
-    ? orders 
+  const filteredOrders = activeTab === 'all' || activeTab === 'available'
+    ? orders
     : orders.filter(order => order.status === activeTab)
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'pending': return 'Chờ nhận'
       case 'delivering': return 'Đang giao'
-      case 'completed': return 'Hoàn thành'
-      default: return status
+      case 'completed': return 'Đã hoàn thành'
+      default: return 'Chờ nhận'  // Mặc định là "Chờ nhận" vì đã lọc assignment_status = 'accepted'
     }
   }
 
   const getStatusClass = (status) => {
     return `order-status ${status}`
   }
+
+  if (isLoading) return (
+    <div className="shipper-orders-page">
+      <div className="dashboard-header">
+        <div className="header-left">
+          <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
+            <FiMenu />
+          </button>
+          <div className="header-title">
+            <h1>Đơn hàng</h1>
+            <p>Đang tải đơn hàng...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  if (error) return (
+    <div className="shipper-orders-page">
+      <div className="dashboard-header">
+        <div className="header-left">
+          <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
+            <FiMenu />
+          </button>
+          <div className="header-title">
+            <h1>Đơn hàng</h1>
+            <p>Lỗi khi tải đơn hàng: {error.message}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <div className="shipper-orders-page">

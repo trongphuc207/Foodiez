@@ -1,16 +1,6 @@
 import React from 'react'
 import './AddressDetailModal.css'
-import { 
-  FiMapPin, 
-  FiHome, 
-  FiX, 
-  FiClock, 
-  FiPhone, 
-  FiTruck, 
-  FiCopy, 
-  FiNavigation,
-  FiMap
-} from 'react-icons/fi'
+import {  FiMapPin,  FiHome, FiX, FiClock, FiPhone, FiTruck, FiCopy, FiNavigation,FiMap} from 'react-icons/fi'
 
 export default function AddressDetailModal({ address, onClose }) {
   if (!address) return null

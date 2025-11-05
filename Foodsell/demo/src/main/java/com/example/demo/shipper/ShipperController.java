@@ -3,6 +3,7 @@ package com.example.demo.shipper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import com.example.demo.Users.User;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
@@ -18,7 +19,14 @@ public class ShipperController {
             @RequestParam(required = false) String status,
             Authentication authentication) {
         try {
-            var orders = shipperService.getShipperOrders(authentication.getName(), status);
+            // Get email from authenticated principal (User) to avoid principal.toString() issues
+            String email = null;
+            if (authentication != null && authentication.getPrincipal() instanceof User) {
+                email = ((User) authentication.getPrincipal()).getEmail();
+            } else if (authentication != null) {
+                email = authentication.getName();
+            }
+            var orders = shipperService.getShipperOrders(email, status);
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "data", orders
@@ -37,7 +45,13 @@ public class ShipperController {
             @RequestParam(required = false) String area,
             Authentication authentication) {
         try {
-            var orders = shipperService.getAvailableOrders(authentication.getName(), keyword, area);
+            String email = null;
+            if (authentication != null && authentication.getPrincipal() instanceof User) {
+                email = ((User) authentication.getPrincipal()).getEmail();
+            } else if (authentication != null) {
+                email = authentication.getName();
+            }
+            var orders = shipperService.getAvailableOrders(email, keyword, area);
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "data", orders
@@ -50,10 +64,42 @@ public class ShipperController {
         }
     }
 
+    @PostMapping("/orders/{orderId}/accept")
+    public ResponseEntity<?> acceptOrder(
+            @PathVariable Integer orderId,
+            @RequestBody(required = false) AcceptOrderRequest request,
+            Authentication authentication) {
+        try {
+            String note = request != null ? request.getNote() : null;
+            String email = null;
+            if (authentication != null && authentication.getPrincipal() instanceof User) {
+                email = ((User) authentication.getPrincipal()).getEmail();
+            } else if (authentication != null) {
+                email = authentication.getName();
+            }
+            shipperService.acceptOrder(orderId, email, note);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Đã nhận đơn hàng thành công"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
+
     @GetMapping("/dashboard")
     public ResponseEntity<?> getDashboard(Authentication authentication) {
         try {
-            var dashboard = shipperService.getShipperDashboard(authentication.getName());
+            String email = null;
+            if (authentication != null && authentication.getPrincipal() instanceof User) {
+                email = ((User) authentication.getPrincipal()).getEmail();
+            } else if (authentication != null) {
+                email = authentication.getName();
+            }
+            var dashboard = shipperService.getShipperDashboard(email);
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "data", dashboard
@@ -72,22 +118,13 @@ public class ShipperController {
             @RequestBody OrderStatusUpdateRequest request,
             Authentication authentication) {
         try {
-            shipperService.updateOrderStatus(orderId, request.getStatus(), request.getNote(), authentication.getName());
-            return ResponseEntity.ok(Map.of("success", true));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", e.getMessage()
-            ));
-        }
-    }
-
-    @PostMapping("/orders/{orderId}/accept")
-    public ResponseEntity<?> acceptOrder(
-            @PathVariable Integer orderId,
-            Authentication authentication) {
-        try {
-            shipperService.acceptOrder(orderId, authentication.getName());
+            String email = null;
+            if (authentication != null && authentication.getPrincipal() instanceof User) {
+                email = ((User) authentication.getPrincipal()).getEmail();
+            } else if (authentication != null) {
+                email = authentication.getName();
+            }
+            shipperService.updateOrderStatus(orderId, request.getStatus(), request.getNote(), email);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
@@ -100,7 +137,13 @@ public class ShipperController {
     @GetMapping("/earnings")
     public ResponseEntity<?> getEarnings(Authentication authentication) {
         try {
-            var earnings = shipperService.getShipperEarnings(authentication.getName());
+            String email = null;
+            if (authentication != null && authentication.getPrincipal() instanceof User) {
+                email = ((User) authentication.getPrincipal()).getEmail();
+            } else if (authentication != null) {
+                email = authentication.getName();
+            }
+            var earnings = shipperService.getShipperEarnings(email);
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "data", earnings
@@ -116,7 +159,13 @@ public class ShipperController {
     @GetMapping("/history")
     public ResponseEntity<?> getHistory(Authentication authentication) {
         try {
-            var history = shipperService.getDeliveryHistory(authentication.getName());
+            String email = null;
+            if (authentication != null && authentication.getPrincipal() instanceof User) {
+                email = ((User) authentication.getPrincipal()).getEmail();
+            } else if (authentication != null) {
+                email = authentication.getName();
+            }
+            var history = shipperService.getDeliveryHistory(email);
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "data", history
@@ -132,7 +181,13 @@ public class ShipperController {
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile(Authentication authentication) {
         try {
-            var profile = shipperService.getShipperProfile(authentication.getName());
+            String email = null;
+            if (authentication != null && authentication.getPrincipal() instanceof User) {
+                email = ((User) authentication.getPrincipal()).getEmail();
+            } else if (authentication != null) {
+                email = authentication.getName();
+            }
+            var profile = shipperService.getShipperProfile(email);
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "data", profile

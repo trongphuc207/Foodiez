@@ -67,14 +67,11 @@ export const DISTRICT_DISTANCES = {
 
 export const calculateShippingFee = (fromDistrict, toDistrict) => {
   // Phí cơ bản
-  const BASE_FEE = 15000; // VND
-  
+  const BASE_FEE = 15000; 
   // Phí theo km
-  const PRICE_PER_KM = 1000; // 1000đ/km
-  
+  const PRICE_PER_KM = 1000; 
   // Lấy khoảng cách
   const distance = DISTRICT_DISTANCES[fromDistrict][toDistrict];
-  
   // Tính tổng phí
   const distanceFee = Math.round(distance * PRICE_PER_KM);
   const totalFee = BASE_FEE + distanceFee;

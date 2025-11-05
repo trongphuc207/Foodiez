@@ -1,0 +1,38 @@
+# IDE and Editor files
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# Build output
+target/
+build/
+dist/
+out/
+
+# Dependencies
+node_modules/
+.env
+
+# Keys and Secrets
+**/application-dev.properties
+**/application-prod.properties
+**/config.env
+**/*.key
+**/*.pem
+**/credentials.json
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

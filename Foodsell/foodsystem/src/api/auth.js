@@ -311,14 +311,60 @@ export const authAPI = {
 };
 
 // Utility functions
-export const setAuthToken = (token) => {
-  console.log('🔑 Setting auth token:', token ? 'Token provided' : 'No token');
-  localStorage.setItem('authToken', token);
-  console.log('🔑 Token saved to localStorage');
+export const setAuthToken = (tokenOrResponse) => {
+  // Normalize different possible inputs: string token, response object, or unexpected values
+  try {
+    if (!tokenOrResponse) {
+      console.log('🔑 setAuthToken called with falsy value — removing token');
+      localStorage.removeItem('authToken');
+      return;
+    }
+
+    let token = tokenOrResponse;
+
+    // If an object was passed (e.g., entire response), try to extract common fields
+    if (typeof token === 'object') {
+      if (token.token && typeof token.token === 'string') {
+        token = token.token;
+      } else if (token.data && token.data.token && typeof token.data.token === 'string') {
+        token = token.data.token;
+      } else if (token.accessToken && typeof token.accessToken === 'string') {
+        token = token.accessToken;
+      } else {
+        // Last resort: convert to string but detect obvious Java object toString values
+        const asString = String(token);
+        if (asString.includes('Users.User@') || asString.startsWith('[object')) {
+          console.error('🔑 Refusing to store invalid auth token (object looks like a User object):', token);
+          return;
+        }
+        token = asString;
+      }
+    }
+
+    if (typeof token !== 'string') {
+      console.error('🔑 Invalid token type; expected string but got:', typeof token, token);
+      return;
+    }
+
+    console.log('🔑 Setting auth token: Token provided (length:', token.length, ')');
+    localStorage.setItem('authToken', token);
+    console.log('🔑 Token saved to localStorage');
+  } catch (err) {
+    console.error('🔑 Error in setAuthToken:', err);
+  }
 };
 
 export const getAuthToken = () => {
-  const token = localStorage.getItem('authToken');
+  let token = localStorage.getItem('authToken');
+  // Detect obviously invalid token values (e.g., Java object toString from backend)
+  if (token) {
+    const lowered = token.toString();
+    if (lowered.includes('Users.User@') || lowered.includes('com.example.demo') || lowered.startsWith('[object')) {
+      console.warn('🔑 Detected invalid authToken in localStorage — removing it to force re-login:', token);
+      localStorage.removeItem('authToken');
+      token = null;
+    }
+  }
   console.log('🔑 Getting auth token:', token ? 'Token found' : 'No token');
   return token;
 };

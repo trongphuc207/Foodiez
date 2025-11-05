@@ -31,3 +31,31 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Application Properties ###
+src/main/resources/application.properties
+src/main/resources/application-dev.properties
+src/main/resources/application-prod.properties
+
+### Uploaded Files ###
+uploads/
+
+### Logs ###
+logs/
+*.log
+*.log.*
+/logs/
+/logs/archived/
+
+### Tests ###
+**/test/
+**/tests/
+**/test-output/
+**/target/test-classes/
+**/surefire-reports/
+**/*Test.java
+**/*Tests.java
+**/*Test.class
+**/*Tests.class
+**/test-*.properties
+**/test-*.xml

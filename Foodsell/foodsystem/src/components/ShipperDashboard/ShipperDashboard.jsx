@@ -4,16 +4,7 @@ import './ShipperDashboard.css'
 import AddressDetailModal from './AddressDetailModal'
 import SidebarComponent from '../SidebarComponent/SidebarComponent'
 import { shipperAPI } from '../../api/shipper'
-import { 
-  FiPackage, 
-  FiCheck, 
-  FiTruck, 
-  FiDollarSign,
-  FiMenu,
-  FiUser,
-  FiMapPin,
-  FiPhone
-} from 'react-icons/fi'
+import { FiPackage, FiCheck, FiTruck, FiDollarSign,FiMenu,FiUser,FiMapPin,FiPhone} from 'react-icons/fi'
 
 export default function ShipperDashboard() {
   const [activeTab, setActiveTab] = useState('all')
@@ -24,6 +15,26 @@ export default function ShipperDashboard() {
   const [dashboardData, setDashboardData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  // Xử lý nhận đơn hàng
+  const handleAcceptOrder = async (orderId) => {
+    try {
+      setLoading(true)
+      const response = await shipperAPI.acceptOrder(orderId, null) // Pass null for note if not needed
+      if (response && response.success) {
+        // Reload data after accepting
+        await loadShipperData()
+        alert(response.message || 'Đã nhận đơn hàng thành công!')
+      } else {
+        throw new Error(response.message || 'Không thể nhận đơn hàng')
+      }
+    } catch (err) {
+      console.error('Error accepting order:', err)
+      alert('Không thể nhận đơn hàng: ' + (err.message || 'Đã có lỗi xảy ra'))
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Load data from API
   const loadShipperData = useCallback(async () => {
@@ -100,19 +111,6 @@ export default function ShipperDashboard() {
     )
   }
 
-
-  // Handle order actions
-  const handleAcceptOrder = async (orderId) => {
-    try {
-      console.log('Accepting order:', orderId)
-      await shipperAPI.acceptOrder(orderId)
-      // Reload data after accepting order
-      loadShipperData()
-    } catch (err) {
-      console.error('Error accepting order:', err)
-      alert('Không thể nhận đơn hàng: ' + err.message)
-    }
-  }
 
   const handleUpdateStatus = async (orderId, status) => {
     try {
@@ -356,7 +354,7 @@ export default function ShipperDashboard() {
 
             {/* Action Buttons */}
             <div className="order-actions">
-              {order.status === 'waiting_pickup' && (
+              {(order.assignmentStatus === 'accepted' && !order.assignedShipperId) && (
                 <button 
                   className="action-btn primary"
                   onClick={() => handleAcceptOrder(order.id)}
