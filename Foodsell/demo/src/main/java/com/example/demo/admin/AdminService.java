@@ -34,8 +34,8 @@ public class AdminService {
     }
 
     // ==== USERS: Admin updates and deletes ====
-    public void updateUserByAdmin(int adminId, int userId, String fullName, String role, String phone, String address) {
-        adminRepo.updateUserByAdmin(adminId, userId, fullName, role, phone, address);
+    public void updateUserByAdmin(int adminId, int userId, String fullName, String role, String phone, String address, String email) {
+        adminRepo.updateUserByAdmin(adminId, userId, fullName, role, phone, address, email);
     }
 
     public void softDeleteUserByAdmin(int adminId, int userId) {
@@ -108,6 +108,36 @@ public class AdminService {
 
     public void deleteProduct(int id) {
         adminRepo.deleteProduct(id);
+    }
+
+    // ===== Shops Management =====
+    public List<Map<String, Object>> getShops() {
+        return adminRepo.findAllShops();
+    }
+
+    public List<Map<String, Object>> getShopsWithLowRating(double minRating) {
+        return adminRepo.findShopsWithRatingBelow(minRating);
+    }
+
+    public void banShop(int shopId, String reason) {
+        adminRepo.banShop(shopId, reason);
+    }
+
+    public void unbanShop(int shopId) {
+        adminRepo.unbanShop(shopId);
+    }
+
+    // ===== Product Approval =====
+    public List<Map<String, Object>> getPendingProducts() {
+        return adminRepo.findProductsByApprovalStatus("pending");
+    }
+
+    public void approveProduct(int productId) {
+        adminRepo.updateProductApprovalStatus(productId, "approved", null);
+    }
+
+    public void rejectProduct(int productId, String reason) {
+        adminRepo.updateProductApprovalStatus(productId, "rejected", reason);
     }
 
 }

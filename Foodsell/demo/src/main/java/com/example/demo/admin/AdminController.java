@@ -64,6 +64,8 @@ public class AdminController {
             Authentication authentication
     ) {
         int adminId = ((User) authentication.getPrincipal()).getId();
+        System.out.println("📝 UPDATE USER REQUEST - ID: " + id + ", Body: " + body);
+        
         String fullName = null;
         if (body.containsKey("name")) fullName = Objects.toString(body.get("name"), null);
         if (body.containsKey("fullName")) fullName = Objects.toString(body.get("fullName"), fullName);
@@ -78,8 +80,13 @@ public class AdminController {
         String address = null;
         if (body.containsKey("address")) address = Objects.toString(body.get("address"), null);
         if (address == null && body.containsKey("addressText")) address = Objects.toString(body.get("addressText"), null);
+        // Accept email update
+        String email = null;
+        if (body.containsKey("email")) email = Objects.toString(body.get("email"), null);
 
-        adminService.updateUserByAdmin(adminId, id, fullName, role, phone, address);
+        System.out.println("📝 Parsed: fullName=" + fullName + ", role=" + role + ", phone=" + phone + ", address=" + address + ", email=" + email);
+        
+        adminService.updateUserByAdmin(adminId, id, fullName, role, phone, address, email);
         return ResponseEntity.ok(Map.of("success", true, "message", "User updated"));
     }
 
@@ -200,9 +207,83 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> getReports() {
         return ResponseEntity.ok(adminService.getReportData());
     }
+    
     // ===== Products =====
-@GetMapping("/products")
-public ResponseEntity<List<Map<String, Object>>> getProducts() {
-    return ResponseEntity.ok(adminService.getProducts());
-}
+    @GetMapping("/products")
+    public ResponseEntity<List<Map<String, Object>>> getProducts() {
+        return ResponseEntity.ok(adminService.getProducts());
+    }
+
+    // ===== Shops Management =====
+    @GetMapping("/shops")
+    public ResponseEntity<List<Map<String, Object>>> getShops() {
+        return ResponseEntity.ok(adminService.getShops());
+    }
+
+    @GetMapping("/shops/low-rating")
+    public ResponseEntity<List<Map<String, Object>>> getLowRatingShops() {
+        return ResponseEntity.ok(adminService.getShopsWithLowRating(2.5));
+    }
+
+    @PostMapping("/shops/{id}/ban")
+    public ResponseEntity<Map<String, Object>> banShop(
+            @PathVariable int id,
+            @RequestBody Map<String, Object> body,
+            Authentication authentication
+    ) {
+        User principal = (User) authentication.getPrincipal();
+        if (principal == null || principal.getRole() == null || !"admin".equalsIgnoreCase(principal.getRole())) {
+            throw new RuntimeException("Only admin can ban shops.");
+        }
+        String reason = Objects.toString(body.getOrDefault("reason", "Rating dưới 2.5 sao"), "Rating dưới 2.5 sao");
+        adminService.banShop(id, reason);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Shop banned successfully"));
+    }
+
+    @PostMapping("/shops/{id}/unban")
+    public ResponseEntity<Map<String, Object>> unbanShop(
+            @PathVariable int id,
+            Authentication authentication
+    ) {
+        User principal = (User) authentication.getPrincipal();
+        if (principal == null || principal.getRole() == null || !"admin".equalsIgnoreCase(principal.getRole())) {
+            throw new RuntimeException("Only admin can unban shops.");
+        }
+        adminService.unbanShop(id);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Shop unbanned successfully"));
+    }
+
+    // ===== Product Approval =====
+    @GetMapping("/products/pending")
+    public ResponseEntity<List<Map<String, Object>>> getPendingProducts() {
+        return ResponseEntity.ok(adminService.getPendingProducts());
+    }
+
+    @PostMapping("/products/{id}/approve")
+    public ResponseEntity<Map<String, Object>> approveProduct(
+            @PathVariable int id,
+            Authentication authentication
+    ) {
+        User principal = (User) authentication.getPrincipal();
+        if (principal == null || principal.getRole() == null || !"admin".equalsIgnoreCase(principal.getRole())) {
+            throw new RuntimeException("Only admin can approve products.");
+        }
+        adminService.approveProduct(id);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Product approved successfully"));
+    }
+
+    @PostMapping("/products/{id}/reject")
+    public ResponseEntity<Map<String, Object>> rejectProduct(
+            @PathVariable int id,
+            @RequestBody Map<String, Object> body,
+            Authentication authentication
+    ) {
+        User principal = (User) authentication.getPrincipal();
+        if (principal == null || principal.getRole() == null || !"admin".equalsIgnoreCase(principal.getRole())) {
+            throw new RuntimeException("Only admin can reject products.");
+        }
+        String reason = Objects.toString(body.getOrDefault("reason", "Not meeting requirements"), "Not meeting requirements");
+        adminService.rejectProduct(id, reason);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Product rejected successfully"));
+    }
 }

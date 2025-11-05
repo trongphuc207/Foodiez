@@ -660,6 +660,34 @@ const ShopManagement = () => {
                       </span>
                     </div>
                   </div>
+                  
+                  {/* Approval Status - Bottom Right Corner */}
+                  <div className="approval-status-corner">
+                    {(() => {
+                      const approvalStatus = product.approvalStatus || product.approval_status || 'pending';
+                      const rejectionReason = product.rejectionReason || product.rejection_reason;
+                      
+                      if (approvalStatus === 'pending') {
+                        return <span className="status-badge pending">⏳ Đang chờ duyệt</span>;
+                      } else if (approvalStatus === 'approved') {
+                        return <span className="status-badge approved">✅ Đã được duyệt</span>;
+                      } else if (approvalStatus === 'rejected') {
+                        return (
+                          <span className="status-badge rejected">
+                            ❌ Bị từ chối
+                            {rejectionReason && (
+                              <small className="rejection-reason">
+                                {rejectionReason}
+                              </small>
+                            )}
+                          </span>
+                        );
+                      } else {
+                        return <span className="status-badge pending">⏳ Đang chờ duyệt</span>;
+                      }
+                    })()}
+                  </div>
+                  
                   <div className="product-actions">
                     <button 
                       className="btn btn-edit"

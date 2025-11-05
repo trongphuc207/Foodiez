@@ -242,52 +242,48 @@ export const adminAPI = {
   updateUser: async (id, user) => {
     // Normalize role value; keep lowercase as primary
     const role = (user.role === 'customer') ? 'buyer' : (user.role || 'buyer');
-    let lastErr, lastDetail;
+    
+    console.log('📤 admin.js updateUser called with:', { id, user });
 
-    // Helper to capture detailed error
-    const captureErr = async (res, method, url) => {
-      let detail = '';
-      try {
-        const text = await res.text();
-        detail = text;
-      } catch { /* ignore */ }
-      lastDetail = `${method} ${url} -> ${res.status}${detail ? ` | ${detail}` : ''}`;
-      return new Error(lastDetail);
+    // Build the complete update body with all fields
+    const updateBody = {
+      name: user.name,
+      fullName: user.name,
+      email: user.email,
+      phone: user.phone,
+      address: user.address,
+      role: role
     };
+    
+    // Remove undefined/empty values
+    const cleanBody = Object.fromEntries(
+      Object.entries(updateBody).filter(([, v]) => v !== undefined && v !== '' && v !== null)
+    );
+    
+    console.log('📤 Sending update request with body:', cleanBody);
 
-    // Try admin endpoint first, then fall back to public /api users with PUT and PATCH
-    const jsonEndpoints = [
-      { url: `${API_BASE_URL}/users/${id}`, method: 'PUT' },
-      { url: `${API_BASE_URL_API}/users/${id}`, method: 'PUT' },
-      { url: `${API_BASE_URL_API}/users/${id}`, method: 'PATCH' },
-    ];
-    const candidateBodies = [
-      { role },
-      { name: user.name, role },
-      { fullName: user.name, role },
-      { full_name: user.name, role },
-      { name: user.name, email: user.email, role },
-      { fullName: user.name, email: user.email, role },
-      // phone/address variants
-      { phone: user.phone, address: user.address },
-      { phoneNumber: user.phone, addressText: user.address },
-      { name: user.name, phone: user.phone, address: user.address, role },
-      { fullName: user.name, phoneNumber: user.phone, addressText: user.address, role },
-      { email: user.email, phone: user.phone, address: user.address, role },
-      { email: user.email, phoneNumber: user.phone, addressText: user.address, role },
-    ].map((b) => Object.fromEntries(Object.entries(b).filter(([, v]) => v !== undefined && v !== '')));
-    for (const body of candidateBodies) {
-      for (const ep of jsonEndpoints) {
-        try {
-          const res = await fetch(ep.url, { method: ep.method, headers: getHeaders(), body: JSON.stringify(body) });
-          if (res.ok) { try { return await res.json(); } catch { return {}; } }
-          lastErr = await captureErr(res, ep.method, ep.url);
-        } catch (e) { lastErr = e; }
+    // Try admin endpoint first
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/${id}`, { 
+        method: 'PUT', 
+        headers: getHeaders(), 
+        body: JSON.stringify(cleanBody) 
+      });
+      
+      if (res.ok) { 
+        const result = await res.json(); 
+        console.log('✅ Update successful:', result);
+        return result;
       }
+      
+      // Log error details
+      const errorText = await res.text();
+      console.error('❌ Update failed:', res.status, errorText);
+      throw new Error(`Update failed: ${res.status} - ${errorText}`);
+    } catch (e) {
+      console.error('❌ Update error:', e);
+      throw e;
     }
-
-    // Avoid calling /users/{id}/role or query-param role endpoints which have caused 500s on some servers.
-    throw lastErr || new Error('Không thể cập nhật người dùng');
   },
 
   deleteUser: async (id) => {
@@ -657,5 +653,129 @@ export const adminAPI = {
     throw lastErr || new Error('Không thể upload ảnh sản phẩm');
   },
 
+  // ===== SHOP MANAGEMENT =====
+  getShops: async () => {
+    const urls = [
+      `${API_BASE_URL}/shops`,
+      `${API_BASE_URL_API}/admin/shops`,
+    ];
+    let lastErr;
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { headers: getHeaders() });
+        if (!res.ok) { lastErr = new Error(`GET ${url} -> ${res.status}`); continue; }
+        const json = await res.json();
+        return Array.isArray(json) ? json : json?.data ?? [];
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('Không thể tải danh sách shop');
+  },
+
+  getLowRatingShops: async () => {
+    const urls = [
+      `${API_BASE_URL}/shops/low-rating`,
+      `${API_BASE_URL_API}/admin/shops/low-rating`,
+    ];
+    let lastErr;
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { headers: getHeaders() });
+        if (!res.ok) { lastErr = new Error(`GET ${url} -> ${res.status}`); continue; }
+        const json = await res.json();
+        return Array.isArray(json) ? json : json?.data ?? [];
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('Không thể tải shop rating thấp');
+  },
+
+  banShop: async (shopId, data) => {
+    const urls = [
+      { url: `${API_BASE_URL}/shops/${shopId}/ban`, method: 'POST' },
+      { url: `${API_BASE_URL_API}/admin/shops/${shopId}/ban`, method: 'POST' },
+    ];
+    let lastErr;
+    for (const u of urls) {
+      try {
+        const res = await fetch(u.url, { 
+          method: u.method, 
+          headers: getHeaders(), 
+          body: JSON.stringify(data) 
+        });
+        if (res.ok) { try { return await res.json(); } catch { return {}; } }
+        lastErr = new Error(`${u.method} ${u.url} -> ${res.status}`);
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('Không thể ban shop');
+  },
+
+  unbanShop: async (shopId) => {
+    const urls = [
+      { url: `${API_BASE_URL}/shops/${shopId}/unban`, method: 'POST' },
+      { url: `${API_BASE_URL_API}/admin/shops/${shopId}/unban`, method: 'POST' },
+    ];
+    let lastErr;
+    for (const u of urls) {
+      try {
+        const res = await fetch(u.url, { method: u.method, headers: getHeaders() });
+        if (res.ok) { try { return await res.json(); } catch { return {}; } }
+        lastErr = new Error(`${u.method} ${u.url} -> ${res.status}`);
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('Không thể unban shop');
+  },
+
+  // ===== PRODUCT APPROVAL =====
+  getPendingProducts: async () => {
+    const urls = [
+      `${API_BASE_URL}/products/pending`,
+      `${API_BASE_URL_API}/admin/products/pending`,
+    ];
+    let lastErr;
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { headers: getHeaders() });
+        if (!res.ok) { lastErr = new Error(`GET ${url} -> ${res.status}`); continue; }
+        const json = await res.json();
+        return Array.isArray(json) ? json : json?.data ?? [];
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('Không thể tải sản phẩm chờ duyệt');
+  },
+
+  approveProduct: async (productId) => {
+    const urls = [
+      { url: `${API_BASE_URL}/products/${productId}/approve`, method: 'POST' },
+      { url: `${API_BASE_URL_API}/admin/products/${productId}/approve`, method: 'POST' },
+    ];
+    let lastErr;
+    for (const u of urls) {
+      try {
+        const res = await fetch(u.url, { method: u.method, headers: getHeaders() });
+        if (res.ok) { try { return await res.json(); } catch { return {}; } }
+        lastErr = new Error(`${u.method} ${u.url} -> ${res.status}`);
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('Không thể duyệt sản phẩm');
+  },
+
+  rejectProduct: async (productId, data) => {
+    const urls = [
+      { url: `${API_BASE_URL}/products/${productId}/reject`, method: 'POST' },
+      { url: `${API_BASE_URL_API}/admin/products/${productId}/reject`, method: 'POST' },
+    ];
+    let lastErr;
+    for (const u of urls) {
+      try {
+        const res = await fetch(u.url, { 
+          method: u.method, 
+          headers: getHeaders(), 
+          body: JSON.stringify(data) 
+        });
+        if (res.ok) { try { return await res.json(); } catch { return {}; } }
+        lastErr = new Error(`${u.method} ${u.url} -> ${res.status}`);
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('Không thể từ chối sản phẩm');
+  },
 
 };

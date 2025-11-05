@@ -38,7 +38,21 @@ public class SecurityConfig {
                 .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/login/oauth2/code/**").permitAll()
                 
+                // Banned user complaint endpoints (no auth required)
+                .requestMatchers("/api/complaints/banned-user").permitAll()
+                .requestMatchers("/api/complaints/*/upload-image-banned").permitAll()
+                
                 // Customer endpoints (accessible by all authenticated users)
+                .requestMatchers("/api/customer/**").authenticated()
+                .requestMatchers("/api/orders/buyer/**").authenticated()
+                .requestMatchers("/api/orders").authenticated()
+                .requestMatchers("/api/cart/**").authenticated()
+                .requestMatchers("/api/favorites/**").authenticated()
+                
+                // Role applications - Allow ALL authenticated users to access
+                .requestMatchers("/api/role-applications/**").authenticated()
+                
+                // Seller endpoints
                 .requestMatchers("/api/customer/**").authenticated()
                 .requestMatchers("/api/orders/buyer/**").authenticated()
                 .requestMatchers("/api/orders").authenticated()

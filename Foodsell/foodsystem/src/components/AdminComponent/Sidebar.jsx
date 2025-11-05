@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import "./admin.css";
 
@@ -7,18 +7,44 @@ import "./admin.css";
  * -> "users" => /admin/users
  */
 export default function Sidebar() {
+  const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
+
   const navs = [
-    { path: "", label: "Dashboard", end: true },
-    { path: "users", label: "Users" },
-    { path: "orders", label: "Orders" },
-    { path: "vouchers", label: "Vouchers" },
-    { path: "reports", label: "Reports" },
-    {path: "products", label: "Products"} // 🔥 thêm
+    { path: "", label: "Tổng quan", end: true },
+    { path: "users", label: "Người dùng" },
+    { path: "orders", label: "Đơn hàng" },
+    { path: "vouchers", label: "Voucher" },
+    { path: "shops", label: "Quản lý Shop" },
+    { path: "role-applications", label: "Đơn xin vai trò" },
+    { path: "product-approval", label: "Duyệt sản phẩm" },
+    { path: "complaints", label: "Khiếu nại" },
+    { path: "reports", label: "Báo cáo" }
   ];
+
+  const switchToRole = (role) => {
+    // Open different pages in new tab based on role
+    let url = '';
+    switch(role) {
+      case 'customer':
+        url = '/';
+        break;
+      case 'seller':
+        url = '/shop-management';
+        break;
+      case 'shipper':
+        url = '/shipper-dashboard';
+        break;
+      default:
+        return;
+    }
+    // Open in new tab
+    window.open(url, '_blank');
+  };
 
   return (
     <aside className="admin-sidebar">
       <div className="admin-logo">🍽️Foodiez Admin</div>
+
       <ul className="admin-nav">
         {navs.map((n) => (
           <li key={n.path}>
@@ -34,6 +60,40 @@ export default function Sidebar() {
           </li>
         ))}
       </ul>
+      
+      {/* Role Switcher Toggle - Moved to bottom */}
+      <div className="role-switcher-container">
+        <button 
+          className="role-switcher-toggle"
+          onClick={() => setShowRoleSwitcher(!showRoleSwitcher)}
+        >
+          👁️ Hiển thị dưới role khác
+          <span className="toggle-icon">{showRoleSwitcher ? '▼' : '▶'}</span>
+        </button>
+        
+        {showRoleSwitcher && (
+          <div className="role-switcher-dropdown">
+            <button 
+              className="role-switch-btn customer"
+              onClick={() => switchToRole('customer')}
+            >
+              🛒 Xem như Customer
+            </button>
+            <button 
+              className="role-switch-btn seller"
+              onClick={() => switchToRole('seller')}
+            >
+              🏪 Xem như Seller
+            </button>
+            <button 
+              className="role-switch-btn shipper"
+              onClick={() => switchToRole('shipper')}
+            >
+              🚚 Xem như Shipper
+            </button>
+          </div>
+        )}
+      </div>
     </aside>
   );
 }

@@ -118,6 +118,92 @@ html, body { margin: 0; padding: 0; background: #f4f6f8; }
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
+/* ====== Role Switcher ====== */
+.role-switcher-container {
+  margin-top: auto; /* Push to bottom */
+  margin-bottom: 10px;
+  margin-left: 6px;
+  margin-right: 6px;
+  padding: 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.role-switcher-toggle {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.role-switcher-toggle:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.toggle-icon {
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.role-switcher-dropdown {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.role-switch-btn {
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-align: left;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.role-switch-btn:hover {
+  transform: translateX(3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.role-switch-btn.customer {
+  color: #0066cc;
+}
+
+.role-switch-btn.customer:hover {
+  background: #e6f2ff;
+}
+
+.role-switch-btn.seller {
+  color: #16a34a;
+}
+
+.role-switch-btn.seller:hover {
+  background: #dcfce7;
+}
+
+.role-switch-btn.shipper {
+  color: #ca8a04;
+}
+
+.role-switch-btn.shipper:hover {
+  background: #fef9c3;
+}
+
 /* ====== Header ====== */
 .admin-header {
   background: #b52b37;

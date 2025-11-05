@@ -27,6 +27,9 @@ public class AuthController {
     
     @Autowired
     private FileUploadService fileUploadService;
+    
+    @Autowired
+    private com.example.demo.shops.ShopRepository shopRepository;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<User>> register(@Valid @RequestBody RegisterRequest request) {
@@ -46,7 +49,7 @@ public class AuthController {
     @PostMapping("/verify-otp")
     public ResponseEntity<ApiResponse<User>> verifyOTP(@Valid @RequestBody OTPRequest request) {
         User user = authService.verifyOTPAndActivateAccount(request.getEmail(), request.getOtpCode());
-        String token = jwtUtil.generateToken(user.getEmail());
+        String token = jwtUtil.generateToken(user.getEmail(), user.getId().longValue(), user.getRole());
         
         System.out.println("✅ OTP verification successful for: " + user.getEmail());
         return ResponseEntity.ok(ApiResponse.successWithToken(user, token, "Xác thực OTP thành công. Tài khoản đã được kích hoạt"));
@@ -55,7 +58,52 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<User>> login(@Valid @RequestBody LoginRequest request) {
         User user = authService.login(request.getEmail(), request.getPassword());
-        String token = jwtUtil.generateToken(user.getEmail());
+        
+        // Check if user is banned
+        String status = (user.getStatus() != null) ? user.getStatus().toUpperCase() : "ACTIVE";
+        boolean isBanned = status.equals("BANNED") || 
+                          (user.getBanned() != null && user.getBanned());
+        
+        if (isBanned) {
+            System.out.println("⛔ Login blocked - User is banned: " + user.getEmail());
+            
+            // Check if user is seller and get shop info
+            boolean isShopBanned = false;
+            String shopBanReason = null;
+            if ("seller".equalsIgnoreCase(user.getRole())) {
+                java.util.Optional<com.example.demo.shops.Shop> shopOpt = shopRepository.findBySellerId(user.getId());
+                if (shopOpt.isPresent()) {
+                    com.example.demo.shops.Shop shop = shopOpt.get();
+                    isShopBanned = Boolean.TRUE.equals(shop.getIsBanned());
+                    shopBanReason = shop.getBanReason();
+                }
+            }
+            
+            // Return error response with special code for banned account
+            ApiResponse<User> response = new ApiResponse<>();
+            response.setSuccess(false);
+            
+            if (isShopBanned) {
+                response.setMessage("Cửa hàng của bạn đã bị khóa. Vui lòng gửi đơn khiếu nại để được xem xét lại.");
+            } else {
+                response.setMessage("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên hoặc gửi đơn khiếu nại.");
+            }
+            
+            response.setData(user);
+            java.util.Map<String, Object> errorData = new java.util.HashMap<>();
+            errorData.put("errorCode", isShopBanned ? "SHOP_BANNED" : "ACCOUNT_BANNED");
+            errorData.put("userId", user.getId());
+            errorData.put("email", user.getEmail());
+            errorData.put("fullName", user.getFullName());
+            errorData.put("role", user.getRole());
+            if (isShopBanned) {
+                errorData.put("shopBanReason", shopBanReason);
+            }
+            response.setErrors(errorData);
+            return ResponseEntity.status(403).body(response);
+        }
+        
+        String token = jwtUtil.generateToken(user.getEmail(), user.getId().longValue(), user.getRole());
         
         System.out.println("✅ Login successful for: " + user.getEmail());
         return ResponseEntity.ok(ApiResponse.successWithToken(user, token, "Đăng nhập thành công"));
@@ -137,6 +185,15 @@ public class AuthController {
         }
         if (request.getAddress() != null) {
             user.setAddress(request.getAddress());
+        }
+        if (request.getDateOfBirth() != null) {
+            user.setDateOfBirth(request.getDateOfBirth());
+        }
+        if (request.getGender() != null) {
+            user.setGender(request.getGender());
+        }
+        if (request.getIdNumber() != null) {
+            user.setIdNumber(request.getIdNumber());
         }
         
         user.setUpdatedAt(LocalDateTime.now());
@@ -220,6 +277,50 @@ public class AuthController {
                 if (existingUser.isPresent()) {
                     user = existingUser.get();
                     System.out.println("✅ Existing user found: " + user.getEmail());
+                    
+                    // Check if user is banned
+                    String status = (user.getStatus() != null) ? user.getStatus().toUpperCase() : "ACTIVE";
+                    boolean isBanned = status.equals("BANNED") || 
+                                      (user.getBanned() != null && user.getBanned());
+                    
+                    if (isBanned) {
+                        System.out.println("⛔ Google login blocked - User is banned: " + user.getEmail());
+                        
+                        // Check if user is seller and get shop info
+                        boolean isShopBanned = false;
+                        String shopBanReason = null;
+                        if ("seller".equalsIgnoreCase(user.getRole())) {
+                            java.util.Optional<com.example.demo.shops.Shop> shopOpt = shopRepository.findBySellerId(user.getId());
+                            if (shopOpt.isPresent()) {
+                                com.example.demo.shops.Shop shop = shopOpt.get();
+                                isShopBanned = Boolean.TRUE.equals(shop.getIsBanned());
+                                shopBanReason = shop.getBanReason();
+                            }
+                        }
+                        
+                        // Return error response with special code for banned account
+                        ApiResponse<User> response = new ApiResponse<>();
+                        response.setSuccess(false);
+                        
+                        if (isShopBanned) {
+                            response.setMessage("Cửa hàng của bạn đã bị khóa. Vui lòng gửi đơn khiếu nại để được xem xét lại.");
+                        } else {
+                            response.setMessage("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên hoặc gửi đơn khiếu nại.");
+                        }
+                        
+                        response.setData(user);
+                        java.util.Map<String, Object> errorData = new java.util.HashMap<>();
+                        errorData.put("errorCode", isShopBanned ? "SHOP_BANNED" : "ACCOUNT_BANNED");
+                        errorData.put("userId", user.getId());
+                        errorData.put("email", user.getEmail());
+                        errorData.put("fullName", user.getFullName());
+                        errorData.put("role", user.getRole());
+                        if (isShopBanned) {
+                            errorData.put("shopBanReason", shopBanReason);
+                        }
+                        response.setErrors(errorData);
+                        return ResponseEntity.status(403).body(response);
+                    }
                 } else {
                     // Create new user
                     user = new User();
@@ -230,13 +331,15 @@ public class AuthController {
                     user.setPasswordHash("GOOGLE_OAUTH_USER"); // Set a default password for Google users
                     user.setCreatedAt(java.time.LocalDateTime.now());
                     user.setUpdatedAt(java.time.LocalDateTime.now());
+                    user.setStatus("ACTIVE"); // Set default status
+                    user.setBanned(false); // Set default banned status
                     
                     user = userRepository.save(user);
                     System.out.println("✅ New user created: " + user.getEmail());
                 }
                 
-                // Generate JWT token
-                String token = jwtUtil.generateToken(user.getEmail());
+                // Generate JWT token with userId and role
+                String token = jwtUtil.generateToken(user.getEmail(), user.getId().longValue(), user.getRole());
                 
                 return ResponseEntity.ok(ApiResponse.successWithToken(user, token, "Google authentication successful"));
             } else {

@@ -4,6 +4,9 @@ import { isAuthenticated, authAPI } from '../../api/auth';
 import { useAuth } from '../../hooks/useAuth';
 import AvatarUpload from '../AvatarUpload/AvatarUpload';
 import ChangePasswordModal from '../ChangePasswordModal/ChangePasswordModal';
+import axios from 'axios';
+
+const API_BASE = 'http://localhost:8080/api';
 
 const CustomerProfile = () => {
   const { changePassword } = useAuth();
@@ -53,6 +56,8 @@ const CustomerProfile = () => {
   });
   const [errors, setErrors] = useState({});
   const [applicationErrors, setApplicationErrors] = useState({});
+  const [myApplications, setMyApplications] = useState([]);
+  const [applicationsLoading, setApplicationsLoading] = useState(false);
 
   // Mock data - replace with actual API calls
   const mockUser = useMemo(() => ({
@@ -157,6 +162,24 @@ const CustomerProfile = () => {
     }
   }, [mockUser]);
 
+  // Load user's role applications
+  const loadApplications = useCallback(async () => {
+    setApplicationsLoading(true);
+    try {
+      const token = localStorage.getItem('authToken'); // FIX: use 'authToken' not 'token'
+      const res = await axios.get(`${API_BASE}/role-applications/my-applications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const appList = res.data.applications || res.data || [];
+      setMyApplications(Array.isArray(appList) ? appList : []);
+    } catch (error) {
+      console.error('Error loading applications:', error);
+      setMyApplications([]);
+    } finally {
+      setApplicationsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!isAuthenticated()) {
       // Redirect to login if not authenticated
@@ -164,9 +187,10 @@ const CustomerProfile = () => {
       return;
     }
 
-    // Load user data
+    // Load user data and applications
     loadUserData();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    loadApplications();
+  }, [loadUserData, loadApplications]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -218,7 +242,17 @@ const CustomerProfile = () => {
 
     setLoading(true);
     try {
-      const response = await authAPI.updateProfile(form);
+      // Only send non-empty fields to avoid overwriting existing data
+      const updateData = {};
+      Object.keys(form).forEach(key => {
+        if (form[key] !== null && form[key] !== undefined && form[key] !== '') {
+          updateData[key] = form[key];
+        }
+      });
+      
+      console.log('📤 Sending profile update:', updateData);
+      
+      const response = await authAPI.updateProfile(updateData);
       const updatedUser = response.data || response.user;
       
       setUser(updatedUser);
@@ -234,10 +268,14 @@ const CustomerProfile = () => {
 
   const handleCancel = () => {
     setForm({
-      fullName: user.fullName,
-      email: user.email,
-      phone: user.phone,
-      address: user.address
+      fullName: user.fullName || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      address: user.address || '',
+      dateOfBirth: user.dateOfBirth || '',
+      gender: user.gender || '',
+      idNumber: user.idNumber || '',
+      role: user.role || 'buyer'
     });
     setErrors({});
     setIsEditing(false);
@@ -600,68 +638,16 @@ const CustomerProfile = () => {
     setApplicationType(role);
     setShowApplicationModal(true);
     
-    // Pre-fill form with user data
-    setApplicationForm(prev => ({
-      ...prev,
-      fullName: user.fullName,
-      email: user.email,
-      phone: user.phone,
-      address: user.address
-    }));
-  };
-
-  const handleApplicationFormSubmit = (e) => {
-    e.preventDefault();
-    
-    // Validate form
-    const newErrors = {};
-    
-    if (!applicationForm.fullName) newErrors.fullName = 'Họ tên là bắt buộc';
-    if (!applicationForm.phone) newErrors.phone = 'Số điện thoại là bắt buộc';
-    if (!applicationForm.address) newErrors.address = 'Địa chỉ là bắt buộc';
-    if (!applicationForm.dateOfBirth) newErrors.dateOfBirth = 'Ngày sinh là bắt buộc';
-    if (!applicationForm.idNumber) newErrors.idNumber = 'Số CMND/CCCD là bắt buộc';
-    if (!applicationForm.bankAccount) newErrors.bankAccount = 'Số tài khoản ngân hàng là bắt buộc';
-    
-    if (applicationType === 'shipper') {
-      if (!applicationForm.drivingLicense) newErrors.drivingLicense = 'Giấy phép lái xe là bắt buộc';
-      if (!applicationForm.vehicleRegistration) newErrors.vehicleRegistration = 'Giấy đăng ký xe là bắt buộc';
-      if (!applicationForm.vehicleType) newErrors.vehicleType = 'Loại xe là bắt buộc';
-    }
-    
-    if (applicationType === 'seller') {
-      if (!applicationForm.reason) newErrors.reason = 'Lý do đăng ký là bắt buộc';
-      if (!applicationForm.productSafetyCertificate) newErrors.productSafetyCertificate = 'Giấy chứng nhận sản phẩm an toàn là bắt buộc';
-    }
-    
-    setApplicationErrors(newErrors);
-    
-    if (Object.keys(newErrors).length > 0) {
-      return;
-    }
-    
-    // Submit application
-    const applicationData = {
-      userId: user.id,
-      role: applicationType,
-      status: 'pending',
-      appliedAt: new Date().toISOString(),
-      formData: applicationForm
-    };
-    
-    console.log('Application submitted:', applicationData);
-    alert(`Đơn đăng ký ${applicationType === 'seller' ? 'bán hàng' : 'giao hàng'} đã được gửi thành công! Admin sẽ xem xét và phản hồi trong vòng 3-5 ngày làm việc.`);
-    
-    // Close modal and reset form
-    setShowApplicationModal(false);
-    setApplicationType(null);
+    // Prefill application form with existing user data so user only fills missing fields
     setApplicationForm({
-      fullName: '',
-      email: '',
-      phone: '',
-      address: '',
-      dateOfBirth: '',
-      idNumber: '',
+      fullName: user.fullName || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      address: user.address || '',
+      // Ensure date string is YYYY-MM-DD for <input type="date">
+      dateOfBirth: user.dateOfBirth ? String(user.dateOfBirth).split('T')[0] : '',
+      idNumber: user.idNumber || '',
+      // Documents default to null (user must upload if missing)
       idCardFront: null,
       idCardBack: null,
       drivingLicense: null,
@@ -678,79 +664,347 @@ const CustomerProfile = () => {
     });
   };
 
-  const renderApplicationsTab = () => (
-    <div className="applications-tab">
-      <div className="tab-header">
-        <h3>Role Applications</h3>
-        <p className="applications-description">
-          Apply to become a seller or shipper to expand your opportunities on our platform.
-        </p>
-      </div>
+  const handleApplicationFormSubmit = async (e) => {
+    e.preventDefault();
+    
+    console.log('🚀 Form submit triggered!');
+    console.log('🚀 Submitting application:', applicationType);
+    console.log('📝 Form data:', applicationForm);
+    
+    // Validate form
+    const newErrors = {};
+    
+    // Reason is required for all applications
+    if (!applicationForm.reason || !applicationForm.reason.trim()) {
+      newErrors.reason = 'Lý do đăng ký là bắt buộc';
+    }
+    
+    // Phone validation - 10 digits starting with 0
+    if (applicationForm.phone) {
+      const phoneRegex = /^0\d{9}$/;
+      if (!phoneRegex.test(applicationForm.phone)) {
+        newErrors.phone = 'Số điện thoại phải có 10 số và bắt đầu bằng số 0';
+      }
+    }
+    
+    // ID Number validation - 9 or 12 digits
+    if (applicationForm.idNumber) {
+      const idRegex = /^\d{9}$|^\d{12}$/;
+      if (!idRegex.test(applicationForm.idNumber)) {
+        newErrors.idNumber = 'CMND/CCCD phải có 9 hoặc 12 chữ số';
+      }
+    }
+    
+    // Bank name validation
+    if (applicationForm.bankName === 'other' && (!applicationForm.customBankName || !applicationForm.customBankName.trim())) {
+      newErrors.customBankName = 'Vui lòng nhập tên ngân hàng';
+    }
+    
+    // Vehicle validation for shipper
+    if (applicationType === 'shipper') {
+      if (!applicationForm.vehicleType) {
+        newErrors.vehicleType = 'Loại xe là bắt buộc';
+      }
       
-      <div className="application-cards">
-        {/* Seller Application */}
-        <div className="application-card seller-card">
-          <div className="card-header">
-            <h4>🏪 Become a Seller</h4>
-            <span className="card-badge">Earn Money</span>
-          </div>
-          <div className="card-content">
-            <p>Start selling your products and reach thousands of customers.</p>
-            <ul className="benefits-list">
-              <li>✅ Create and manage your shop</li>
-              <li>✅ Upload unlimited products</li>
-              <li>✅ Track sales and analytics</li>
-              <li>✅ Get paid directly</li>
-            </ul>
-            <button 
-              className="apply-btn seller-btn"
-              onClick={() => handleApplicationSubmit('seller')}
-            >
-              Apply as Seller
-            </button>
-          </div>
-        </div>
+      // Vehicle number required for motorcycle and car, optional for bicycle
+      if (applicationForm.vehicleType !== 'bicycle') {
+        if (!applicationForm.vehicleNumber || !applicationForm.vehicleNumber.trim()) {
+          newErrors.vehicleNumber = 'Biển số xe là bắt buộc';
+        } else {
+          const plateValue = applicationForm.vehicleNumber.toUpperCase();
+          let plateRegex;
+          let errorMessage;
+          
+          if (applicationForm.vehicleType === 'motorcycle') {
+            // Xe máy: XXYX-XXXXX hoặc XXYY-XXXXX
+            plateRegex = /^\d{2}[A-Z]\d{1}-\d{5}$|^\d{2}[A-Z]{2}-\d{5}$/;
+            errorMessage = 'Biển số xe máy phải có dạng XXYX-XXXXX hoặc XXYY-XXXXX (X: chữ số, Y: chữ cái)';
+          } else if (applicationForm.vehicleType === 'car') {
+            // Ô tô: XXY-XXXXX
+            plateRegex = /^\d{2}[A-Z]-\d{5}$/;
+            errorMessage = 'Biển số ô tô phải có dạng XXY-XXXXX (X: chữ số, Y: chữ cái)';
+          }
+          
+          if (plateRegex && !plateRegex.test(plateValue)) {
+            newErrors.vehicleNumber = errorMessage;
+          }
+        }
+      }
+    }
+    
+    // For seller, require shop info (using fullName for shop name, address for shop address)
+    if (applicationType === 'seller') {
+      if (!applicationForm.fullName || !applicationForm.fullName.trim()) {
+        newErrors.fullName = 'Tên shop là bắt buộc';
+      }
+      if (!applicationForm.address || !applicationForm.address.trim()) {
+        newErrors.address = 'Địa chỉ shop là bắt buộc';
+      }
+    }
+    
+    console.log('🔍 Validation errors:', newErrors);
+    setApplicationErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      console.log('❌ Validation failed! Errors:', newErrors);
+      alert('Vui lòng điền đầy đủ các thông tin bắt buộc:\n' + Object.values(newErrors).join('\n'));
+      return;
+    }
+    
+    console.log('✅ Validation passed! Proceeding to submit...');
+    
+    // Submit application to backend
+    try {
+      const token = localStorage.getItem('authToken'); // FIX: use 'authToken' not 'token'
+      console.log('🔑 Token:', token ? 'exists' : 'missing');
+      console.log('🔑 Token value (first 50 chars):', token ? token.substring(0, 50) + '...' : 'N/A');
+      
+      if (!token) {
+        alert('Bạn chưa đăng nhập. Vui lòng đăng nhập lại.');
+        window.location.href = '/';
+        return;
+      }
+      
+      if (!token) {
+        alert('Bạn chưa đăng nhập. Vui lòng đăng nhập lại!');
+        window.location.href = '/';
+        return;
+      }
+      
+      // Build payload with text fields only (files will be handled separately if needed)
+      const payload = {
+        requestedRole: applicationType,
+        reason: applicationForm.reason || '',
+        shopName: applicationType === 'seller' ? (applicationForm.fullName || '') : null,
+        shopAddress: applicationType === 'seller' ? (applicationForm.address || '') : null,
+        shopDescription: applicationType === 'seller' ? (applicationForm.experience || '') : null
+      };
+      
+      console.log('📤 Sending payload:', payload);
+      console.log('📤 API URL:', `${API_BASE}/role-applications/apply`);
+      
+      const response = await axios.post(`${API_BASE}/role-applications/apply`, payload, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('✅ Response:', response.data);
+      
+      if (response.data.success) {
+        alert(`✅ THÀNH CÔNG!\n\nĐơn đăng ký ${applicationType === 'seller' ? 'bán hàng' : 'giao hàng'} đã được gửi thành công!\n\nAdmin sẽ xem xét và phản hồi trong vòng 3-5 ngày làm việc.`);
+      } else {
+        alert(`❌ LỖI: ${response.data.message || 'Không thể gửi đơn đăng ký'}`);
+      }
+      
+      // Reload applications
+      await loadApplications();
+      
+      // Close modal and reset form
+      setShowApplicationModal(false);
+      setApplicationType(null);
+      setApplicationForm({
+        fullName: '',
+        email: '',
+        phone: '',
+        address: '',
+        dateOfBirth: '',
+        idNumber: '',
+        idCardFront: null,
+        idCardBack: null,
+        drivingLicense: null,
+        vehicleRegistration: null,
+        insurance: null,
+        householdBook: null,
+        productSafetyCertificate: null,
+        bankAccount: '',
+        bankName: '',
+        vehicleType: '',
+        vehicleNumber: '',
+        experience: '',
+        reason: ''
+      });
+    } catch (error) {
+      console.error('❌ Error submitting application:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error message:', error.message);
+      
+      let errorMsg = '❌ LỖI: Không thể gửi đơn đăng ký!\n\n';
+      
+      if (error.response) {
+        // Server responded with error
+        if (error.response.status === 401) {
+          errorMsg += 'Bạn chưa đăng nhập. Vui lòng đăng nhập lại.';
+          // Optionally redirect to login
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 2000);
+        } else if (error.response.status === 403) {
+          errorMsg += 'Bạn không có quyền thực hiện thao tác này.';
+        } else if (error.response.data?.message) {
+          errorMsg += error.response.data.message;
+        } else {
+          errorMsg += `Lỗi server (${error.response.status})`;
+        }
+      } else if (error.request) {
+        // Request made but no response
+        errorMsg += 'Không thể kết nối đến server!\n\nVui lòng kiểm tra:\n• Backend có đang chạy không?\n• Kết nối mạng có ổn định không?';
+      } else {
+        errorMsg += error.message;
+      }
+      
+      alert(errorMsg);
+    }
+  };
 
-        {/* Shipper Application */}
-        <div className="application-card shipper-card">
-          <div className="card-header">
-            <h4>🚚 Become a Shipper</h4>
-            <span className="card-badge">Flexible Work</span>
-          </div>
-          <div className="card-content">
-            <p>Deliver orders and earn money on your own schedule.</p>
-            <ul className="benefits-list">
-              <li>✅ Flexible working hours</li>
-              <li>✅ Choose your delivery area</li>
-              <li>✅ Earn per delivery</li>
-              <li>✅ Real-time order tracking</li>
-            </ul>
-            <button 
-              className="apply-btn shipper-btn"
-              onClick={() => handleApplicationSubmit('shipper')}
-            >
-              Apply as Shipper
-            </button>
-          </div>
+  const renderApplicationsTab = () => {
+    // Get latest application for each role
+    const sellerApp = myApplications
+      .filter(app => app.requestedRole === 'seller')
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+    
+    const shipperApp = myApplications
+      .filter(app => app.requestedRole === 'shipper')
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+    
+    const getStatusBadge = (app) => {
+      if (!app) return <span className="status-value not-applied">Chưa nộp đơn</span>;
+      
+      const statusMap = {
+        'pending': <span className="status-value pending">Đang chờ duyệt</span>,
+        'approved': <span className="status-value approved">Đã duyệt</span>,
+        'rejected': <span className="status-value rejected">Bị từ chối</span>
+      };
+      
+      return statusMap[app.status] || <span className="status-value">{app.status}</span>;
+    };
+    
+    const canApply = (role) => {
+      const app = role === 'seller' ? sellerApp : shipperApp;
+      // Can apply if no application or last application was rejected
+      return !app || app.status === 'rejected';
+    };
+    
+    return (
+      <div className="applications-tab">
+        <div className="tab-header">
+          <h3>Role Applications</h3>
+          <p className="applications-description">
+            Apply to become a seller or shipper to expand your opportunities on our platform.
+          </p>
         </div>
-      </div>
+        
+        {applicationsLoading ? (
+          <div className="loading-spinner">Đang tải...</div>
+        ) : (
+          <>
+            <div className="application-cards">
+              {/* Seller Application */}
+              <div className="application-card seller-card">
+                <div className="card-header">
+                  <h4>🏪 Become a Seller</h4>
+                  <span className="card-badge">Earn Money</span>
+                </div>
+                <div className="card-content">
+                  <p>Start selling your products and reach thousands of customers.</p>
+                  <ul className="benefits-list">
+                    <li>✅ Create and manage your shop</li>
+                    <li>✅ Upload unlimited products</li>
+                    <li>✅ Track sales and analytics</li>
+                    <li>✅ Get paid directly</li>
+                  </ul>
+                  {sellerApp && (
+                    <div className="app-info">
+                      <p><strong>Trạng thái:</strong> {getStatusBadge(sellerApp)}</p>
+                      {sellerApp.adminNote && (
+                        <p><strong>Ghi chú:</strong> {sellerApp.adminNote}</p>
+                      )}
+                      <p><small>Nộp đơn: {new Date(sellerApp.createdAt).toLocaleDateString('vi-VN')}</small></p>
+                    </div>
+                  )}
+                  <button 
+                    className="apply-btn seller-btn"
+                    onClick={() => handleApplicationSubmit('seller')}
+                    disabled={!canApply('seller')}
+                  >
+                    {sellerApp && sellerApp.status === 'pending' 
+                      ? 'Đang chờ duyệt...' 
+                      : sellerApp && sellerApp.status === 'approved'
+                      ? 'Đã được duyệt'
+                      : 'Apply as Seller'}
+                  </button>
+                </div>
+              </div>
 
-      {/* Application Status */}
-      <div className="application-status">
-        <h4>Application Status</h4>
-        <div className="status-list">
-          <div className="status-item">
-            <span className="status-label">Seller Application:</span>
-            <span className="status-value pending">Pending Review</span>
-          </div>
-          <div className="status-item">
-            <span className="status-label">Shipper Application:</span>
-            <span className="status-value not-applied">Not Applied</span>
-          </div>
-        </div>
+              {/* Shipper Application */}
+              <div className="application-card shipper-card">
+                <div className="card-header">
+                  <h4>🚚 Become a Shipper</h4>
+                  <span className="card-badge">Flexible Work</span>
+                </div>
+                <div className="card-content">
+                  <p>Deliver orders and earn money on your own schedule.</p>
+                  <ul className="benefits-list">
+                    <li>✅ Flexible working hours</li>
+                    <li>✅ Choose your delivery area</li>
+                    <li>✅ Earn per delivery</li>
+                    <li>✅ Real-time order tracking</li>
+                  </ul>
+                  {shipperApp && (
+                    <div className="app-info">
+                      <p><strong>Trạng thái:</strong> {getStatusBadge(shipperApp)}</p>
+                      {shipperApp.adminNote && (
+                        <p><strong>Ghi chú:</strong> {shipperApp.adminNote}</p>
+                      )}
+                      <p><small>Nộp đơn: {new Date(shipperApp.createdAt).toLocaleDateString('vi-VN')}</small></p>
+                    </div>
+                  )}
+                  <button 
+                    className="apply-btn shipper-btn"
+                    onClick={() => handleApplicationSubmit('shipper')}
+                    disabled={!canApply('shipper')}
+                  >
+                    {shipperApp && shipperApp.status === 'pending' 
+                      ? 'Đang chờ duyệt...' 
+                      : shipperApp && shipperApp.status === 'approved'
+                      ? 'Đã được duyệt'
+                      : 'Apply as Shipper'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Application History */}
+            {myApplications.length > 0 && (
+              <div className="application-status">
+                <h4>Lịch sử đơn xin vai trò</h4>
+                <div className="status-list">
+                  {myApplications.map(app => (
+                    <div key={app.id} className="status-item">
+                      <span className="status-label">
+                        {app.requestedRole === 'seller' ? '🏪 Seller' : '🚚 Shipper'}:
+                      </span>
+                      {getStatusBadge(app)}
+                      <span className="status-date">
+                        {new Date(app.createdAt).toLocaleDateString('vi-VN')}
+                      </span>
+                      {app.adminNote && (
+                        <div className="admin-note">
+                          <em>"{app.adminNote}"</em>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   if (!user) {
     return <div className="loading">Loading...</div>;
@@ -895,8 +1149,25 @@ const CustomerProfile = () => {
                     <input
                       type="tel"
                       value={applicationForm.phone}
-                      onChange={(e) => setApplicationForm(prev => ({...prev, phone: e.target.value}))}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setApplicationForm(prev => ({...prev, phone: value}));
+                        
+                        // Real-time validation
+                        const phoneRegex = /^0\d{9}$/;
+                        if (value && !phoneRegex.test(value)) {
+                          setApplicationErrors(prev => ({...prev, phone: 'Số điện thoại phải có 10 số và bắt đầu bằng số 0'}));
+                        } else {
+                          setApplicationErrors(prev => {
+                            const newErrors = {...prev};
+                            delete newErrors.phone;
+                            return newErrors;
+                          });
+                        }
+                      }}
                       className={applicationErrors.phone ? 'error' : ''}
+                      placeholder="0xxxxxxxxx (10 số)"
+                      maxLength="10"
                     />
                     {applicationErrors.phone && <span className="error-text">{applicationErrors.phone}</span>}
                   </div>
@@ -918,8 +1189,25 @@ const CustomerProfile = () => {
                     <input
                       type="text"
                       value={applicationForm.idNumber}
-                      onChange={(e) => setApplicationForm(prev => ({...prev, idNumber: e.target.value}))}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setApplicationForm(prev => ({...prev, idNumber: value}));
+                        
+                        // Real-time validation
+                        const idRegex = /^\d{9}$|^\d{12}$/;
+                        if (value && !idRegex.test(value)) {
+                          setApplicationErrors(prev => ({...prev, idNumber: 'CMND/CCCD phải có 9 hoặc 12 chữ số'}));
+                        } else {
+                          setApplicationErrors(prev => {
+                            const newErrors = {...prev};
+                            delete newErrors.idNumber;
+                            return newErrors;
+                          });
+                        }
+                      }}
                       className={applicationErrors.idNumber ? 'error' : ''}
+                      placeholder="9 hoặc 12 chữ số"
+                      maxLength="12"
                     />
                     {applicationErrors.idNumber && <span className="error-text">{applicationErrors.idNumber}</span>}
                   </div>
@@ -1017,18 +1305,56 @@ const CustomerProfile = () => {
                       value={applicationForm.bankAccount}
                       onChange={(e) => setApplicationForm(prev => ({...prev, bankAccount: e.target.value}))}
                       className={applicationErrors.bankAccount ? 'error' : ''}
+                      placeholder="Nhập số tài khoản"
                     />
                     {applicationErrors.bankAccount && <span className="error-text">{applicationErrors.bankAccount}</span>}
                   </div>
                   <div className="form-group">
-                    <label>Tên ngân hàng</label>
-                    <input
-                      type="text"
+                    <label>Tên ngân hàng *</label>
+                    <select
                       value={applicationForm.bankName}
                       onChange={(e) => setApplicationForm(prev => ({...prev, bankName: e.target.value}))}
-                    />
+                      className={applicationErrors.bankName ? 'error' : ''}
+                    >
+                      <option value="">-- Chọn ngân hàng --</option>
+                      <optgroup label="🏦 Ngân hàng Thương mại Cổ phần lớn (Big 4)">
+                        <option value="Vietcombank">Vietcombank - Ngân hàng TMCP Ngoại Thương Việt Nam</option>
+                        <option value="BIDV">BIDV - Ngân hàng TMCP Đầu tư và Phát triển Việt Nam</option>
+                        <option value="VietinBank">VietinBank - Ngân hàng TMCP Công thương Việt Nam</option>
+                        <option value="Agribank">Agribank - Ngân hàng Nông nghiệp và Phát triển Nông thôn Việt Nam</option>
+                      </optgroup>
+                      <optgroup label="🏦 Ngân hàng Thương mại Cổ phần khác">
+                        <option value="VPBank">VPBank - Ngân hàng TMCP Việt Nam Thịnh Vượng</option>
+                        <option value="Techcombank">Techcombank - Ngân hàng TMCP Kỹ Thương</option>
+                        <option value="ACB">ACB - Ngân hàng TMCP Á Châu</option>
+                        <option value="SHB">SHB - Ngân hàng TMCP Sài Gòn – Hà Nội</option>
+                        <option value="MB">MB - Ngân hàng TMCP Quân Đội</option>
+                        <option value="Sacombank">Sacombank - Ngân hàng TMCP Sài Gòn Thương Tín</option>
+                        <option value="HDBank">HDBank - Ngân hàng TMCP Phát triển TP.HCM</option>
+                        <option value="MSB">MSB - Ngân hàng TMCP Hàng Hải</option>
+                        <option value="OCB">OCB - Ngân hàng TMCP Phương Đông</option>
+                        <option value="TPBank">TPBank - Ngân hàng TMCP Tiên Phong</option>
+                      </optgroup>
+                      <option value="other">🔹 Ngân hàng khác (nhập thủ công)</option>
+                    </select>
+                    {applicationErrors.bankName && <span className="error-text">{applicationErrors.bankName}</span>}
                   </div>
                 </div>
+                
+                {/* Show custom input if "other" is selected */}
+                {applicationForm.bankName === 'other' && (
+                  <div className="form-group">
+                    <label>Nhập tên ngân hàng *</label>
+                    <input
+                      type="text"
+                      value={applicationForm.customBankName || ''}
+                      onChange={(e) => setApplicationForm(prev => ({...prev, customBankName: e.target.value}))}
+                      placeholder="Nhập tên ngân hàng của bạn"
+                      className={applicationErrors.customBankName ? 'error' : ''}
+                    />
+                    {applicationErrors.customBankName && <span className="error-text">{applicationErrors.customBankName}</span>}
+                  </div>
+                )}
               </div>
 
               {/* Additional Information */}
@@ -1051,13 +1377,72 @@ const CustomerProfile = () => {
                       {applicationErrors.vehicleType && <span className="error-text">{applicationErrors.vehicleType}</span>}
                     </div>
                     <div className="form-group">
-                      <label>Biển số xe</label>
+                      <label>
+                        Biển số xe {applicationForm.vehicleType !== 'bicycle' && '*'}
+                        {applicationForm.vehicleType === 'bicycle' && ' (Không bắt buộc)'}
+                      </label>
                       <input
                         type="text"
                         value={applicationForm.vehicleNumber}
-                        onChange={(e) => setApplicationForm(prev => ({...prev, vehicleNumber: e.target.value}))}
+                        onChange={(e) => {
+                          const value = e.target.value.toUpperCase();
+                          setApplicationForm(prev => ({...prev, vehicleNumber: value}));
+                          
+                          // Only validate if not bicycle or if value is provided
+                          if (applicationForm.vehicleType !== 'bicycle' && value) {
+                            let plateRegex;
+                            let errorMessage;
+                            
+                            if (applicationForm.vehicleType === 'motorcycle') {
+                              // Xe máy: XXYX-XXXXX hoặc XXYY-XXXXX (X: chữ số, Y: chữ)
+                              plateRegex = /^\d{2}[A-Z]\d{1}-\d{5}$|^\d{2}[A-Z]{2}-\d{5}$/;
+                              errorMessage = 'Biển số xe máy phải có dạng XXYX-XXXXX hoặc XXYY-XXXXX (X: chữ số, Y: chữ cái)';
+                            } else if (applicationForm.vehicleType === 'car') {
+                              // Ô tô: XXY-XXXXX (X: chữ số, Y: chữ)
+                              plateRegex = /^\d{2}[A-Z]-\d{5}$/;
+                              errorMessage = 'Biển số ô tô phải có dạng XXY-XXXXX (X: chữ số, Y: chữ cái)';
+                            }
+                            
+                            if (plateRegex && !plateRegex.test(value)) {
+                              setApplicationErrors(prev => ({...prev, vehicleNumber: errorMessage}));
+                            } else {
+                              setApplicationErrors(prev => {
+                                const newErrors = {...prev};
+                                delete newErrors.vehicleNumber;
+                                return newErrors;
+                              });
+                            }
+                          } else {
+                            // Clear error if bicycle or empty value
+                            setApplicationErrors(prev => {
+                              const newErrors = {...prev};
+                              delete newErrors.vehicleNumber;
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        placeholder={
+                          applicationForm.vehicleType === 'motorcycle' ? 'Ví dụ: 51A1-12345 hoặc 29AB-12345' :
+                          applicationForm.vehicleType === 'car' ? 'Ví dụ: 51A-12345' :
+                          'Nhập biển số xe (nếu có)'
+                        }
+                        className={applicationErrors.vehicleNumber ? 'error' : ''}
+                        disabled={!applicationForm.vehicleType}
                       />
+                      {applicationErrors.vehicleNumber && <span className="error-text">{applicationErrors.vehicleNumber}</span>}
                     </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Lý do muốn trở thành shipper *</label>
+                    <textarea
+                      value={applicationForm.reason}
+                      onChange={(e) => setApplicationForm(prev => ({...prev, reason: e.target.value}))}
+                      className={applicationErrors.reason ? 'error' : ''}
+                      rows={4}
+                      placeholder="Hãy chia sẻ lý do bạn muốn trở thành shipper trên nền tảng của chúng tôi..."
+                    />
+                    {applicationErrors.reason && <span className="error-text">{applicationErrors.reason}</span>}
                   </div>
                 </div>
               )}
