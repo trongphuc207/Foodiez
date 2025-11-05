@@ -117,29 +117,50 @@ export const productAPI = {
   // Lấy sản phẩm theo ID
   getProductById: async (productId) => {
     console.log('📤 API: Fetching product by ID:', productId);
-    const response = await fetch(`${API_BASE_URL}/products/${productId}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch product');
+    try {
+      const response = await fetch(`${API_BASE_URL}/products/${productId}`);
+      
+      if (!response.ok) {
+        // Try to get error message from response
+        let errorMessage = 'Failed to fetch product';
+        try {
+          const errorData = await response.json();
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          // If response is not JSON, use status text
+          errorMessage = `HTTP ${response.status}: ${response.statusText || 'Failed to fetch product'}`;
+        }
+        console.error('❌ API Error:', errorMessage, 'Status:', response.status);
+        throw new Error(errorMessage);
+      }
+      
+      const data = await response.json();
+      console.log('📥 API: Product details:', data);
+      
+      // Debug status field
+      if (data.data) {
+        console.log('🔍 Product status fields:', {
+          status: data.data.status,
+          is_available: data.data.is_available,
+          available: data.data.available
+        });
+      } else {
+        console.log('🔍 Product status fields:', {
+          status: data.status,
+          is_available: data.is_available,
+          available: data.available
+        });
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('❌ getProductById error:', error);
+      throw error;
     }
-    const data = await response.json();
-    console.log('📥 API: Product details:', data);
-    
-    // Debug status field
-    if (data.data) {
-      console.log('🔍 Product status fields:', {
-        status: data.data.status,
-        is_available: data.data.is_available,
-        available: data.data.available
-      });
-    } else {
-      console.log('🔍 Product status fields:', {
-        status: data.status,
-        is_available: data.is_available,
-        available: data.available
-      });
-    }
-    
-    return data;
   },
 
   // Tạo sản phẩm mới

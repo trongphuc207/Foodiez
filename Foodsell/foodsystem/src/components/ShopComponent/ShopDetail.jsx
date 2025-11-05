@@ -21,6 +21,7 @@ const ShopDetail = () => {
   const [error, setError] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [reviewStats, setReviewStats] = useState({ averageRating: 0, reviewCount: 0 });
+  // Đã xóa selectedCategory vì không còn menu categories
   const [searchKeyword, setSearchKeyword] = useState('');
   const [productQuantities, setProductQuantities] = useState({});
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -110,11 +111,13 @@ const ShopDetail = () => {
     alert(`Đã thêm ${quantity} ${product.name} vào giỏ hàng!`);
   };
 
+  // Filter products chỉ theo search keyword (không filter theo category nữa)
   const filteredProducts = products.filter(product => {
-    const matchesCategory = selectedCategory === 'all' || product.categoryId.toString() === selectedCategory;
     const matchesSearch = product.name.toLowerCase().includes(searchKeyword.toLowerCase()) ||
                           product.description.toLowerCase().includes(searchKeyword.toLowerCase());
     return matchesCategory && matchesSearch;
+                         product.description.toLowerCase().includes(searchKeyword.toLowerCase());
+    return matchesSearch;
   });
 
   if (loading) {
@@ -182,6 +185,49 @@ const ShopDetail = () => {
           <div className="shop-service-info">
             <div className="service-fee">{'Phí dịch vụ 0.0% Quán đối tác'}</div>
             <div className="service-by">{'Dịch vụ bởi FoodieExpress'}</div>
+        <span onClick={() => navigate('/')}>Trang chủ</span>
+        <span className="separator">›</span>
+        <span onClick={() => navigate('/shops')}>Cửa hàng</span>
+        <span className="separator">›</span>
+        <span className="current">{shop.name}</span>
+      </div>
+
+      {/* Hero Section - Shop Information */}
+      <div className="shop-hero-section">
+        <div className="shop-hero-content">
+          <div className="shop-header-modern">
+            <h1 className="shop-name-modern">{shop.name}</h1>
+            
+            <div className="shop-meta-info">
+              <div className="meta-item">
+                <span className="meta-icon">📍</span>
+                <span className="meta-text">{shop.address}</span>
+              </div>
+              
+              <div className="meta-item">
+                <div className="rating-modern">
+                  {renderStars(shop.rating)}
+                  <span className="rating-text-modern">{shop.rating.toFixed(1)}</span>
+                </div>
+                <span className="review-count-modern">999+ đánh giá</span>
+              </div>
+              
+              <div className="meta-item">
+                <span className="meta-icon">🕒</span>
+                <span className="meta-text">Mở cửa {shop.openingHours || '8AM-10PM'}</span>
+              </div>
+            </div>
+
+            <div className="shop-badges">
+              <div className="badge badge-success">
+                <span className="badge-icon">✓</span>
+                <span>PHÍ DỊCH VỤ 0%</span>
+              </div>
+              <div className="badge badge-info">
+                <span className="badge-icon">🚀</span>
+                <span>FoodieExpress</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -224,7 +270,22 @@ const ShopDetail = () => {
               onClick={() => setSelectedCategory('4')}
             >
               {'Đồ uống'}
+      {/* Products Section */}
+      <div className="products-section-modern">
+        {/* Promotion Banner */}
+        <div className="promotion-banner-modern">
+          <div className="promotion-content-modern">
+            <div className="promotion-left">
+              <div className="promotion-icon-modern">🎉</div>
+              <div className="promotion-text">
+                <div className="promotion-title">Ưu đãi đặc biệt</div>
+                <div className="promotion-desc">GIẢM 30.000₫ cho đơn hàng đầu tiên</div>
+              </div>
             </div>
+            <button className="copy-code-btn-modern">
+              <span>📋</span>
+              <span>Copy code</span>
+            </button>
           </div>
         </div>
 
@@ -240,7 +301,31 @@ const ShopDetail = () => {
                 onChange={(e) => setSearchKeyword(e.target.value)}
               />
             </div>
+        {/* Search Bar */}
+        <div className="search-section-modern">
+          <div className="search-bar-modern">
+            <span className="search-icon-modern">🔍</span>
+            <input
+              type="text"
+              placeholder="Tìm kiếm món ăn..."
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              className="search-input-modern"
+            />
+            {searchKeyword && (
+              <button 
+                className="clear-search-btn"
+                onClick={() => setSearchKeyword('')}
+              >
+                ✕
+              </button>
+            )}
           </div>
+          <div className="products-count">
+            <span className="count-number">{filteredProducts.length}</span>
+            <span className="count-label">món ăn</span>
+          </div>
+        </div>
 
           <div className="products-list">
             <h3>{`Tất cả món (${filteredProducts.length} món)`}</h3>
@@ -306,15 +391,84 @@ const ShopDetail = () => {
                             onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}
                           >
                             {'Thêm vào giỏ hàng'}
+        {/* Products Grid */}
+        <div className="products-list-modern">
+          {filteredProducts.length === 0 ? (
+            <div className="no-products-modern">
+              <div className="no-products-icon">🔍</div>
+              <h3>Không tìm thấy món ăn nào</h3>
+              <p>Thử tìm kiếm với từ khóa khác</p>
+            </div>
+          ) : (
+            <div className="products-grid-modern">
+              {filteredProducts.map((product) => (
+                <div key={product.id} className="product-card-modern" onClick={() => handleProductClick(product.id)}>
+                  <div className="product-image-modern">
+                    <img 
+                      src={product.imageUrl || '/placeholder.jpg'} 
+                      alt={product.name}
+                      onError={(e) => {
+                        e.target.src = '/placeholder.jpg';
+                      }}
+                    />
+                    <div className="product-overlay">
+                      <button className="view-detail-btn">Xem chi tiết</button>
+                    </div>
+                    {(!product.available || product.status === 'out_of_stock') && (
+                      <div className="product-badge-unavailable">
+                        {!product.available ? 'Hết hàng' : 'Hết nguyên liệu'}
+                      </div>
+                    )}
+                  </div>
+                  <div className="product-info-modern">
+                    <h4 className="product-name-modern">{product.name}</h4>
+                    <p className="product-description-modern">{product.description || 'Món ăn ngon và hấp dẫn'}</p>
+                    <div className="product-footer">
+                      <div className="product-price-modern">
+                        <span className="price-value">{product.price.toLocaleString('vi-VN')}</span>
+                        <span className="price-unit">đ</span>
+                      </div>
+                      {product.available && product.status !== 'out_of_stock' && (
+                        <div className="product-actions-modern">
+                          <div className="quantity-controls-modern">
+                            <button 
+                              className="qty-btn qty-minus"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleQuantityChange(product.id, -1);
+                              }}
+                            >
+                              −
+                            </button>
+                            <span className="qty-value">{productQuantities[product.id] || 1}</span>
+                            <button 
+                              className="qty-btn qty-plus"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleQuantityChange(product.id, 1);
+                              }}
+                            >
+                              +
+                            </button>
+                          </div>
+                          <button 
+                            className="add-cart-btn-modern"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddToCart(product);
+                            }}
+                          >
+                            <span className="cart-icon">🛒</span>
+                            <span>Thêm</span>
                           </button>
                         </div>
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

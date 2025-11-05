@@ -1,0 +1,276 @@
+.product-form-page {
+  min-height: 100vh;
+  background: #f8f9fa;
+  padding: 20px;
+}
+
+.product-form-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+}
+
+.product-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #ecf0f1;
+}
+
+.product-form-header h2 {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.btn-close {
+  background: transparent;
+  border: none;
+  font-size: 1.8rem;
+  color: #666;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.btn-close:hover {
+  background: #f0f0f0;
+  color: #e74c3c;
+  transform: rotate(90deg);
+}
+
+.product-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-weight: 500;
+  color: #2c3e50;
+  font-size: 1rem;
+}
+
+.required {
+  color: #e74c3c;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ecf0f1;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+  background-color: white;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #3498db;
+  background-color: #f8fcff;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.image-upload-section {
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  background: #f9f9f9;
+  transition: all 0.3s ease;
+}
+
+.image-upload-section:hover {
+  border-color: #ff6b35;
+  background: #fff5f0;
+}
+
+.image-upload-section input[type="file"] {
+  margin-bottom: 10px;
+}
+
+.file-info {
+  margin-top: 10px;
+  padding: 10px;
+  background: #e8f5e8;
+  border: 1px solid #c3e6c3;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.file-info p {
+  margin: 5px 0;
+  color: #155724;
+}
+
+.upload-status {
+  margin-top: 10px;
+  padding: 10px;
+  background: #e3f2fd;
+  border-radius: 4px;
+  color: #1976d2;
+}
+
+.upload-status p {
+  margin: 0;
+  font-weight: 500;
+}
+
+.error-message {
+  color: #ff9800;
+  font-size: 0.9rem;
+  margin-top: 5px;
+  padding: 8px;
+  background: #fff8e1;
+  border: 1px solid #ffcc80;
+  border-radius: 4px;
+}
+
+.success-message {
+  color: #27ae60;
+  font-size: 0.9rem;
+  margin-top: 5px;
+  padding: 8px;
+  background: #f0f9f0;
+  border: 1px solid #c3e6c3;
+  border-radius: 4px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid #ecf0f1;
+}
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.btn-cancel {
+  background: #95a5a6;
+  color: white;
+}
+
+.btn-cancel:hover {
+  background: #7f8c8d;
+}
+
+.btn-submit {
+  background: #3498db;
+  color: white;
+}
+
+.btn-submit:hover {
+  background: #2980b9;
+}
+
+.btn-submit:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.product-form-page-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.no-shop-message {
+  text-align: center;
+  padding: 40px;
+}
+
+.no-shop-message h2 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+}
+
+.no-shop-message p {
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.btn-primary {
+  background: #3498db;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #2980b9;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .product-form-page {
+    padding: 10px;
+  }
+
+  .product-form-container {
+    padding: 20px;
+  }
+
+  .product-form-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .product-form-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}
+
+

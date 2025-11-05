@@ -31,7 +31,7 @@ export default function Dashboard() {
         <StatCard title="💰 Doanh thu tháng" value={stats.revenue.toLocaleString() + ' VNĐ'} color="info" />
         <StatCard title="🎟️ Voucher" value={stats.vouchers} color="secondary" />
         <StatCard title="📦 Sản phẩm" value={stats.products} color="warning" />
-        <StatCard title="🏷️ Tổng tồn kho" value={stats.totalStock} color="danger" />
+        <StatCard title="🍽️ Món đang bán" value={stats.activeProducts} color="danger" />
       </div>
 
       <div className="mt-5 text-center">

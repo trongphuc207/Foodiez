@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private int id;
 
     @Column(name = "shop_id")
@@ -18,8 +19,13 @@ public class Product {
     @Column(name = "category_id")
     private int categoryId;
 
+    @Column(name = "name")
     private String name;
+    
+    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
+    
+    @Column(name = "price")
     private double price;
 
     @Column(name = "is_available")
@@ -28,6 +34,7 @@ public class Product {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(name = "status")
     private String status;
 
     @Column(name = "created_at")

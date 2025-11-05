@@ -11,6 +11,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -36,7 +37,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/products/**").permitAll()
                 .requestMatchers("/api/categories/**").permitAll()
                 .requestMatchers("/api/shops/**").permitAll()
-                .requestMatchers("/api/orders/test").permitAll()
+                .requestMatchers("/api/orders/debug/**").permitAll()
                 .requestMatchers("/api/payos/**").permitAll()
                 .requestMatchers("/test/**").permitAll()
                 .requestMatchers("/uploads/**").permitAll()
@@ -84,6 +85,10 @@ public class SecurityConfig {
                 // Chat endpoints
                 .requestMatchers("/api/chat/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/chat/**").authenticated()
+                
+                // Order status update endpoint (for payment callbacks)
+                .requestMatchers(HttpMethod.PUT, "/api/orders/customer/orders/*/status")
+                .permitAll()
                 
                 // All other requests need authentication
                 .anyRequest().authenticated()

@@ -73,7 +73,7 @@ public class OrderService {
     
     // Create new order with PayOS integration
     @Transactional
-    public Map<String, Object> createOrder(Map<String, Object> deliveryInfo, Map<String, Object> paymentInfo, 
+    public Map<String, Object> createOrder(Integer buyerId, Map<String, Object> deliveryInfo, Map<String, Object> paymentInfo, 
                                           List<Map<String, Object>> cartItems, Integer payosOrderCode, 
                                           Integer totalAmount, String status) {
         try {
@@ -81,7 +81,7 @@ public class OrderService {
             
             // Create new order
             Order order = new Order();
-            order.setBuyerId(1); // Default buyer ID - you might want to get this from authentication
+            order.setBuyerId(buyerId); // Use the actual buyer ID from authentication
             order.setShopId(1); // Default shop ID - you might want to get this from cart items
             order.setDeliveryAddressId(1); // Default address ID
             order.setTotalAmount(new BigDecimal(totalAmount));
@@ -93,6 +93,9 @@ public class OrderService {
                 order.setRecipientPhone((String) deliveryInfo.get("recipientPhone"));
                 order.setAddressText((String) deliveryInfo.get("addressText"));
             }
+            
+            // Set PayOS order code
+            order.setOrderCode(payosOrderCode);
             
             // Set PayOS order code in notes
             String notes = "PayOS:" + payosOrderCode;
@@ -314,18 +317,18 @@ public class OrderService {
                 if ("PAID".equals(status)) {
                     // Cập nhật từ pending_payment thành paid
                     if ("pending_payment".equals(order.getStatus())) {
-                        order.setStatus("paid");
+                        order.setStatus("confirmed");
                         System.out.println("✅ Order " + order.getId() + " updated from pending_payment to PAID");
                         
                         // Tạo order history
-                        createOrderHistory(order.getId(), oldStatus, "paid", "payment_success", 
+                        createOrderHistory(order.getId(), oldStatus, "confirmed", "payment_success", 
                             "Payment completed successfully via PayOS. Transaction ID: " + transactionId, "system");
                     } else {
-                        order.setStatus("paid");
+                        order.setStatus("confirmed");
                         System.out.println("✅ Order " + order.getId() + " marked as PAID");
                         
                         // Tạo order history
-                        createOrderHistory(order.getId(), oldStatus, "paid", "payment_success", 
+                        createOrderHistory(order.getId(), oldStatus, "confirmed", "payment_success", 
                             "Payment completed successfully via PayOS. Transaction ID: " + transactionId, "system");
                     }
                 } else if ("CANCELLED".equals(status)) {
@@ -383,4 +386,36 @@ public class OrderService {
     public List<OrderHistory> getOrderHistory(Integer orderId) {
         return orderHistoryRepository.findByOrderIdOrderByCreatedAtDesc(orderId);
     }
+    
+    @Transactional
+    // Cập nhật trạng thái đơn hàng theo PayOS orderCode
+    public boolean updateStatusByPayosOrderCode(Integer orderCode, String status) {
+        try {
+            
+            // Tìm đơn hàng theo orderCode
+            Optional<Order> orderOpt = orderRepository.findByOrderCode(orderCode);
+            if (orderOpt.isEmpty()) {
+                return false;
+            }
+            
+            Order order = orderOpt.get();
+            String oldStatus = order.getStatus();
+            
+            // Cập nhật trạng thái
+            order.setStatus(status);
+            orderRepository.save(order);
+            
+            // Tạo lịch sử
+            createOrderHistory(order.getId(), oldStatus, status, "PAYMENT_UPDATE", 
+                "Order status updated from payment callback", "SYSTEM");
+            
+            return true;
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error updating order status: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
 }

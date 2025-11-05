@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ProductDetail.css";
 import { useCart } from "../../contexts/CartContext";
+import { useAuth } from "../../hooks/useAuth";
 import { getShopName } from "../../constants/shopNames";
 import { getCategoryName } from "../../constants/categoryNames";
 import ReviewList from "../ReviewComponent/ReviewList";
@@ -10,6 +11,7 @@ import { useAuth } from "../../hooks/useAuth";
 const ProductDetail = ({ product, onClose }) => {
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -19,6 +21,11 @@ const ProductDetail = ({ product, onClose }) => {
   if (!product) return null;
 
   const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
+      return;
+    }
+
     // Tạo product object với đầy đủ thông tin để add vào cart
     const cartProduct = {
       id: product.id,
@@ -99,7 +106,7 @@ const ProductDetail = ({ product, onClose }) => {
                 <span className={`status ${product.status}`}>
                   {product.status === 'active' ? 'Còn hàng' : 
                    product.status === 'inactive' ? 'Tạm ngừng' : 
-                   product.status === 'out_of_stock' ? 'Hết hàng' : product.status}
+                   product.status === 'out_of_stock' ? 'Hết nguyên liệu' : product.status}
                 </span>
               </div>
               

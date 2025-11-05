@@ -39,6 +39,9 @@ public class Order {
     @Column(name = "notes", columnDefinition = "NVARCHAR(MAX)")
     private String notes;
 
+    @Column(name = "order_code")
+    private Integer orderCode;
+
     @Column(name = "recipient_name")
     private String recipientName;
 
@@ -56,6 +59,9 @@ public class Order {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     // One-to-many relationship with OrderItem
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -92,6 +98,12 @@ public class Order {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
+    }
+
+    // Auto set updatedAt when updating
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
 }

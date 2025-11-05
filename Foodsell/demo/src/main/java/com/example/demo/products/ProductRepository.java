@@ -2,6 +2,7 @@
 package com.example.demo.products;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,4 +17,11 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
            "LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<Product> searchProducts(@Param("keyword") String keyword);
+    
+    
+    // Count products by shop
+    long countByShopId(Integer shopId);
+    
+    // Count products by shop and status
+    long countByShopIdAndStatus(Integer shopId, String status);
 }

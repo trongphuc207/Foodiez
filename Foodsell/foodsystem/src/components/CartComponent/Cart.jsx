@@ -3,6 +3,7 @@ import React from "react"
 import { useNavigate } from "react-router-dom"
 import "./Cart.css"
 import { useCart } from "../../contexts/CartContext"
+import { useAuth } from "../../hooks/useAuth"
 
 const Cart = ({ isOpen, onClose }) => {
   const { 
@@ -13,10 +14,15 @@ const Cart = ({ isOpen, onClose }) => {
     getShippingFee, 
     getGrandTotal 
   } = useCart();
-
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const handleCheckout = () => {
+    if (!isAuthenticated) {
+      alert('Vui lòng đăng nhập để thanh toán!');
+      onClose(); // Close cart modal
+      return;
+    }
     console.log("[v0] Proceeding to checkout with items:", cartItems)
     onClose(); // Close cart modal
     navigate('/checkout'); // Navigate to checkout page

@@ -75,4 +75,13 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
            "GROUP BY o.id, o.totalAmount, o.status " +
            "ORDER BY o.id DESC")
     List<OrderSummaryDTO> findOrderSummariesByBuyerId(@Param("buyerId") Integer buyerId);
+
+    // Find by PayOS order code stored in notes (pattern: "PayOS:{code}")
+    Optional<Order> findFirstByNotesContaining(String text);
+    
+    // Find by orderCode (PayOS order code)
+    Optional<Order> findByOrderCode(Integer orderCode);
+    
+    // Count orders by shop ID and status
+    long countByShopIdAndStatus(Integer shopId, String status);
 }

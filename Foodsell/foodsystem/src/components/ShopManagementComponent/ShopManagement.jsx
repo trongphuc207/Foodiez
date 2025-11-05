@@ -14,10 +14,9 @@ import './ShopManagement.css';
 const ShopManagement = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('products');
-  const [showProductForm, setShowProductForm] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
   const [showShopForm, setShowShopForm] = useState(false);
   const [showRatings, setShowRatings] = useState(false);
   // Form states
@@ -33,12 +32,24 @@ const ShopManagement = () => {
   // Image upload states
   const [productImageUrl, setProductImageUrl] = useState(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+
   const [shopForm, setShopForm] = useState({
     name: '',
     description: '',
     address: '',
     opening_hours: ''
   });
+
+  // Scroll modal to top when opened
+  useEffect(() => {
+    if (showShopForm) {
+      // Prevent body scroll
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+  }, [showShopForm]);
+
   // Fetch shop data
   const { data: shopData, isLoading: shopLoading } = useQuery({
     queryKey: ['shop', user?.id],
@@ -279,10 +290,29 @@ const createProductMutation = useMutation({
       }
     }
   });
+
+  // Test server connection on mount
+  useEffect(() => {
+    const testConnection = async () => {
+      const isConnected = await testServerConnection();
+      if (!isConnected) {
+        console.warn('⚠️ Server connection test failed');
+      }
+    };
+    testConnection();
+  }, []);
+
+
+
   const deleteProductMutation = useMutation({
     mutationFn: productAPI.deleteProduct,
     onSuccess: () => {
       queryClient.invalidateQueries(['products']);
+      alert('✅ Xóa món ăn thành công!');
+    },
+    onError: (error) => {
+      console.error('❌ Delete product error:', error);
+      alert('❌ Lỗi khi xóa món ăn: ' + error.message);
     }
   });
   const updateShopMutation = useMutation({
@@ -385,6 +415,8 @@ const createProductMutation = useMutation({
       alert('Lỗi khi' + (editingProduct ? 'cập nhật' : 'thêm') + ' món ăn: ' + error.message);
     }
   };
+
+
   const handleShopSubmit = async (e) => {
     e.preventDefault();
     
@@ -458,6 +490,9 @@ const createProductMutation = useMutation({
       });
       setShowProductForm(true);
     }
+
+  const handleEditProduct = (product) => {
+    navigate(`/shop-management/products/${product.id}/edit`);
   };
   const handleDeleteProduct = (productId) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa món ăn này?')) {
@@ -488,6 +523,8 @@ const createProductMutation = useMutation({
     
     setProductForm({ ...productForm, image: file });
   };
+
+
   if (shopLoading) {
     return <div className="loading">Đang tải thông tin cửa hàng...</div>;
   }
@@ -542,11 +579,7 @@ const createProductMutation = useMutation({
             <h2>Danh sách món ăn</h2>
             <button
               className="btn btn-primary"
-              onClick={() => {
-                setEditingProduct(null);
-                setProductForm({ name: '', description: '', price: '', categoryId: '', image: null });
-                setShowProductForm(true);
-              }}
+              onClick={() => navigate('/shop-management/products/new')}
             >
               Thêm món ăn
             </button>
@@ -674,6 +707,7 @@ const createProductMutation = useMutation({
               </div>
             </div>
           )}
+
           <div className="products-list">
             {productsLoading ? (
               <div className="loading">Đang tải danh sách món ăn...</div>
@@ -717,7 +751,7 @@ const createProductMutation = useMutation({
                       <span className={`status ${product.status === 'active' ? 'available' : 'unavailable'}`}>
                         {product.status === 'active' ? '✅ Còn hàng' : 
                          product.status === 'inactive' ? '⏸️ Tạm ngừng' : 
-                         product.status === 'out_of_stock' ? '❌ Hết hàng' : '❌ Không xác định'}
+                         product.status === 'out_of_stock' ? '🚫 Hết nguyên liệu' : '❌ Không xác định'}
                       </span>
                     </div>
                   </div>
@@ -762,6 +796,13 @@ const createProductMutation = useMutation({
           {showShopForm && (
             <div className="modal-overlay" onClick={() => setShowShopForm(false)}>
               <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <button 
+                  type="button"
+                  className="modal-close-btn" 
+                  onClick={() => setShowShopForm(false)}
+                >
+                  ✕
+                </button>
                 <h3>Cập nhật thông tin cửa hàng</h3>
                 <form onSubmit={handleShopSubmit}>
                   <div className="form-group">
