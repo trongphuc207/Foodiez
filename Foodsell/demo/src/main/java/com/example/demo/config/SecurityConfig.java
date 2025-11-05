@@ -10,12 +10,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.http.HttpMethod;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
+
+    @Autowired
+    private OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -23,63 +26,73 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource, OAuth2SuccessHandler oauth2SuccessHandler) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
-            .oauth2Login(oauth2 -> oauth2
-                .successHandler(oauth2SuccessHandler)
-            )
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
-                .requestMatchers("/api/auth/login").permitAll()
-                .requestMatchers("/api/auth/register").permitAll()
-                .requestMatchers("/api/auth/verify").permitAll()
-                .requestMatchers("/api/auth/validate-reset-token").permitAll()
-                .requestMatchers("/api/auth/forgot-password").permitAll()
-                .requestMatchers("/api/auth/reset-password").permitAll()
-                .requestMatchers("/api/auth/google").permitAll()
-                .requestMatchers("/login/oauth2/code/**").permitAll()
-                .requestMatchers("/oauth2/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/products").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/shops/**").permitAll()
-                .requestMatchers("/api/payos/webhook").permitAll()
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/products/**").permitAll()
+                .requestMatchers("/api/categories/**").permitAll()
+                .requestMatchers("/api/shops/**").permitAll()
+                .requestMatchers("/api/orders/test").permitAll()
+                .requestMatchers("/api/payos/**").permitAll()
+                .requestMatchers("/test/**").permitAll()
                 .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/login/oauth2/code/**").permitAll()
+                .requestMatchers("/oauth2/authorization/**").permitAll()
+                .requestMatchers("/ws-chat/**").permitAll()
                 
                 // Voucher endpoints (public for now, can be restricted later)
                 .requestMatchers("/api/vouchers/**").permitAll()
+                
+                // Review endpoints (public for reading reviews and stats)
+                .requestMatchers("/api/reviews/product/**").permitAll()
+                .requestMatchers("/api/reviews/shop/**").permitAll()
+                .requestMatchers("/api/reviews/*/replies").permitAll()
+                // .requestMatchers("/api/reviews").permitAll() // POST reviews cần authentication
+                
+                // Notification system endpoints (public for system calls)
+                .requestMatchers("/api/notifications/system/**").permitAll()
+                // User notification endpoints (require authentication)
+                .requestMatchers("/api/notifications/my-notifications").authenticated()
+                .requestMatchers("/api/notifications/unread").authenticated()
+                .requestMatchers("/api/notifications/unread-count").authenticated()
+                .requestMatchers("/api/notifications/*/read").authenticated()
+                .requestMatchers("/api/notifications/mark-all-read").authenticated()
+                // Admin notification endpoints
+                .requestMatchers("/api/notifications").hasAnyRole("ADMIN", "admin")
+                .requestMatchers("/api/notifications/*").hasAnyRole("ADMIN", "admin")
+                .requestMatchers("/api/notifications/admin/**").hasAnyRole("ADMIN", "admin")
                 
                 // Customer endpoints (accessible by all authenticated users)
                 .requestMatchers("/api/customer/**").authenticated()
                 .requestMatchers("/api/orders/buyer/**").authenticated()
                 .requestMatchers("/api/orders").authenticated()
-                .requestMatchers("/api/cart/test").permitAll()  // Test endpoint
-                .requestMatchers("/api/cart/test-cart").authenticated()  // Test CartService endpoint
                 .requestMatchers("/api/cart/**").authenticated()
-                // Temporarily allow favorites endpoints for testing; restore to authenticated() after tests
-                .requestMatchers("/api/favorites/**").permitAll()
-                .requestMatchers("/api/auth/test-auth").authenticated()
-                .requestMatchers("/api/shops/*/orders").authenticated()
+                .requestMatchers("/api/favorites/**").authenticated()
                 
                 // Seller endpoints
                 .requestMatchers("/api/seller/**").hasAnyRole("SELLER", "ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/orders/*/accept").hasAnyRole("SELLER", "ADMIN")
                 
                 // Shipper endpoints  
                 .requestMatchers("/api/shipper/**").hasAnyRole("SHIPPER", "ADMIN")
                 
                 // Admin endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                
-                // Order status update endpoint (for payment callbacks)
-                .requestMatchers(HttpMethod.PUT, "/api/orders/customer/orders/*/status")
-                .permitAll()
+                // Chat endpoints
+                .requestMatchers("/api/chat/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/chat/**").authenticated()
                 
                 // All other requests need authentication
                 .anyRequest().authenticated()
             )
+            // OAuth2 temporarily disabled for testing
+            // .oauth2Login(oauth2 -> oauth2
+            //     .successHandler(oAuth2SuccessHandler)
+            //     .defaultSuccessUrl("http://localhost:3000/auth/success", true)
+            // )
             .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

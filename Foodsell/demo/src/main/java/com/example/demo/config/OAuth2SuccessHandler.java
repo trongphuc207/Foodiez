@@ -34,7 +34,6 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         
         String email = oauth2User.getAttribute("email");
         String name = oauth2User.getAttribute("name");
-        String picture = oauth2User.getAttribute("picture");
         
         if (email == null) {
             System.out.println("❌ Error: No email found in OAuth2User attributes");

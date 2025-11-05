@@ -1,4 +1,4 @@
-package com.example.demo.shipper;
+package com.example.demo.Shipper;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

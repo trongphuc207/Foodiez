@@ -1,7 +1,6 @@
 package com.example.demo.favorites;
 
 import com.example.demo.dto.ApiResponse;
-import com.example.demo.favorites.FavoriteProductDTO;
 import com.example.demo.Users.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

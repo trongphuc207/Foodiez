@@ -20,7 +20,7 @@ export const adminAPI = {
     products: json.totalProducts ?? 0,
     vouchers: json.totalVouchers ?? 0,
     revenue: json.totalRevenue ?? 0,
-    totalStock: json.totalStock ?? 0,
+    activeProducts: json.activeProducts ?? 0,
   };
 },
 
@@ -90,7 +90,7 @@ export const adminAPI = {
       name: p.name ?? 'N/A',
       price: p.price ?? 0,
       category: p.category ?? 'Chưa phân loại',
-      stock: p.stock_quantity ?? 0,
+      status: p.status ?? 'active',
     }));
   },
 

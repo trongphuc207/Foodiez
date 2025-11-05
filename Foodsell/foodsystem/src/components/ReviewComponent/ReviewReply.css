@@ -1,0 +1,151 @@
+.review-reply {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.replies-list {
+  margin-bottom: 15px;
+}
+
+.reply-item {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 10px;
+}
+
+.reply-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.reply-author {
+  font-weight: 600;
+  color: #007bff;
+  font-size: 0.9rem;
+}
+
+.reply-date {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.reply-content p {
+  margin: 0;
+  line-height: 1.5;
+  color: #444;
+  font-size: 0.95rem;
+}
+
+.reply-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.reply-btn:hover {
+  background: #218838;
+}
+
+.reply-form {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 15px;
+  margin-top: 10px;
+}
+
+.reply-form .form-group {
+  margin-bottom: 15px;
+}
+
+.reply-form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.reply-form textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 80px;
+  box-sizing: border-box;
+}
+
+.reply-form textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.reply-form .form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.reply-form .cancel-btn,
+.reply-form .submit-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.reply-form .cancel-btn {
+  background: #6c757d;
+  color: white;
+}
+
+.reply-form .cancel-btn:hover {
+  background: #5a6268;
+}
+
+.reply-form .submit-btn {
+  background: #007bff;
+  color: white;
+}
+
+.reply-form .submit-btn:hover {
+  background: #0056b3;
+}
+
+.reply-form .submit-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .reply-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  .reply-form .form-actions {
+    flex-direction: column;
+  }
+  
+  .reply-form .cancel-btn,
+  .reply-form .submit-btn {
+    width: 100%;
+  }
+}

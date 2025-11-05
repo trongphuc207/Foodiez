@@ -1,4 +1,4 @@
-package com.example.demo.shipper;
+package com.example.demo.Shipper;
 
 import lombok.*;
 import java.time.LocalDateTime;

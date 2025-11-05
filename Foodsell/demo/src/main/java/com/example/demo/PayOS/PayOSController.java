@@ -4,8 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.example.demo.Orders.OrderService;
-import com.example.demo.Orders.OrderRepository;
-import com.example.demo.Orders.Order;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,9 +18,6 @@ public class PayOSController {
     
     @Autowired
     private OrderService orderService;
-    
-    @Autowired
-    private OrderRepository orderRepository;
 
     // Tạo payment link
     @PostMapping("/create-payment")

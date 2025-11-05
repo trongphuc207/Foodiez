@@ -7,8 +7,8 @@ import './RouteGuard.css';
 
 /**
  * RouteGuard: bảo vệ route theo role.
- * - requiredRole: chuỗi role duy nhất (vd: 'admin' | 'seller' | 'shipper')
- * - requiredRoles: mảng role cho phép (vd: ['seller','shipper'])
+ * - requiredRole: chuỗi role duy nhất (vd: 'admin' | 'seller')
+ * - requiredRoles: mảng role cho phép (vd: ['seller','admin'])
  * - allowAdminBypass: cho phép tài khoản admin đi qua mọi route (mặc định: true)
  * - redirectTo: trang điều hướng khi không đủ quyền (mặc định: '/')
  * - showLoading: có hiển thị trạng thái loading khi đang load profile

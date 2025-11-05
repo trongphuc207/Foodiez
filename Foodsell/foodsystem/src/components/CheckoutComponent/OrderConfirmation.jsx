@@ -1,62 +1,58 @@
 import React from 'react';
 import './OrderConfirmation.css';
 
-const OrderConfirmation = ({ 
-  deliveryInfo, 
-  paymentInfo, 
-  cartItems, 
-  totalAmount, 
-  shippingFee, 
-  grandTotal, 
-  voucherDiscount = 0,
-  appliedVoucher = null,
-  finalTotal = grandTotal,
-  onComplete, 
+const OrderConfirmation = ({
+  deliveryInfo,
+  paymentInfo,
+  cartItems,
+  totalAmount,
+  shippingFee,
+  grandTotal,
+  voucherDiscount,
+  appliedVoucher,
+  finalTotal,
+  onComplete,
   onBack,
-  isProcessingPayment = false
+  isProcessingPayment
 }) => {
-  const formatPrice = (price) => {
+  const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND'
-    }).format(price);
-  };
-
-  const getPaymentMethodName = (methodId) => {
-    const methods = {
-      'cod': 'Thanh toán khi nhận hàng (COD)',
-      'PayOS': 'PayOS'
-    };
-    return methods[methodId] || methodId;
+    }).format(amount || 0);
   };
 
   return (
     <div className="order-confirmation-container">
       <div className="confirmation-header">
         <h2>Xác nhận đơn hàng</h2>
-        <p>Kiểm tra và hoàn tất đơn hàng của bạn</p>
+        <p>Vui lòng kiểm tra thông tin trước khi hoàn tất</p>
       </div>
 
       <div className="confirmation-content">
         {/* Delivery Information */}
         <div className="confirmation-section">
-          <h3>Thông tin giao hàng</h3>
+          <h3>📍 Thông tin giao hàng</h3>
           <div className="info-card">
             <div className="info-item">
               <strong>Họ và tên:</strong>
-              <span>{deliveryInfo.fullName}</span>
+              <span>{deliveryInfo.fullName || 'N/A'}</span>
             </div>
             <div className="info-item">
               <strong>Số điện thoại:</strong>
-              <span>{deliveryInfo.phone}</span>
+              <span>{deliveryInfo.phone || 'N/A'}</span>
             </div>
             <div className="info-item">
               <strong>Email:</strong>
-              <span>{deliveryInfo.email}</span>
+              <span>{deliveryInfo.email || 'N/A'}</span>
             </div>
             <div className="info-item">
               <strong>Địa chỉ:</strong>
-              <span>{deliveryInfo.address}, {deliveryInfo.district}, {deliveryInfo.city}</span>
+              <span>
+                {deliveryInfo.address || 'N/A'}
+                {deliveryInfo.district && `, ${deliveryInfo.district}`}
+                {deliveryInfo.city && `, ${deliveryInfo.city}`}
+              </span>
             </div>
             {deliveryInfo.notes && (
               <div className="info-item">
@@ -69,75 +65,91 @@ const OrderConfirmation = ({
 
         {/* Payment Information */}
         <div className="confirmation-section">
-          <h3>Phương thức thanh toán</h3>
+          <h3>💳 Phương thức thanh toán</h3>
           <div className="info-card">
             <div className="info-item">
               <strong>Phương thức:</strong>
-              <span>{getPaymentMethodName(paymentInfo.method)}</span>
+              <span>{paymentInfo.methodName || paymentInfo.method || 'N/A'}</span>
             </div>
           </div>
         </div>
 
         {/* Order Items */}
         <div className="confirmation-section">
-          <h3>Chi tiết đơn hàng</h3>
+          <h3>🛒 Sản phẩm đã chọn</h3>
           <div className="order-items">
-            {cartItems.map((item, index) => (
-              <div key={`${item.id}-${index}`} className="order-item">
-                <img 
-                  src={item.image || "/placeholder.svg"} 
-                  alt={item.name}
-                  className="item-image"
-                />
-                <div className="item-details">
-                  <h4 className="item-name">{item.name}</h4>
-                  <p className="item-shop">{item.shop}</p>
-                  <div className="item-quantity">Số lượng: {item.quantity}</div>
+            {cartItems && cartItems.length > 0 ? (
+              cartItems.map((item, index) => (
+                <div key={index} className="order-item">
+                  {item.image && (
+                    <img
+                      src={item.image}
+                      alt={item.name || item.productName}
+                      className="item-image"
+                      onError={(e) => {
+                        e.target.src = '/placeholder.jpg';
+                      }}
+                    />
+                  )}
+                  <div className="item-details">
+                    <h4 className="item-name">{item.name || item.productName || 'Sản phẩm'}</h4>
+                    {item.shopName && (
+                      <p className="item-shop">Cửa hàng: {item.shopName}</p>
+                    )}
+                    <p className="item-quantity">Số lượng: {item.quantity || 1}</p>
+                  </div>
+                  <div className="item-price">
+                    {formatCurrency((item.price || item.unitPrice || 0) * (item.quantity || 1))}
+                  </div>
                 </div>
-                <div className="item-price">
-                  {formatPrice(item.price * item.quantity)}
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p>Không có sản phẩm nào</p>
+            )}
           </div>
         </div>
 
         {/* Order Summary */}
         <div className="confirmation-section">
-          <h3>Tổng kết đơn hàng</h3>
+          <h3>💰 Tóm tắt đơn hàng</h3>
           <div className="order-summary">
             <div className="summary-row">
               <span>Tạm tính:</span>
-              <span>{formatPrice(totalAmount)}</span>
+              <span>{formatCurrency(totalAmount)}</span>
             </div>
             <div className="summary-row">
               <span>Phí vận chuyển:</span>
-              <span>{formatPrice(shippingFee)}</span>
+              <span>{formatCurrency(shippingFee)}</span>
             </div>
-            {appliedVoucher && voucherDiscount > 0 && (
+            {voucherDiscount > 0 && appliedVoucher && (
               <div className="summary-row voucher-discount">
                 <span>
-                  <span className="voucher-icon">🎫</span>
-                  Giảm giá ({appliedVoucher.code}):
+                  <span className="voucher-icon">🎟️</span>
+                  Giảm giá ({appliedVoucher.code || 'Voucher'}):
                 </span>
-                <span>-{formatPrice(voucherDiscount)}</span>
+                <span>-{formatCurrency(voucherDiscount)}</span>
               </div>
             )}
             <div className="summary-row total">
               <span>Tổng cộng:</span>
-              <span>{formatPrice(finalTotal)}</span>
+              <span>{formatCurrency(finalTotal)}</span>
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="confirmation-actions">
-          <button type="button" className="back-btn" onClick={onBack}>
+          <button
+            type="button"
+            className="back-btn"
+            onClick={onBack}
+            disabled={isProcessingPayment}
+          >
             Quay lại
           </button>
-          <button 
-            type="button" 
-            className="complete-btn" 
+          <button
+            type="button"
+            className="complete-btn"
             onClick={onComplete}
             disabled={isProcessingPayment}
           >
@@ -150,3 +162,4 @@ const OrderConfirmation = ({
 };
 
 export default OrderConfirmation;
+

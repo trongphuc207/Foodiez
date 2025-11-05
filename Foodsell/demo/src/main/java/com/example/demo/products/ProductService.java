@@ -57,7 +57,22 @@ public class ProductService {
     }
     
     public Optional<Product> getProductById(int id) {
-        return repo.findById(id);
+        try {
+            System.out.println("🔍 ProductService.getProductById: Looking for product ID: " + id);
+            Optional<Product> product = repo.findById(id);
+            
+            if (product.isPresent()) {
+                System.out.println("✅ ProductService: Found product: " + product.get().getName());
+            } else {
+                System.out.println("⚠️ ProductService: Product not found with ID: " + id);
+            }
+            return product;
+        } catch (Exception e) {
+            System.err.println("❌ ProductService.getProductById ERROR: " + e.getMessage());
+            System.err.println("❌ Error class: " + e.getClass().getName());
+            e.printStackTrace();
+            throw e;
+        }
     }
     
     public Product updateProduct(Product product) {

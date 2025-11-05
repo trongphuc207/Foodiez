@@ -19,7 +19,6 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
 @Service
 public class PayOSService {
@@ -72,18 +71,18 @@ public class PayOSService {
             String apiUrl = baseUrl + "/v2/payment-requests";
             System.out.println("API URL: " + apiUrl);
 
-            ResponseEntity<Map> response = restTemplate.exchange(
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                     apiUrl,
                     HttpMethod.POST,
                     request,
-                    Map.class
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
             );
             
             System.out.println("Response status: " + response.getStatusCode());
             System.out.println("Response body: " + response.getBody());
 
             Map<String, Object> result = new HashMap<>();
-            Map responseBody = response.getBody();
+            Map<String, Object> responseBody = response.getBody();
             if ("00".equals(responseBody.get("code"))) {
                 result.put("success", true);
                 result.put("data", responseBody.get("data"));
@@ -123,18 +122,18 @@ public class PayOSService {
             String apiUrl = baseUrl + "/v2/payment-requests/" + orderCode;
             System.out.println("API URL: " + apiUrl);
 
-            ResponseEntity<Map> response = restTemplate.exchange(
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                     apiUrl,
                     HttpMethod.GET,
                     request,
-                    Map.class
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
             );
 
             System.out.println("Response status: " + response.getStatusCode());
             System.out.println("Response body: " + response.getBody());
 
             Map<String, Object> result = new HashMap<>();
-            Map responseBody = response.getBody();
+            Map<String, Object> responseBody = response.getBody();
             if ("00".equals(responseBody.get("code"))) {
                 result.put("success", true);
                 result.put("data", responseBody.get("data"));
@@ -196,15 +195,15 @@ public class PayOSService {
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(cancelData, headers);
 
-            ResponseEntity<Map> response = restTemplate.exchange(
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                     baseUrl + "/v2/payment-requests/" + orderCode + "/cancel",
                     HttpMethod.POST,
                     request,
-                    Map.class
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
             );
 
             Map<String, Object> result = new HashMap<>();
-            Map responseBody = response.getBody();
+            Map<String, Object> responseBody = response.getBody();
             if ("00".equals(responseBody.get("code"))) {
                 result.put("success", true);
                 result.put("data", responseBody.get("data"));

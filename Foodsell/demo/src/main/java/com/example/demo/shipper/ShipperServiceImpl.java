@@ -1,4 +1,4 @@
-package com.example.demo.shipper;
+package com.example.demo.Shipper;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -69,7 +69,8 @@ public class ShipperServiceImpl implements ShipperService {
         // Optional keyword search (notes, recipientName, addressText) and optional area filter (simple substring match on address_text)
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        Shipper shipper = shipperRepository.findByUserId(user.getId().longValue())
+        // Verify shipper exists (but don't need to store it)
+        shipperRepository.findByUserId(user.getId().longValue())
             .orElseThrow(() -> new RuntimeException("Shipper not found"));
 
         List<Order> available;
@@ -113,7 +114,8 @@ public class ShipperServiceImpl implements ShipperService {
         dashboard.setTotalEarnings(formatCurrency(
             orders.stream()
                 .filter(o -> "delivered".equals(o.getStatus()))
-                .mapToDouble(Order::getDeliveryFee)
+                .map(o -> o.getDeliveryFee() != null ? o.getDeliveryFee().doubleValue() : 0.0)
+                .mapToDouble(Double::doubleValue)
                 .sum()
         ));
 
@@ -237,7 +239,7 @@ public class ShipperServiceImpl implements ShipperService {
         dto.setDeliveryAddress(order.getAddressText());
         dto.setItems(order.getOrderItems().size());
         dto.setDistance(calculateDistance(order));
-        dto.setPrice(formatCurrency(order.getDeliveryFee()));
+        dto.setPrice(formatCurrency(order.getDeliveryFee() != null ? order.getDeliveryFee().doubleValue() : 0.0));
         dto.setNote(order.getNotes());
         return dto;
     }
@@ -249,7 +251,7 @@ public class ShipperServiceImpl implements ShipperService {
         dto.setDeliveryAddress(order.getAddressText());
         dto.setStatus(order.getStatus());
         dto.setCompletedAt(order.getUpdatedAt());
-        dto.setEarnings(formatCurrency(order.getDeliveryFee()));
+        dto.setEarnings(formatCurrency(order.getDeliveryFee() != null ? order.getDeliveryFee().doubleValue() : 0.0));
         dto.setDistance(calculateDistance(order));
         return dto;
     }

@@ -80,24 +80,30 @@ const districts = {
 
   const isValidAddress = (address) => {
     if (!address) return false;
-    const addr = removeDiacritics(address.trim());
-    // Độ dài tối thiểu (ví dụ 6 ký tự) để tránh các chuỗi rác như "ggggg"
+    const addr = removeDiacritics(address.trim().toLowerCase());
+// Kiểm tra độ dài tối thiểu
     if (addr.length < 6) return false;
 
-    const cityNormalized = removeDiacritics('Đà Nẵng');
-    const containsCity = addr.includes(cityNormalized) || addr.includes('danang') || addr.includes('da nang');
-    const containsDistrict = districtList.some(d => addr.includes(removeDiacritics(d)));
-    const containsGenericStreet = streetKeywords.some(k => addr.includes(k));
-    const containsMainStreet = mainStreetList.some(s => addr.includes(removeDiacritics(s)));
+    // Không cho phép nhập "Đà Nẵng" trong địa chỉ vì đã có ở dropdown
+    const cityNormalized = removeDiacritics('Đà Nẵng').toLowerCase();
+    if (addr === cityNormalized || addr.includes('danang') || addr.includes('da nang')) {
+      return false;
+    }
+    
+    // Kiểm tra xem địa chỉ có chứa tên đường không
+    const containsStreetName = mainStreetList.some(street => 
+      addr.includes(removeDiacritics(street).toLowerCase())
+    );
 
-    // Nếu chứa tên thành phố hoặc tên quận => chấp nhận
-    if (containsCity || containsDistrict) return !containsInvalidLocation(address);
+    // Kiểm tra xem địa chỉ có chứa từ khóa chung về đường không
+    const containsGenericStreet = streetKeywords.some(keyword => 
+      addr.includes(removeDiacritics(keyword).toLowerCase())
+    );
 
-    // Nếu không có tên thành phố/quận, chấp nhận nếu địa chỉ chứa 1 trong các đường chính (whitelist)
-    if (containsMainStreet) return !containsInvalidLocation(address);
-
-    // Nếu chỉ chứa từ khoá chung (ví dụ 'đường') nhưng không biết đường chính và không chọn quận => không hợp lệ
-    if (containsGenericStreet) return false;
+    // Địa chỉ hợp lệ khi:
+    // 1. Có tên đường cụ thể hoặc từ khóa về đường
+    // 2. Không chứa tên thành phố khác
+    return (containsStreetName || containsGenericStreet) && !containsInvalidLocation(address);
 
     return false;
   };
@@ -173,8 +179,7 @@ const districts = {
       district: '' // Reset district when city changes
     }));
   };
-
-  const handleDistrictChange = (e) => {
+const handleDistrictChange = (e) => {
     const selectedDistrict = e.target.value;
     setFormData(prev => ({
       ...prev,
@@ -264,7 +269,7 @@ const districts = {
             <select
               id="city"
               name="city"
-              value={formData.city}
+value={formData.city}
               onChange={handleCityChange}
               className={errors.city ? 'error' : ''}
             >

@@ -149,6 +149,12 @@
   opacity: 1;
 }
 
+.product-reviews-section {
+  margin-top: 20px;
+  padding: 20px;
+  border-top: 1px solid #eee;
+}
+
 .add-to-cart-section {
   background: #f8f9fa;
   padding: 20px;

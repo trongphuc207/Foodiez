@@ -223,7 +223,6 @@ public class AuthController {
                 
                 String email = jsonNode.get("email").asText();
                 String name = jsonNode.get("name").asText();
-                String picture = jsonNode.has("picture") ? jsonNode.get("picture").asText() : "";
                 
                 System.out.println("👤 Google user - Email: " + email + ", Name: " + name);
                 

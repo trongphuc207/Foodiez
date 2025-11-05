@@ -8,6 +8,7 @@ import Users from './Users';
 import Vouchers from './Vouchers';
 import Reports from './Reports';
 import VoucherManager from './VoucherManager';
+import AdminReviewManagement from '../ReviewComponent/AdminReviewManagement';
 import './admin.css';
 
 const AdminApp = () => {
@@ -29,6 +30,8 @@ const AdminApp = () => {
         return <VoucherManager />;
       case 'reports':
         return <Reports />;
+      case 'reviews':
+        return <AdminReviewManagement />;
       default:
         return <Dashboard />;
     }

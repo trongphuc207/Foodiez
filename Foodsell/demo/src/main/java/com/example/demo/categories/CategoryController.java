@@ -4,38 +4,52 @@ import com.example.demo.dto.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/categories")
 @CrossOrigin(origins = "http://localhost:3000")
 public class CategoryController {
     
+    private static final Logger logger = LoggerFactory.getLogger(CategoryController.class);
     private final CategoryService categoryService;
     
     @Autowired
     public CategoryController(CategoryService categoryService) {
         this.categoryService = categoryService;
+        logger.info("✅ CategoryController initialized!");
     }
     
     // GET: Lấy tất cả categories
     @GetMapping
     public ResponseEntity<ApiResponse<List<Category>>> getAllCategories() {
+        logger.info("🔥 GET /api/categories called!");
         try {
-            // Mock data để test trước
-            List<Category> categories = new ArrayList<>();
-            categories.add(new Category("Phở", "Vietnamese noodle soup, ready-to-eat"));
-            categories.add(new Category("Bánh Mì", "Vietnamese sandwich, ready-to-eat"));
-            categories.add(new Category("Cơm", "Rice dishes, ready-to-eat"));
-            categories.add(new Category("Nước uống", "Beverages including coffee, tea, and soft drinks"));
-            categories.add(new Category("Pizza", "Món pizza phong cách Ý, nhiều loại topping đa dạng"));
-            categories.add(new Category("Bún", "Món bún Việt Nam truyền thống, dùng với thịt, chả"));
+            // Lấy từ database thực thay vì hardcoded
+            List<Category> categories = categoryService.getAllCategories();
+            logger.info("✅ Found {} categories from database", categories.size());
+            
+            // Nếu database rỗng, tự động seed dữ liệu mẫu
+            if (categories.isEmpty()) {
+                logger.warn("⚠️ No categories found in database. Auto-seeding default categories...");
+                try {
+                    categoryService.seedData();
+                    categories = categoryService.getAllCategories();
+                    logger.info("✅ Auto-seeded {} categories", categories.size());
+                } catch (Exception seedError) {
+                    logger.error("❌ Auto-seed failed: {}", seedError.getMessage());
+                    seedError.printStackTrace();
+                }
+            }
             
             return ResponseEntity.ok(ApiResponse.success(categories, "Lấy danh sách categories thành công"));
         } catch (Exception e) {
+            logger.error("❌ Error getting categories: {}", e.getMessage(), e);
+            e.printStackTrace();
             return ResponseEntity.status(500).body(ApiResponse.error("Lỗi khi lấy danh sách categories: " + e.getMessage()));
         }
     }
@@ -190,9 +204,12 @@ public class CategoryController {
     @GetMapping("/seed")
     public ResponseEntity<ApiResponse<String>> seedData() {
         try {
-            String result = "Đã tạo 6 categories mẫu thành công!";
+            logger.info("🌱 Seeding categories data...");
+            String result = categoryService.seedData();
+            logger.info("✅ Seed result: {}", result);
             return ResponseEntity.ok(ApiResponse.success(result, "Tạo dữ liệu mẫu thành công"));
         } catch (Exception e) {
+            logger.error("❌ Error seeding data: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(ApiResponse.error("Lỗi khi tạo dữ liệu mẫu: " + e.getMessage()));
         }
     }

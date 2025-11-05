@@ -1,8 +1,7 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { FaTachometerAlt, FaUsers, FaBoxOpen, FaShoppingCart, FaTicketAlt, FaChartBar } from 'react-icons/fa';
+import { FaTachometerAlt, FaUsers, FaBoxOpen, FaShoppingCart, FaTicketAlt, FaChartBar, FaStar } from 'react-icons/fa';
 
-export default function Sidebar() {
+export default function Sidebar({ activeTab, setActiveTab }) {
   return (
     <div
       className="bg-danger text-white p-3 d-flex flex-column"
@@ -12,70 +11,66 @@ export default function Sidebar() {
 
       <ul className="nav flex-column">
         <li className="nav-item mb-2">
-          <NavLink
-            to="/admin"
-            className={({ isActive }) =>
-              `nav-link d-flex align-items-center text-white ${isActive ? 'fw-bold bg-dark rounded-2 px-2' : ''}`
-            }
+          <button
+            onClick={() => setActiveTab('dashboard')}
+            className={`nav-link d-flex align-items-center text-white w-100 border-0 bg-transparent ${activeTab === 'dashboard' ? 'fw-bold bg-dark rounded-2 px-2' : ''}`}
           >
             <FaTachometerAlt className="me-2" /> Dashboard
-          </NavLink>
+          </button>
         </li>
 
         <li className="nav-item mb-2">
-          <NavLink
-            to="/admin/users"
-            className={({ isActive }) =>
-              `nav-link d-flex align-items-center text-white ${isActive ? 'fw-bold bg-dark rounded-2 px-2' : ''}`
-            }
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`nav-link d-flex align-items-center text-white w-100 border-0 bg-transparent ${activeTab === 'users' ? 'fw-bold bg-dark rounded-2 px-2' : ''}`}
           >
             <FaUsers className="me-2" /> Users
-          </NavLink>
+          </button>
         </li>
 
         <li className="nav-item mb-2">
-          <NavLink
-            to="/admin/orders"
-            className={({ isActive }) =>
-              `nav-link d-flex align-items-center text-white ${isActive ? 'fw-bold bg-dark rounded-2 px-2' : ''}`
-            }
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={`nav-link d-flex align-items-center text-white w-100 border-0 bg-transparent ${activeTab === 'orders' ? 'fw-bold bg-dark rounded-2 px-2' : ''}`}
           >
             <FaShoppingCart className="me-2" /> Orders
-          </NavLink>
+          </button>
         </li>
 
-        {/* ✅ Thêm mục Products */}
         <li className="nav-item mb-2">
-          <NavLink
-            to="/admin/products"
-            className={({ isActive }) =>
-              `nav-link d-flex align-items-center text-white ${isActive ? 'fw-bold bg-dark rounded-2 px-2' : ''}`
-            }
+          <button
+            onClick={() => setActiveTab('products')}
+            className={`nav-link d-flex align-items-center text-white w-100 border-0 bg-transparent ${activeTab === 'products' ? 'fw-bold bg-dark rounded-2 px-2' : ''}`}
           >
             <FaBoxOpen className="me-2" /> Products
-          </NavLink>
+          </button>
         </li>
 
         <li className="nav-item mb-2">
-          <NavLink
-            to="/admin/vouchers"
-            className={({ isActive }) =>
-              `nav-link d-flex align-items-center text-white ${isActive ? 'fw-bold bg-dark rounded-2 px-2' : ''}`
-            }
+          <button
+            onClick={() => setActiveTab('vouchers')}
+            className={`nav-link d-flex align-items-center text-white w-100 border-0 bg-transparent ${activeTab === 'vouchers' ? 'fw-bold bg-dark rounded-2 px-2' : ''}`}
           >
             <FaTicketAlt className="me-2" /> Vouchers
-          </NavLink>
+          </button>
         </li>
 
         <li className="nav-item mb-2">
-          <NavLink
-            to="/admin/reports"
-            className={({ isActive }) =>
-              `nav-link d-flex align-items-center text-white ${isActive ? 'fw-bold bg-dark rounded-2 px-2' : ''}`
-            }
+          <button
+            onClick={() => setActiveTab('reviews')}
+            className={`nav-link d-flex align-items-center text-white w-100 border-0 bg-transparent ${activeTab === 'reviews' ? 'fw-bold bg-dark rounded-2 px-2' : ''}`}
+          >
+            <FaStar className="me-2" /> Reviews
+          </button>
+        </li>
+
+        <li className="nav-item mb-2">
+          <button
+            onClick={() => setActiveTab('reports')}
+            className={`nav-link d-flex align-items-center text-white w-100 border-0 bg-transparent ${activeTab === 'reports' ? 'fw-bold bg-dark rounded-2 px-2' : ''}`}
           >
             <FaChartBar className="me-2" /> Reports
-          </NavLink>
+          </button>
         </li>
       </ul>
 

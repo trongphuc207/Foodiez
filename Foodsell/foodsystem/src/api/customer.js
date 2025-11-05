@@ -106,8 +106,7 @@ export const customerAPI = {
     if (!token) {
       throw new Error('No authentication token found');
     }
-
-    const response = await fetch(`${API_BASE_URL}/customer/profile`, {
+const response = await fetch(`${API_BASE_URL}/customer/profile`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

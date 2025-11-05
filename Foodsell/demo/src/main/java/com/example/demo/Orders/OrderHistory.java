@@ -1,9 +1,9 @@
 package com.example.demo.Orders;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
@@ -15,29 +15,28 @@ public class OrderHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-
-    @Column(name = "order_id", nullable = false)
+    
+    @Column(name = "order_id")
     private Integer orderId;
-
+    
     @Column(name = "status_from")
     private String statusFrom;
-
-    @Column(name = "status_to", nullable = false)
+    
+    @Column(name = "status_to")
     private String statusTo;
-
-    @Column(name = "action", nullable = false)
-    private String action; // payment_success, payment_failed, order_cancelled, etc.
-
-    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
+    
+    @Column(name = "action")
+    private String action;
+    
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
-
+    
     @Column(name = "created_by")
-    private String createdBy; // system, user_id, admin_id
-
-    // Constructor for creating new order history
+    private String createdBy;
+    
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+    
     public OrderHistory(Integer orderId, String statusFrom, String statusTo, 
                        String action, String description, String createdBy) {
         this.orderId = orderId;
@@ -48,8 +47,7 @@ public class OrderHistory {
         this.createdBy = createdBy;
         this.createdAt = LocalDateTime.now();
     }
-
-    // Auto set createdAt when persisting
+    
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) {
@@ -57,3 +55,4 @@ public class OrderHistory {
         }
     }
 }
+

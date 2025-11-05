@@ -20,7 +20,17 @@ public class CategoryService {
     
     // Lấy tất cả categories
     public List<Category> getAllCategories() {
-        return categoryRepository.findAllByOrderByNameAsc();
+        try {
+            System.out.println("🔍 CategoryService.getAllCategories: Fetching categories...");
+            List<Category> categories = categoryRepository.findAllByOrderByNameAsc();
+            System.out.println("✅ CategoryService: Found " + categories.size() + " categories");
+            return categories;
+        } catch (Exception e) {
+            System.err.println("❌ CategoryService.getAllCategories ERROR: " + e.getMessage());
+            System.err.println("❌ Error class: " + e.getClass().getName());
+            e.printStackTrace();
+            throw e;
+        }
     }
     
     // Lấy category theo ID
@@ -127,6 +137,8 @@ public class CategoryService {
             Category nuocUong = new Category("Nước uống", "Beverages including coffee, tea, and soft drinks");
             Category pizza = new Category("Pizza", "Món pizza phong cách Ý, nhiều loại topping đa dạng");
             Category bun = new Category("Bún", "Món bún Việt Nam truyền thống, dùng với thịt, chả");
+            Category mi = new Category("Mì", "Vietnamese noodles, ready to eat");
+            Category cuon = new Category("Cuốn", "Vietnamese spring rolls and wraps, ready to eat");
             
             categoryRepository.save(pho);
             categoryRepository.save(banhMi);
@@ -134,6 +146,8 @@ public class CategoryService {
             categoryRepository.save(nuocUong);
             categoryRepository.save(pizza);
             categoryRepository.save(bun);
+            categoryRepository.save(mi);
+            categoryRepository.save(cuon);
             
             return "Đã tạo " + categoryRepository.count() + " categories mẫu thành công!";
         } catch (Exception e) {

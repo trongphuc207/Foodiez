@@ -1,4 +1,4 @@
-package com.example.demo.shipper;
+package com.example.demo.Shipper;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

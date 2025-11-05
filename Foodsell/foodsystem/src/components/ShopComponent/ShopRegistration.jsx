@@ -164,16 +164,3 @@ const ShopRegistration = () => {
 };
 
 export default ShopRegistration;
-
-
-
-
-
-
-
-
-
-
-
-
-

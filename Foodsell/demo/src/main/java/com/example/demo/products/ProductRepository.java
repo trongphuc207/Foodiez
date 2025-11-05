@@ -16,4 +16,11 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
            "LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<Product> searchProducts(@Param("keyword") String keyword);
+    
+    
+    // Count products by shop
+    long countByShopId(Integer shopId);
+    
+    // Count products by shop and status
+    long countByShopIdAndStatus(Integer shopId, String status);
 }

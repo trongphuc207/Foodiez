@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import SimpleSearch from "../ButtonInputSearch/SimpleSearch";
 import LoginSignUp from "../LoginSignUpComponent/LoginSignUp";
 import Cart from "../CartComponent/Cart";
 import SidebarComponent from "../SidebarComponent/SidebarComponent";
+import NotificationBell from "../NotificationComponent/NotificationBell";
 import { useAuth } from "../../hooks/useAuth";
 import { useCart } from "../../contexts/CartContext";
 import "./Header.css";
@@ -14,6 +14,7 @@ const Header = ({ toggleSidebar }) => {
   const [showCart, setShowCart] = useState(false);
   const [showContactDropdown, setShowContactDropdown] = useState(false);
   const [showNavbar] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState("");
 
   // NEW: state mở modal và mode (login/signup)
   const [showAuth, setShowAuth] = useState(false);
@@ -119,17 +120,31 @@ const Header = ({ toggleSidebar }) => {
 
         <div className="header-center">
           <div className="search-container">
-            <SimpleSearch
-              placeholder="Tìm kiếm món ăn, nhà hàng..."
-              onSearch={handleSearch}
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Tìm kiế"
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearch(searchKeyword);
+                }
+              }}
             />
+            <button
+              className="search-button"
+              onClick={() => handleSearch(searchKeyword)}
+            >
+              Tìm kiếm
+            </button>
           </div>
         </div>
 
         <div className="header-actions">
-          <button className="action-btn notification-btn">
-            🔔<span className="notification-badge">3</span>
-          </button>
+          {isAuthenticated && <NotificationBell />}
+
+          <button className="action-btn chat-btn" onClick={() => navigate('/chat')}>Chat</button>
 
           <div className="contact-wrapper">
             <button
@@ -140,7 +155,7 @@ const Header = ({ toggleSidebar }) => {
                 setShowUserDropdown(false)
               }}
             >
-              📞 Liên hệ
+              <span className="contact-icon">📞</span> Liên hệ
             </button>
 
             {showContactDropdown && (
@@ -155,14 +170,14 @@ const Header = ({ toggleSidebar }) => {
             className="action-btn voucher-btn"
             onClick={() => navigate('/vouchers')}
           >
-            🎫 Voucher
+            <span className="voucher-icon">🎁</span> Voucher
           </button>
 
           <button 
             className="cart-btn"
             onClick={() => setShowCart(true)}
           >
-            🛒 Giỏ hàng ({getTotalItems()})
+            <span className="cart-icon">🛒</span> Giỏ hàng ({getTotalItems()})
           </button>
 
           {user ? (
@@ -170,10 +185,10 @@ const Header = ({ toggleSidebar }) => {
               className="order-btn"
               onClick={() => navigate('/orders')}
             >
-              📦 Đơn hàng của tôi
+              Đơn hàng của tôi
             </button>
           ) : (
-            <button className="order-btn">Đặt hàng ngay</button>
+            <button className="order-btn" onClick={() => navigate('/products')}>Đặt hàng ngay</button>
           )}
 
           <div className="user-dropdown">
@@ -181,7 +196,7 @@ const Header = ({ toggleSidebar }) => {
               className="user-btn"
               onClick={() => setShowUserDropdown(!showUserDropdown)}
             >
-              👤
+              <span className="user-icon">👤</span>
             </button>
             {showUserDropdown && (
               <div className="user-dropdown-menu">
