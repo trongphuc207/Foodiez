@@ -32,7 +32,7 @@ public class Shop {
     private String openingHours;
 
     @Column(name = "rating")
-    private Double rating;
+    private Integer rating;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

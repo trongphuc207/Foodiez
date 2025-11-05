@@ -5,12 +5,18 @@ import { useCart } from "../../contexts/CartContext";
 import { useAuth } from "../../hooks/useAuth";
 import { getShopName } from "../../constants/shopNames";
 import { getCategoryName } from "../../constants/categoryNames";
+import ReviewList from "../ReviewComponent/ReviewList";
+import { useAuth } from "../../hooks/useAuth";
 
 const ProductDetail = ({ product, onClose }) => {
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Debug: Log user info
+  console.log('🔍 ProductDetail Debug:', { user, productId: product?.id, shopId: product?.shopId });
 
   if (!product) return null;
 
@@ -136,6 +142,16 @@ const ProductDetail = ({ product, onClose }) => {
               </div>
             )}
           </div>
+        </div>
+        
+        {/* Review Section */}
+        <div className="product-reviews-section">
+          <ReviewList 
+            productId={product.id}
+            shopId={product.shopId}
+            userRole={user?.role}
+            currentUserId={user?.id}
+          />
         </div>
       </div>
     </div>

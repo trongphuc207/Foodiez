@@ -10,12 +10,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
+
+    @Autowired
+    private OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -38,9 +42,30 @@ public class SecurityConfig {
                 .requestMatchers("/test/**").permitAll()
                 .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/login/oauth2/code/**").permitAll()
+                .requestMatchers("/oauth2/authorization/**").permitAll()
+                .requestMatchers("/ws-chat/**").permitAll()
                 
                 // Voucher endpoints (public for now, can be restricted later)
                 .requestMatchers("/api/vouchers/**").permitAll()
+                
+                // Review endpoints (public for reading reviews and stats)
+                .requestMatchers("/api/reviews/product/**").permitAll()
+                .requestMatchers("/api/reviews/shop/**").permitAll()
+                .requestMatchers("/api/reviews/*/replies").permitAll()
+                // .requestMatchers("/api/reviews").permitAll() // POST reviews cần authentication
+                
+                // Notification system endpoints (public for system calls)
+                .requestMatchers("/api/notifications/system/**").permitAll()
+                // User notification endpoints (require authentication)
+                .requestMatchers("/api/notifications/my-notifications").authenticated()
+                .requestMatchers("/api/notifications/unread").authenticated()
+                .requestMatchers("/api/notifications/unread-count").authenticated()
+                .requestMatchers("/api/notifications/*/read").authenticated()
+                .requestMatchers("/api/notifications/mark-all-read").authenticated()
+                // Admin notification endpoints
+                .requestMatchers("/api/notifications").hasAnyRole("ADMIN", "admin")
+                .requestMatchers("/api/notifications/*").hasAnyRole("ADMIN", "admin")
+                .requestMatchers("/api/notifications/admin/**").hasAnyRole("ADMIN", "admin")
                 
                 // Customer endpoints (accessible by all authenticated users)
                 .requestMatchers("/api/customer/**").authenticated()
@@ -57,6 +82,9 @@ public class SecurityConfig {
                 
                 // Admin endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                // Chat endpoints
+                .requestMatchers("/api/chat/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/chat/**").authenticated()
                 
                 // Order status update endpoint (for payment callbacks)
                 .requestMatchers(HttpMethod.PUT, "/api/orders/customer/orders/*/status")
@@ -65,6 +93,11 @@ public class SecurityConfig {
                 // All other requests need authentication
                 .anyRequest().authenticated()
             )
+            // OAuth2 temporarily disabled for testing
+            // .oauth2Login(oauth2 -> oauth2
+            //     .successHandler(oAuth2SuccessHandler)
+            //     .defaultSuccessUrl("http://localhost:3000/auth/success", true)
+            // )
             .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

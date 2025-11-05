@@ -26,7 +26,7 @@ public class Shipper {
     private Boolean isAvailable = true;
 
     @Column(name = "rating")
-    private Double rating = 0.0;
+    private Integer rating = 0;
 
     @Column(name = "total_deliveries")
     private Integer totalDeliveries = 0;
@@ -69,8 +69,8 @@ public class Shipper {
     public Boolean getIsAvailable() { return isAvailable; }
     public void setIsAvailable(Boolean isAvailable) { this.isAvailable = isAvailable; }
 
-    public Double getRating() { return rating; }
-    public void setRating(Double rating) { this.rating = rating; }
+    public Integer getRating() { return rating; }
+    public void setRating(Integer rating) { this.rating = rating; }
 
     public Integer getTotalDeliveries() { return totalDeliveries; }
     public void setTotalDeliveries(Integer totalDeliveries) { this.totalDeliveries = totalDeliveries; }

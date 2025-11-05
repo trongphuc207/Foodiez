@@ -53,7 +53,7 @@ public class ShipperService {
     }
     
     // Cập nhật rating
-    public Shipper updateRating(Integer userId, Double newRating) {
+    public Shipper updateRating(Integer userId, Integer newRating) {
         Optional<Shipper> shipper = shipperRepository.findByUserId(userId);
         if (shipper.isEmpty()) {
             throw new RuntimeException("Shipper not found");

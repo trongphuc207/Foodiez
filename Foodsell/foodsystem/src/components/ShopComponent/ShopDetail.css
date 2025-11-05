@@ -59,6 +59,16 @@
   color: #e55a2b;
 }
 
+.shop-reviews-section {
+  margin-top: 30px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.breadcrumb span:not(:last-child) {
+  margin-right: 8px;
 .breadcrumb .separator {
   color: #adb5bd;
   cursor: default;
@@ -142,6 +152,15 @@
   font-weight: 500;
 }
 
+/* Use dynamic review count rendered from API */
+.shop-rating-section .review-count { display: none; }
+.shop-rating-section .review-count-dynamic {
+  color: #666;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.shop-hours {
 .rating-modern {
   display: flex;
   align-items: center;

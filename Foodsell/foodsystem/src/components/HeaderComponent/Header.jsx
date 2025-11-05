@@ -4,6 +4,7 @@ import SimpleSearch from "../ButtonInputSearch/SimpleSearch";
 import LoginSignUp from "../LoginSignUpComponent/LoginSignUp";
 import Cart from "../CartComponent/Cart";
 import SidebarComponent from "../SidebarComponent/SidebarComponent";
+import NotificationBell from "../NotificationComponent/NotificationBell";
 import { useAuth } from "../../hooks/useAuth";
 import { useCart } from "../../contexts/CartContext";
 import "./Header.css";
@@ -126,9 +127,9 @@ const Header = ({ toggleSidebar }) => {
         </div>
 
         <div className="header-actions">
-          <button className="action-btn notification-btn">
-            🔔<span className="notification-badge">3</span>
-          </button>
+          {isAuthenticated && <NotificationBell />}
+
+          <button className="action-btn" onClick={() => navigate('/chat')}>Chat</button>
 
           <button className="action-btn contact-btn">📞 Liên hệ</button>
 
