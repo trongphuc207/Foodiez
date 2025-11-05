@@ -98,6 +98,9 @@ const ChatWindow = ({ conversation }) => {
     alert('Đã gửi báo cáo');
   }
 
+  const fmtTime = (iso) => new Date(iso).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  const fmtDate = (iso) => new Date(iso).toLocaleDateString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit' });
+
   if (!conversation) return <div className="chat-window"><div className="chat-empty">{'Chọn một cuộc trò chuyện để bắt đầu'}</div></div>;
 
   return (
@@ -106,19 +109,30 @@ const ChatWindow = ({ conversation }) => {
         <div className="title">{conversation.title || `Cuộc trò chuyện #${conversation.id}`}</div>
         <div className="right"><a onClick={()=>window.location.reload()}>{'Làm mới'}</a></div>
       </div>
-      <div ref={listRef} className="chat-messages">
-        {messages.map(m => {
-          const sid = m.senderId ?? m.sender?.id;
-          return (
-          <div key={m.id} className={`chat-message ${sid===user?.id? 'mine':'other'}`}>
-            <div>{m.content}</div>
-            <div className="chat-tools">
-              <span className="time">{new Date(m.createdAt).toLocaleString('vi-VN')}</span>
-              <span className="report-link" onClick={()=>report(m.id)}>{'Báo cáo'}</span>
-            </div>
-          </div>
-        )})}
-      </div>
+      <div ref={listRef} className="chat-messages">{
+        (() => {
+          const out = [];
+          let lastDate = '';
+          (messages||[]).forEach((m) => {
+            const sid = m.senderId ?? m.sender?.id;
+            const d = fmtDate(m.createdAt);
+            if (d !== lastDate) {
+              out.push(<div key={`d-${d}-${m.id}`} className="date-sep">{d}</div>);
+              lastDate = d;
+            }
+            out.push(
+              <div key={m.id} className={`chat-message ${sid===user?.id? 'mine':'other'}`}>
+                <div>{m.content}</div>
+                <div className="chat-tools">
+                  <span className="time">{fmtTime(m.createdAt)}</span>
+                  <span className="report-link" onClick={()=>report(m.id)}>{'Báo cáo'}</span>
+                </div>
+              </div>
+            );
+          });
+          return out;
+        })()
+      }</div>
       <div className="chat-input">
         <textarea rows={1} value={text} onChange={(e)=>setText(e.target.value)} placeholder={'Nhập tin nhắn...'} onKeyDown={(e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } }} />
         <button onClick={send} disabled={!text.trim()}>{'Gửi'}</button>
