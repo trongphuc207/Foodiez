@@ -20,7 +20,17 @@ public class CategoryService {
     
     // Lấy tất cả categories
     public List<Category> getAllCategories() {
-        return categoryRepository.findAllByOrderByNameAsc();
+        try {
+            System.out.println("🔍 CategoryService.getAllCategories: Fetching categories...");
+            List<Category> categories = categoryRepository.findAllByOrderByNameAsc();
+            System.out.println("✅ CategoryService: Found " + categories.size() + " categories");
+            return categories;
+        } catch (Exception e) {
+            System.err.println("❌ CategoryService.getAllCategories ERROR: " + e.getMessage());
+            System.err.println("❌ Error class: " + e.getClass().getName());
+            e.printStackTrace();
+            throw e;
+        }
     }
     
     // Lấy category theo ID

@@ -15,6 +15,7 @@ import ShopRegistration from '../components/ShopComponent/ShopRegistration';
 import ShopDashboard from '../components/ShopComponent/ShopDashboard';
 import CategoryManagement from '../components/CategoryComponent/CategoryManagement';
 import ShopManagement from '../components/ShopManagementComponent/ShopManagement';
+import ProductFormPage from '../components/ShopManagementComponent/ProductFormPage';
 import SellerApp from '../components/SellerComponent/SellerApp';
 import CheckoutPage from '../Page/CheckoutPage/CheckoutPage';
 import PaymentSuccessPage from '../Page/PaymentSuccessPage/PaymentSuccessPage';
@@ -97,6 +98,16 @@ export const routes = [
     {
         path: '/shop-management',
         component: ShopManagement,
+        isShowHeader: true
+    },
+    {
+        path: '/shop-management/products/:productId/edit',
+        component: ProductFormPage,
+        isShowHeader: true
+    },
+    {
+        path: '/shop-management/products/new',
+        component: ProductFormPage,
         isShowHeader: true
     },
     {

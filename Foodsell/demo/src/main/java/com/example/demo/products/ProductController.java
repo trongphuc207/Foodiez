@@ -38,6 +38,28 @@ public class ProductController {
             return ResponseEntity.status(500).body(ApiResponse.error("Lỗi khi lấy sản phẩm theo shop: " + e.getMessage()));
         }
     }
+    
+    // GET: Lấy sản phẩm theo ID
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<Product>> getProductById(@PathVariable int id) {
+        try {
+            System.out.println("📤 GET /api/products/" + id + " - Fetching product...");
+            Optional<Product> productOpt = service.getProductById(id);
+            if (productOpt.isPresent()) {
+                Product product = productOpt.get();
+                System.out.println("✅ Product found: ID=" + product.getId() + ", Name=" + product.getName());
+                return ResponseEntity.ok(ApiResponse.success(product, "Lấy sản phẩm thành công"));
+            } else {
+                System.out.println("❌ Product not found with ID: " + id);
+                return ResponseEntity.status(404).body(ApiResponse.error("Không tìm thấy sản phẩm với ID: " + id));
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Error in getProductById: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(ApiResponse.error("Lỗi khi lấy sản phẩm: " + e.getMessage()));
+        }
+    }
+    
     // GET: Tìm kiếm sản phẩm
     @GetMapping("/search")
     public List<Product> searchProducts(@RequestParam String keyword) {

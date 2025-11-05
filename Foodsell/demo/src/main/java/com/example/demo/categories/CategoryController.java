@@ -42,12 +42,14 @@ public class CategoryController {
                     logger.info("✅ Auto-seeded {} categories", categories.size());
                 } catch (Exception seedError) {
                     logger.error("❌ Auto-seed failed: {}", seedError.getMessage());
+                    seedError.printStackTrace();
                 }
             }
             
             return ResponseEntity.ok(ApiResponse.success(categories, "Lấy danh sách categories thành công"));
         } catch (Exception e) {
             logger.error("❌ Error getting categories: {}", e.getMessage(), e);
+            e.printStackTrace();
             return ResponseEntity.status(500).body(ApiResponse.error("Lỗi khi lấy danh sách categories: " + e.getMessage()));
         }
     }
