@@ -14,11 +14,12 @@ import './ShopManagement.css';
 const ShopManagement = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('products');
   const [showShopForm, setShowShopForm] = useState(false);
   const [showRatings, setShowRatings] = useState(false);
+  const [showProductForm, setShowProductForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
   // Form states
   const [productForm, setProductForm] = useState({
     name: '',
@@ -442,58 +443,11 @@ const createProductMutation = useMutation({
     console.log('Submitting shop update:', updateData);
     updateShopMutation.mutate({ id: shopData?.data?.id, data: updateData });
   };
-  const handleEditProduct = async (product) => {
-    console.log('Editing product:', product);
-    console.log('Product status:', product.status);
-    console.log('Product is_available:', product.is_available);
-    
-    try {
-      // Fetch detailed product info from database
-      const detailedProduct = await productAPI.getProductById(product.id);
-      console.log('Detailed product from API:', detailedProduct);
-      
-      const productData = detailedProduct.data || detailedProduct;
-      
-      // Get status value (priority: API data > product data > default)
-      let statusValue = 'active';
-      if (productData.status) {
-        statusValue = productData.status;
-      } else if (product.status) {
-        statusValue = product.status;
-      }
-      
-      console.log('Final status value:', statusValue);
-      
-      setEditingProduct(productData);
-      setProductForm({
-        name: productData.name || product.name,
-        description: productData.description || product.description,
-        price: (productData.price || product.price).toString(),
-        categoryId: productData.categoryId || product.categoryId,
-        image: null,
-        is_available: productData.is_available !== undefined ? productData.is_available : product.available,
-        status: statusValue
-      });
-      setProductImageUrl(productData.imageUrl || product.imageUrl);
-      setShowProductForm(true);
-    } catch (error) {
-      console.error('Error fetching product details:', error);
-      // Fallback to original product data
-      setEditingProduct(product);
-      setProductForm({
-        name: product.name,
-        description: product.description,
-        price: product.price.toString(),
-        categoryId: product.categoryId,
-        image: null,
-        status: product.status || 'active'
-      });
-      setShowProductForm(true);
-    }
-
   const handleEditProduct = (product) => {
+    // Navigate to edit page instead of showing modal
     navigate(`/shop-management/products/${product.id}/edit`);
   };
+
   const handleDeleteProduct = (productId) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa món ăn này?')) {
       deleteProductMutation.mutate(productId);
@@ -584,129 +538,6 @@ const createProductMutation = useMutation({
               Thêm món ăn
             </button>
           </div>
-          {showProductForm && (
-            <div className="modal-overlay" onClick={() => setShowProductForm(false)}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <h3>{editingProduct ? 'Sửa món ăn' : 'Thêm món ăn mới'}</h3>
-                <form onSubmit={handleProductSubmit}>
-                  <div className="form-group">
-                    <label>Tên món ăn:</label>
-                    <input
-                      type="text"
-                      value={productForm.name}
-                      onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Mô tả:</label>
-                    <textarea
-                      value={productForm.description}
-                      onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Giá (VND):</label>
-                    <input
-                      type="number"
-                      value={productForm.price}
-                      onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                      required
-                    />
-                  </div>
-                   <div className="form-group">
-                     <label>Danh mục:</label>
-                     <select
-                       value={productForm.categoryId}
-                       onChange={(e) => setProductForm({ ...productForm, categoryId: e.target.value })}
-                       required
-                       disabled={categoriesLoading}
-                     >
-                       <option value="">
-                         {categoriesLoading ? 'Đang tải danh mục...' : 'Chọn danh mục'}
-                       </option>
-                       {categoriesData?.data?.map(category => (
-                         <option key={category.id} value={category.id}>
-                           {category.name}
-                         </option>
-                       ))}
-                     </select>
-                     {categoriesError && (
-                       <div className="error-message">
-                         Lỗi khi tải danh mục từ server. Đang sử dụng danh mục mặc định.
-                       </div>
-                     )}
-                   </div>
-                  <div className="form-group">
-                    <label>Ảnh món ăn:</label>
-                    {editingProduct ? (
-                      <ImageUpload
-                        productId={editingProduct.id}
-                        currentImageUrl={productImageUrl}
-                        onImageUpdate={(newImageUrl) => {
-                          setProductImageUrl(newImageUrl);
-                          // Update the product in the list
-                          queryClient.invalidateQueries(['products']);
-                        }}
-                      />
-                    ) : (
-                      <div className="image-upload-section">
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                          onChange={handleImageChange}
-                        />
-                        {productForm.image && (
-                          <div className="file-info">
-                            <p>File đã chọn: {productForm.image.name}</p>
-                            <p>Kích thước: {(productForm.image.size / 1024 / 1024).toFixed(2)} MB</p>
-                          </div>
-                        )}
-                        {isUploadingImage && (
-                          <div className="upload-status">
-                            <p>Đang upload ảnh...</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="form-group">
-                    <label>Tình trạng sẵn có:</label>
-                    <select
-                      value={productForm.is_available}
-                      onChange={(e) => setProductForm({ ...productForm, is_available: e.target.value === 'true' })}
-                    >
-                      <option value={true}>Có sẵn</option>
-                      <option value={false}>Không có sẵn</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Trạng thái bán hàng:</label>
-                    <select
-                      value={productForm.status}
-                      onChange={(e) => setProductForm({ ...productForm, status: e.target.value })}
-                    >
-                      <option value="active">Đang bán</option>
-                      <option value="inactive">Tạm ngừng bán</option>
-                      <option value="out_of_stock">Hết hàng</option>
-                    </select>
-                  </div>
-                  <div className="form-actions">
-                    <button type="button" onClick={() => setShowProductForm(false)}>
-                      Hủy
-                    </button>
-                    <button type="submit" disabled={createProductMutation.isPending || updateProductMutation.isPending}>
-                      {createProductMutation.isPending || updateProductMutation.isPending ? 
-                        'Đang xử lý...' : 
-                        (editingProduct ? 'Cập nhật' : 'Thêm món')
-                      }
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
 
           <div className="products-list">
             {productsLoading ? (

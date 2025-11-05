@@ -19,9 +19,7 @@ const ShopDetail = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
   const [reviewStats, setReviewStats] = useState({ averageRating: 0, reviewCount: 0 });
-  // Đã xóa selectedCategory vì không còn menu categories
   const [searchKeyword, setSearchKeyword] = useState('');
   const [productQuantities, setProductQuantities] = useState({});
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -115,8 +113,6 @@ const ShopDetail = () => {
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchKeyword.toLowerCase()) ||
                           product.description.toLowerCase().includes(searchKeyword.toLowerCase());
-    return matchesCategory && matchesSearch;
-                         product.description.toLowerCase().includes(searchKeyword.toLowerCase());
     return matchesSearch;
   });
 
@@ -154,45 +150,7 @@ const ShopDetail = () => {
         <span>{shop.name}</span>
       </div>
 
-      {/* Main Shop Information Card */}
-      <div className="shop-info-card">
-        <div className="shop-header">
-          <h1 className="shop-name">{shop.name}</h1>
-
-          <div className="shop-address">
-            <span className="address-icon">{'\uD83D\uDCCD'}</span>
-            <span>{shop.address}</span>
-          </div>
-
-          <div className="shop-rating-section">
-            <div className="rating">
-              {renderStars(reviewStats.averageRating || 0)}
-              <span className="rating-text">{(reviewStats.averageRating || 0).toFixed(1)}</span>
-            </div>
-            <span className="review-count">{'999+ đánh giá'}</span>
-          </div>
-
-          <span className="review-count-dynamic">{reviewStats.reviewCount > 999 ? '999+' : reviewStats.reviewCount} {'đánh giá'}</span>
-          <div className="shop-hours">
-            <span className="hours-icon">{'\uD83D\uDD52'}</span>
-            <span>{'Mở cửa'} {shop.openingHours || '8AM-10PM'}</span>
-          </div>
-
-          <div className="shop-price-range">
-            <span>{'Giá: $25.000 - $40.000'}</span>
-          </div>
-
-          <div className="shop-service-info">
-            <div className="service-fee">{'Phí dịch vụ 0.0% Quán đối tác'}</div>
-            <div className="service-by">{'Dịch vụ bởi FoodieExpress'}</div>
-        <span onClick={() => navigate('/')}>Trang chủ</span>
-        <span className="separator">›</span>
-        <span onClick={() => navigate('/shops')}>Cửa hàng</span>
-        <span className="separator">›</span>
-        <span className="current">{shop.name}</span>
-      </div>
-
-      {/* Hero Section - Shop Information */}
+      {/* Hero Section - Shop Information with Gradient */}
       <div className="shop-hero-section">
         <div className="shop-hero-content">
           <div className="shop-header-modern">
@@ -206,10 +164,12 @@ const ShopDetail = () => {
               
               <div className="meta-item">
                 <div className="rating-modern">
-                  {renderStars(shop.rating)}
-                  <span className="rating-text-modern">{shop.rating.toFixed(1)}</span>
+                  {renderStars(reviewStats.averageRating || 0)}
+                  <span className="rating-text-modern">{(reviewStats.averageRating || 0).toFixed(1)}</span>
                 </div>
-                <span className="review-count-modern">999+ đánh giá</span>
+                <span className="review-count-modern">
+                  {reviewStats.reviewCount > 999 ? '999+' : reviewStats.reviewCount} đánh giá
+                </span>
               </div>
               
               <div className="meta-item">
@@ -231,45 +191,11 @@ const ShopDetail = () => {
           </div>
         </div>
       </div>
+
       <div style={{ margin: '8px 0 16px' }}>
         <button className="btn btn-primary" onClick={startChat}>Chat</button>
       </div>
 
-      {/* Bottom Section with Menu, Products, and QR */}
-      <div className="bottom-section">
-        {/* Left Column - Menu Categories */}
-        <div className="menu-categories">
-          <div className="menu-header">{'THỰC ĐƠN'}</div>
-          <div className="category-list">
-            <div
-              className={`category-item ${selectedCategory === 'all' ? 'active' : ''}`}
-              onClick={() => setSelectedCategory('all')}
-            >
-              {'Tất cả món'}
-            </div>
-            <div
-              className={`category-item ${selectedCategory === '1' ? 'active' : ''}`}
-              onClick={() => setSelectedCategory('1')}
-            >
-              {'Món chính'}
-            </div>
-            <div
-              className={`category-item ${selectedCategory === '2' ? 'active' : ''}`}
-              onClick={() => setSelectedCategory('2')}
-            >
-              {'Combo siêu khủng'}
-            </div>
-            <div
-              className={`category-item ${selectedCategory === '3' ? 'active' : ''}`}
-              onClick={() => setSelectedCategory('3')}
-            >
-              {'Món ăn thêm'}
-            </div>
-            <div
-              className={`category-item ${selectedCategory === '4' ? 'active' : ''}`}
-              onClick={() => setSelectedCategory('4')}
-            >
-              {'Đồ uống'}
       {/* Products Section */}
       <div className="products-section-modern">
         {/* Promotion Banner */}
@@ -289,18 +215,6 @@ const ShopDetail = () => {
           </div>
         </div>
 
-        {/* Right Column - Products */}
-        <div className="products-section">
-          {/* Search */}
-          <div className="search-section">
-            <div className="search-bar">
-              <input
-                type="text"
-                placeholder={'Tìm món'}
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-              />
-            </div>
         {/* Search Bar */}
         <div className="search-section-modern">
           <div className="search-bar-modern">
@@ -326,71 +240,6 @@ const ShopDetail = () => {
             <span className="count-label">món ăn</span>
           </div>
         </div>
-
-          <div className="products-list">
-            <h3>{`Tất cả món (${filteredProducts.length} món)`}</h3>
-
-            {filteredProducts.length === 0 ? (
-              <div className="no-products">
-                <p>{'Không tìm thấy món ăn nào'}</p>
-              </div>
-            ) : (
-              <div className="products-grid">
-                {filteredProducts.map((product) => (
-                  <div key={product.id} className="product-card" onClick={() => handleProductClick(product.id)}>
-                    <div className="product-image">
-                      <img
-                        src={product.imageUrl || '/placeholder.jpg'}
-                        alt={product.name}
-                        onError={(e) => { e.target.src = '/placeholder.jpg'; }}
-                      />
-                    </div>
-                    <div className="product-info">
-                      <h4 className="product-name">{product.name}</h4>
-                      <p className="product-description">{product.description}</p>
-                      <div className="product-price">{product.price.toLocaleString('vi-VN')} VND</div>
-                      <div className="product-status">
-                        {!product.available ? (
-                          <span className="out-of-stock">{'✗ Không có sẵn'}</span>
-                        ) : product.status === 'out_of_stock' ? (
-                          <span className="out-of-stock">{'✗ Hết hàng'}</span>
-                        ) : (
-                          <span className="in-stock">{'✓ Còn hàng'}</span>
-                        )}
-                      </div>
-
-                      {/* Add to Cart Section */}
-                      {product.available && product.status !== 'out_of_stock' && (
-                        <div className="add-to-cart-section">
-                          <div className="quantity-selector">
-                            <label className="quantity-label">{'Số lượng:'}</label>
-                            <div className="quantity-controls">
-                              <button
-                                className="quantity-btn minus"
-                                onClick={(e) => { e.stopPropagation(); handleQuantityChange(product.id, -1); }}
-                              >
-                                -
-                              </button>
-                              <input
-                                type="number"
-                                className="quantity-input"
-                                value={productQuantities[product.id] || 1}
-                                onChange={(e) => setProductQuantities(prev => ({ ...prev, [product.id]: Math.max(1, parseInt(e.target.value) || 1) }))}
-                                min="1"
-                              />
-                              <button
-                                className="quantity-btn plus"
-                                onClick={(e) => { e.stopPropagation(); handleQuantityChange(product.id, 1); }}
-                              >
-                                +
-                              </button>
-                            </div>
-                          </div>
-                          <button
-                            className="add-to-cart-btn"
-                            onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}
-                          >
-                            {'Thêm vào giỏ hàng'}
         {/* Products Grid */}
         <div className="products-list-modern">
           {filteredProducts.length === 0 ? (
@@ -493,4 +342,5 @@ const ShopDetail = () => {
 };
 
 export default ShopDetail;
+
 

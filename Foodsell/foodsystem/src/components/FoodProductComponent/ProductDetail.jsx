@@ -6,7 +6,6 @@ import { useAuth } from "../../hooks/useAuth";
 import { getShopName } from "../../constants/shopNames";
 import { getCategoryName } from "../../constants/categoryNames";
 import ReviewList from "../ReviewComponent/ReviewList";
-import { useAuth } from "../../hooks/useAuth";
 
 const ProductDetail = ({ product, onClose }) => {
   const [quantity, setQuantity] = useState(1);

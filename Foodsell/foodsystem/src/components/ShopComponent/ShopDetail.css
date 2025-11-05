@@ -69,6 +69,8 @@
 
 .breadcrumb span:not(:last-child) {
   margin-right: 8px;
+}
+
 .breadcrumb .separator {
   color: #adb5bd;
   cursor: default;
@@ -141,6 +143,7 @@
   padding: 12px 20px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-wrap: wrap;
 }
 
 .meta-icon {
@@ -160,11 +163,15 @@
   font-weight: 500;
 }
 
-.shop-hours {
 .rating-modern {
   display: flex;
   align-items: center;
   gap: 6px;
+  color: white;
+}
+
+.rating-modern .star {
+  color: #ffd700;
 }
 
 .star {
@@ -177,12 +184,15 @@
   font-size: 1.2rem;
   font-weight: 700;
   margin-left: 4px;
+  color: white;
 }
 
 .review-count-modern {
   font-size: 0.9rem;
   opacity: 0.9;
-  margin-left: 8px;
+  margin-left: 12px;
+  color: white;
+  white-space: nowrap;
 }
 
 .shop-badges {
