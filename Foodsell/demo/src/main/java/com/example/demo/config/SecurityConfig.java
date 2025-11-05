@@ -11,7 +11,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -37,7 +36,6 @@ public class SecurityConfig {
                 .requestMatchers("/api/products/**").permitAll()
                 .requestMatchers("/api/categories/**").permitAll()
                 .requestMatchers("/api/shops/**").permitAll()
-                .requestMatchers("/api/orders/debug/**").permitAll()
                 .requestMatchers("/api/payos/**").permitAll()
                 .requestMatchers("/test/**").permitAll()
                 .requestMatchers("/uploads/**").permitAll()
@@ -69,26 +67,17 @@ public class SecurityConfig {
                 
                 // Customer endpoints (accessible by all authenticated users)
                 .requestMatchers("/api/customer/**").authenticated()
-                .requestMatchers("/api/orders/buyer/**").authenticated()
-                .requestMatchers("/api/orders").authenticated()
                 .requestMatchers("/api/cart/**").authenticated()
                 .requestMatchers("/api/favorites/**").authenticated()
                 
                 // Seller endpoints
                 .requestMatchers("/api/seller/**").hasAnyRole("SELLER", "ADMIN")
                 
-                // Shipper endpoints  
-                .requestMatchers("/api/shipper/**").hasAnyRole("SHIPPER", "ADMIN")
-                
                 // Admin endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // Chat endpoints
                 .requestMatchers("/api/chat/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/chat/**").authenticated()
-                
-                // Order status update endpoint (for payment callbacks)
-                .requestMatchers(HttpMethod.PUT, "/api/orders/customer/orders/*/status")
-                .permitAll()
                 
                 // All other requests need authentication
                 .anyRequest().authenticated()

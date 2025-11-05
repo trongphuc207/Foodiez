@@ -1,6 +1,5 @@
 import HomePage from '../Page/HomePage/HomePage';
 import { Navigate } from 'react-router-dom';
-import OrderPage from '../Page/OrderPage/OrderPage';
 import ProductPage from '../Page/productPPage/productPage';
 import NotFoundPage from '../Page/NotFoundPage/NotFoundPage';
 import InformationPage from '../Page/InformationPage/InformationPage';
@@ -20,12 +19,6 @@ import SellerApp from '../components/SellerComponent/SellerApp';
 import CheckoutPage from '../Page/CheckoutPage/CheckoutPage';
 import PaymentSuccessPage from '../Page/PaymentSuccessPage/PaymentSuccessPage';
 import PaymentCancelPage from '../Page/PaymentCancelPage/PaymentCancelPage';
-import ShipperDashboardPage from '../Page/ShipperDashboardPage/ShipperDashboardPage';
-import ShipperOrdersPage from '../Page/ShipperOrdersPage/ShipperOrdersPage';
-import ShipperEarningsPage from '../Page/ShipperEarningsPage/ShipperEarningsPage';
-import ShipperHistoryPage from '../Page/ShipperHistoryPage/ShipperHistoryPage';
-import ShipperMapPage from '../Page/ShipperMapPage/ShipperMapPage';
-import ShipperOverviewPage from '../Page/ShipperOverviewPage/ShipperOverviewPage';
 import VoucherPage from '../Page/VoucherPage/VoucherPage';
 import RouteGuard from '../components/RouteGuard/RouteGuard';
 import Unauthorized from '../components/Unauthorized/Unauthorized';
@@ -40,11 +33,6 @@ export const routes = [
     {
         path: '/chat',
         component: ChatPage,
-        isShowHeader: true
-    },
-    {
-        path: '/orders',
-        component: OrderPage,
         isShowHeader: true
     },
     {
@@ -134,65 +122,6 @@ export const routes = [
     {
         path: '/payment/cancel',
         component: PaymentCancelPage,
-        isShowHeader: false
-    },
-    {
-        path: '/shipper',
-        component: () => <Navigate to="/shipper/dashboard" replace />,
-        isShowHeader: false
-    },
-    {
-        path: '/shipper/dashboard',
-        component: () => (
-            <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">
-                <ShipperDashboardPage />
-            </RouteGuard>
-        ),
-        isShowHeader: false
-    },
-    {
-        path: '/shipper/orders',
-        component: () => (
-            <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">
-                <ShipperOrdersPage />
-            </RouteGuard>
-        ),
-        isShowHeader: false
-    },
-    {
-        path: '/shipper/earnings',
-        component: () => (
-            <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">
-                <ShipperEarningsPage />
-            </RouteGuard>
-        ),
-        isShowHeader: false
-    },
-    {
-        path: '/shipper/history',
-        component: () => (
-            <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">
-                <ShipperHistoryPage />
-            </RouteGuard>
-        ),
-        isShowHeader: false
-    },
-    {
-        path: '/shipper/map',
-        component: () => (
-            <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">
-                <ShipperMapPage />
-            </RouteGuard>
-        ),
-        isShowHeader: false
-    },
-    {
-        path: '/shipper/overview',
-        component: () => (
-            <RouteGuard requiredRole="shipper" redirectTo="/unauthorized">
-                <ShipperOverviewPage />
-            </RouteGuard>
-        ),
         isShowHeader: false
     },
     {

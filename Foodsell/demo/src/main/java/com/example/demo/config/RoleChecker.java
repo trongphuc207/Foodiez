@@ -47,10 +47,6 @@ public class RoleChecker {
         return hasRole("seller");
     }
     
-    public boolean isShipper() {
-        return hasRole("shipper");
-    }
-    
     public boolean isAdmin() {
         return hasRole("admin");
     }

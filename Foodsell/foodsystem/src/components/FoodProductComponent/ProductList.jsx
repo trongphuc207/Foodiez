@@ -44,10 +44,39 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
     }
   }, [externalProducts])
 
-  // lọc theo category 
+  // Reset trang về 1 khi category thay đổi
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [category])
+
+  // lọc theo category - đảm bảo so sánh đúng type (số)
   const filteredProducts = category
-    ? products.filter((p) => p.categoryId === category)
+    ? products.filter((p) => {
+        // Chuyển đổi cả hai về số để so sánh
+        const productCategoryId = Number(p.categoryId)
+        const selectedCategoryId = Number(category)
+        const matches = productCategoryId === selectedCategoryId
+        return matches
+      })
     : products
+
+  // Debug logging
+  useEffect(() => {
+    if (category) {
+      console.log("🔍 Filtering by category:", {
+        selectedCategory: category,
+        selectedCategoryType: typeof category,
+        totalProducts: products.length,
+        filteredProducts: filteredProducts.length,
+        sampleProductCategoryIds: products.slice(0, 3).map(p => ({
+          id: p.id,
+          name: p.name,
+          categoryId: p.categoryId,
+          categoryIdType: typeof p.categoryId
+        }))
+      })
+    }
+  }, [category, products, filteredProducts])
 
   // Tính toán phân trang
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
