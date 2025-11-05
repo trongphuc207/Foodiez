@@ -54,7 +54,6 @@ const SidebarComponent = ({ isOpen, onClose }) => {
     { icon: <FiSettings />, label: 'Cài đặt', path: '/shipper/settings' }
   ]
 
-  // >>>> THÊM MENU ADMIN <<<<
   const adminMenuItems = [
     { icon: <FiHome />, label: 'Trang quản trị', path: '/admin' },
     { icon: <FiBarChart />, label: 'Analytics', path: '/admin/analytics' },

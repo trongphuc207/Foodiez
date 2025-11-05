@@ -90,7 +90,7 @@ public class ShopService {
     public Shop updateShopRating(int id, Integer rating) {
         Shop shop = shopRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Shop not found with id: " + id));
-        shop.setRating(rating);
+        shop.setRating(rating != null ? rating.floatValue() : null);
         return shopRepository.save(shop);
     }
     

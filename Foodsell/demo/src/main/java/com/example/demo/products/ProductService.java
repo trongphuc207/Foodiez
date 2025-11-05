@@ -32,27 +32,35 @@ public class ProductService {
         return null;
     }
 
+    // Get all approved products for customers
     public List<Product> getAllProducts() {
+        return repo.findAllApprovedProducts(); // Only show approved products
+    }
+    
+    // Get all products including pending/rejected (for admin/seller)
+    public List<Product> getAllProductsForManagement() {
         return repo.findAll();
     }
+    
     public List<Product> searchProducts(String keyword) {
         System.out.println("🔍 Searching for keyword: '" + keyword + "'");
         
-        // Thử cả 2 cách search
-        List<Product> results1 = repo.findByNameContainingIgnoreCase(keyword);
-        List<Product> results2 = repo.searchProducts(keyword);
+        // Chỉ search trong sản phẩm đã duyệt
+        List<Product> results = repo.searchProducts(keyword);
         
-        System.out.println("📦 findByNameContainingIgnoreCase found: " + results1.size() + " products");
-        System.out.println("📦 searchProducts found: " + results2.size() + " products");
+        System.out.println("📦 searchProducts found: " + results.size() + " approved products");
         
-        // Trả về kết quả từ method nào có kết quả
-        return results1.size() > 0 ? results1 : results2;
+        return results;
     }
     
     public List<Product> getProductsByShopId(int shopId) {
         return repo.findByShopId(shopId);
     }
     public Product createProduct(Product product) {
+        // Set approval status to 'pending' for new products
+        if (product.getApprovalStatus() == null || product.getApprovalStatus().isEmpty()) {
+            product.setApprovalStatus("pending");
+        }
         return repo.save(product);
     }
     
@@ -77,6 +85,10 @@ public class ProductService {
     
     public Product updateProduct(Product product) {
         return repo.save(product);
+    }
+
+    public void deleteProductById(int id) {
+        repo.deleteById(id);
     }
     
     public String seedData() {

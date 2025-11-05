@@ -617,6 +617,49 @@ const createProductMutation = useMutation({
                       </span>
                     </div>
                   </div>
+                  
+                  {/* Approval Status - Top Left Corner */}
+                  <div className="approval-status-badge">
+                    {(() => {
+                      const approvalStatus = product.approvalStatus || product.approval_status || 'pending';
+                      const rejectionReason = product.rejectionReason || product.rejection_reason;
+                      
+                      if (approvalStatus === 'pending') {
+                        return (
+                          <span className="status-badge pending" title="Món ăn đang chờ admin duyệt">
+                            ⏳ Chưa duyệt
+                          </span>
+                        );
+                      } else if (approvalStatus === 'approved') {
+                        return (
+                          <span className="status-badge approved" title="Món ăn đã được admin duyệt">
+                            ✅ Đã duyệt
+                          </span>
+                        );
+                      } else if (approvalStatus === 'rejected') {
+                        return (
+                          <span 
+                            className="status-badge rejected" 
+                            title={rejectionReason ? `Lý do: ${rejectionReason}` : 'Món ăn bị admin từ chối'}
+                          >
+                            ❌ Từ chối
+                            {rejectionReason && (
+                              <small className="rejection-reason">
+                                {rejectionReason}
+                              </small>
+                            )}
+                          </span>
+                        );
+                      } else {
+                        return (
+                          <span className="status-badge pending" title="Món ăn đang chờ admin duyệt">
+                            ⏳ Chưa duyệt
+                          </span>
+                        );
+                      }
+                    })()}
+                  </div>
+                  
                   <div className="product-actions">
                     <button 
                       className="btn btn-edit"

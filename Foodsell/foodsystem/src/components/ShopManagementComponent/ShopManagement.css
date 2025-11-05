@@ -147,10 +147,73 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
   cursor: pointer;
+  position: relative; /* For absolute positioning of badge */
 }
 
 .product-card:hover {
   transform: translateY(-2px);
+}
+
+/* Approval Status Badge - Top Left Corner */
+.approval-status-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+}
+
+.approval-status-badge .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  cursor: help;
+}
+
+.approval-status-badge .status-badge:hover {
+  transform: scale(1.05);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+.approval-status-badge .status-badge.pending {
+  background: linear-gradient(135deg, #ffc107, #ffb300);
+  color: #fff;
+  border: 2px solid #ff9800;
+}
+
+.approval-status-badge .status-badge.approved {
+  background: linear-gradient(135deg, #4caf50, #43a047);
+  color: #fff;
+  border: 2px solid #388e3c;
+}
+
+.approval-status-badge .status-badge.rejected {
+  background: linear-gradient(135deg, #f44336, #e53935);
+  color: #fff;
+  border: 2px solid #d32f2f;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.approval-status-badge .rejection-reason {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  margin-top: 2px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  max-width: 200px;
+  line-height: 1.2;
 }
 
 .product-image {
@@ -159,10 +222,12 @@
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 15px;
+  margin-top: 35px; /* Space for approval badge */
   background: #f8f9fa;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .product-image img {
@@ -694,7 +759,6 @@
     font-size: 1.5rem;
   }
 }
-<<<<<<< HEAD
 
 /* Orders section styles */
 .orders-section {

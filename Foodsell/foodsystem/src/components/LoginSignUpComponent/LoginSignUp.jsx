@@ -5,6 +5,8 @@ import { useAuth } from '../../hooks/useAuth'; // Custom hook for auth context
 import { useLogin, useRegister, useForgotPassword, useVerifyOTP, useSendOTP } from '../../hooks/useAuthQueries'; // React Query hooks
 import { useForm } from '../../hooks/useCommon'; // Custom form hook
 import GoogleAuth from '../GoogleAuth/GoogleAuth';
+import BannedAccountModal from './BannedAccountModal';
+import BannedShopModal from './BannedShopModal';
 
 import email_icon from '../Assets/email.png';
 import password_icon from '../Assets/password.png';
@@ -12,6 +14,9 @@ import password_icon from '../Assets/password.png';
 const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
   const [mode, setMode] = useState(defaultMode); // 'signup' | 'login' | 'forgot' | 'verify-otp'
   const [registeredEmail, setRegisteredEmail] = useState(''); // Store email after registration
+  const [bannedUserData, setBannedUserData] = useState(null); // Store banned user data
+  const [shopBanReason, setShopBanReason] = useState(null); // Store shop ban reason
+  const [banType, setBanType] = useState(null); // 'ACCOUNT_BANNED' or 'SHOP_BANNED'
   // eslint-disable-next-line no-unused-vars
   const { logout } = useAuth(); // For potential logout functionality
   
@@ -140,13 +145,32 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
       } else {
         const result = await loginMutation.mutateAsync(values);
         alert('Đăng nhập thành công!');
+        
         // Dispatch event để notify useAuth hook
         window.dispatchEvent(new CustomEvent('authSuccess', { detail: result }));
         onClose && onClose();
-        // Don't navigate, let the header update automatically
+        
+        // Check if user is admin and redirect to /admin
+        if (result?.data?.role === 'admin') {
+          // Redirect to admin dashboard
+          window.location.href = '/admin';
+        }
+        // For non-admin users, let the header update automatically
       }
     } catch (error) {
-      alert('Lỗi: ' + error.message);
+      // Check if error is account banned or shop banned
+      const errorCode = error.response?.data?.errors?.errorCode;
+      if (error.response?.status === 403 && (errorCode === 'ACCOUNT_BANNED' || errorCode === 'SHOP_BANNED')) {
+        // Show appropriate modal
+        const userData = error.response.data.data || error.response.data.errors;
+        setBannedUserData(userData);
+        setBanType(errorCode);
+        if (errorCode === 'SHOP_BANNED') {
+          setShopBanReason(error.response.data.errors.shopBanReason || 'Không có lý do cụ thể');
+        }
+      } else {
+        alert('Lỗi: ' + error.message);
+      }
     }
   };
 
@@ -196,11 +220,27 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
               // Dispatch event để notify useAuth hook
               window.dispatchEvent(new CustomEvent('authSuccess', { detail: data }));
               onClose && onClose();
-              // Don't navigate, let the header update automatically
+              
+              // Check if user is admin and redirect to /admin
+              if (data?.data?.role === 'admin') {
+                window.location.href = '/admin';
+              }
+              // For non-admin users, let the header update automatically
             }}
             onError={(error) => {
               console.error('❌ Google login error:', error);
-              alert('Lỗi đăng nhập Google: ' + error.message);
+              
+              // Check if account is banned
+              if (error.isBanned && error.bannedData) {
+                const errorCode = error.response?.data?.errors?.errorCode;
+                setBannedUserData(error.bannedData);
+                setBanType(errorCode);
+                if (errorCode === 'SHOP_BANNED') {
+                  setShopBanReason(error.response?.data?.errors?.shopBanReason || 'Không có lý do cụ thể');
+                }
+              } else {
+                alert('Lỗi đăng nhập Google: ' + error.message);
+              }
             }}
           />
           <div className="auth-or-line"><span>or</span></div>
@@ -376,6 +416,30 @@ const LoginSignUp = ({ onClose, defaultMode = 'signup' }) => {
           {isLoading ? 'Đang xử lý...' : (mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send Reset Link' : 'Sign in')}
         </button>
       </form>
+      )}
+
+      {/* Banned Account Modal */}
+      {bannedUserData && banType === 'ACCOUNT_BANNED' && (
+        <BannedAccountModal 
+          userData={bannedUserData}
+          onClose={() => {
+            setBannedUserData(null);
+            setBanType(null);
+          }}
+        />
+      )}
+      
+      {/* Banned Shop Modal */}
+      {bannedUserData && banType === 'SHOP_BANNED' && (
+        <BannedShopModal 
+          userData={bannedUserData}
+          shopBanReason={shopBanReason}
+          onClose={() => {
+            setBannedUserData(null);
+            setBanType(null);
+            setShopBanReason(null);
+          }}
+        />
       )}
     </div>
   );

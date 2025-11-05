@@ -25,8 +25,23 @@ const GoogleAuth = ({ onSuccess, onError }) => {
       
       console.log('📡 Backend response status:', response.status);
       
+      // Check if response has content
+      const text = await response.text();
+      console.log('📄 Raw response:', text);
+      
+      if (!text) {
+        throw new Error('Empty response from server');
+      }
+      
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (parseError) {
+        console.error('❌ JSON parse error:', parseError);
+        throw new Error('Invalid JSON response from server: ' + text);
+      }
+      
       if (response.ok) {
-        const data = await response.json();
         console.log('✅ Google auth response:', data);
         
         if (data.success) {
@@ -39,10 +54,20 @@ const GoogleAuth = ({ onSuccess, onError }) => {
           console.error('❌ Google auth failed:', data.message);
           throw new Error(data.message || 'Google authentication failed');
         }
+      } else if (response.status === 403) {
+        // Handle banned account
+        console.error('⛔ Account banned:', data);
+        
+        // Create error object with banned account info
+        const error = new Error(data.message || 'Tài khoản đã bị khóa');
+        error.isBanned = true;
+        error.bannedData = data.data || data.errors;
+        error.response = { status: 403, data: data };
+        
+        onError && onError(error);
       } else {
-        const errorData = await response.json();
-        console.error('❌ Backend error:', errorData);
-        throw new Error(errorData.message || 'Google authentication failed');
+        console.error('❌ Backend error:', data);
+        throw new Error(data.message || 'Google authentication failed');
       }
     } catch (error) {
       console.error('❌ Google login error:', error);

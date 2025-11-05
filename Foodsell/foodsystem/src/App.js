@@ -31,6 +31,7 @@ function App() {
                 />
               ))}
             </Routes>
+            
           </Router>
         </CartProvider>
       </div>

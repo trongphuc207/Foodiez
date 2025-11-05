@@ -32,7 +32,7 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
-                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/verify-email", "/api/auth/reset-password").permitAll()
+                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/verify-email", "/api/auth/reset-password", "/api/auth/google").permitAll()
                 .requestMatchers("/api/products/**").permitAll()
                 .requestMatchers("/api/categories/**").permitAll()
                 .requestMatchers("/api/shops/**").permitAll()
@@ -66,7 +66,21 @@ public class SecurityConfig {
                 .requestMatchers("/api/notifications/*").hasAnyRole("ADMIN", "admin")
                 .requestMatchers("/api/notifications/admin/**").hasAnyRole("ADMIN", "admin")
                 
+                // Banned user complaint endpoints (no auth required)
+                .requestMatchers("/api/complaints/banned-user").permitAll()
+                .requestMatchers("/api/complaints/*/upload-image-banned").permitAll()
+                
                 // Customer endpoints (accessible by all authenticated users)
+                .requestMatchers("/api/customer/**").authenticated()
+                .requestMatchers("/api/orders/buyer/**").authenticated()
+                .requestMatchers("/api/orders").authenticated()
+                .requestMatchers("/api/cart/**").authenticated()
+                .requestMatchers("/api/favorites/**").authenticated()
+                
+                // Role applications - Allow ALL authenticated users to access
+                .requestMatchers("/api/role-applications/**").authenticated()
+                
+                // Seller endpoints
                 .requestMatchers("/api/customer/**").authenticated()
                 .requestMatchers("/api/orders/buyer/**").authenticated()
                 .requestMatchers("/api/orders").authenticated()
