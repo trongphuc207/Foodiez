@@ -28,14 +28,25 @@ public class OrderItem {
     @Column(name = "unit_price", precision = 19, scale = 2)
     private BigDecimal unitPrice;
     
-    @Column(name = "total_price", precision = 19, scale = 2)
+    // Transient field - not stored in database, calculated on-the-fly
+    @Transient
     private BigDecimal totalPrice;
     
     @PostLoad
+    @PostPersist
+    @PostUpdate
     private void calculateTotalPrice() {
         if (unitPrice != null && quantity != null) {
             totalPrice = unitPrice.multiply(new BigDecimal(quantity));
         }
+    }
+    
+    // Getter for totalPrice (if not using Lombok @Data)
+    public BigDecimal getTotalPrice() {
+        if (totalPrice == null && unitPrice != null && quantity != null) {
+            totalPrice = unitPrice.multiply(new BigDecimal(quantity));
+        }
+        return totalPrice;
     }
 }
 

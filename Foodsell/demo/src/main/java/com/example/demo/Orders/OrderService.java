@@ -158,18 +158,23 @@ public class OrderService {
     }
     
     // Create new order with PayOS integration
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> createOrder(Integer buyerId, Map<String, Object> deliveryInfo, Map<String, Object> paymentInfo, 
                                           List<Map<String, Object>> cartItems, Integer payosOrderCode, 
                                           Integer totalAmount, String status) {
-        try {
-            // Validate inputs
-            if (totalAmount == null || totalAmount <= 0) {
-                throw new IllegalArgumentException("Total amount must be greater than 0");
-            }
-            if (cartItems == null || cartItems.isEmpty()) {
-                throw new IllegalArgumentException("Cart items cannot be empty");
-            }
+        // Validate inputs
+        if (totalAmount == null || totalAmount <= 0) {
+            Map<String, Object> errorResult = new HashMap<>();
+            errorResult.put("success", false);
+            errorResult.put("message", "Total amount must be greater than 0");
+            return errorResult;
+        }
+        if (cartItems == null || cartItems.isEmpty()) {
+            Map<String, Object> errorResult = new HashMap<>();
+            errorResult.put("success", false);
+            errorResult.put("message", "Cart items cannot be empty");
+            return errorResult;
+        }
             
             
             
@@ -295,29 +300,22 @@ public class OrderService {
                     orderItemRepository.save(orderItem);
                 }
                 
-            }
             
-            // Tự động phân phối đơn hàng cho seller và shipper
-            // Auto-assigning order to seller and shipper
-            orderAssignmentService.autoAssignNewOrder(savedOrder.getId());
-            
-            // Return success response
-            Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
-            result.put("message", "Order created successfully");
-            result.put("orderId", savedOrder.getId());
-            result.put("payosOrderCode", payosOrderCode);
-            result.put("status", status);
-            
-            return result;
-            
-        } catch (Exception e) {
-            // Error creating order: return failure result
-            Map<String, Object> errorResult = new HashMap<>();
-            errorResult.put("success", false);
-            errorResult.put("message", "Error creating order: " + e.getMessage());
-            return errorResult;
         }
+        
+        // Tự động phân phối đơn hàng cho seller và shipper
+        // Auto-assigning order to seller and shipper
+        orderAssignmentService.autoAssignNewOrder(savedOrder.getId());
+        
+        // Return success response
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("message", "Order created successfully");
+        result.put("orderId", savedOrder.getId());
+        result.put("payosOrderCode", payosOrderCode);
+        result.put("status", status);
+        
+        return result;
     }
     
 
