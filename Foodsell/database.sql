@@ -1,4 +1,3 @@
-
 ALTER SERVER ROLE sysadmin ADD MEMBER sa;
 GO
 /****** Object:  Table [dbo].[categories]    Script Date: 10/11/2025 10:36:52 AM ******/
@@ -245,6 +244,8 @@ CREATE TABLE [dbo].[products](
 	[is_available] [bit] NULL,
 	[image_url] [varchar](255) NULL,
 	[status] [nvarchar](20) NULL,
+	[approval_status] [nvarchar](50) NULL,
+	[rejection_reason] [nvarchar](max) NULL,
 	[created_at] [datetime2](7) NULL,
 	[updated_at] [datetime2](7) NULL,
 PRIMARY KEY CLUSTERED 
@@ -305,6 +306,8 @@ CREATE TABLE [dbo].[shops](
 	[address] [nvarchar](max) NOT NULL,
 	[opening_hours] [nvarchar](255) NULL,
 	[rating] [decimal](3, 2) NULL,
+	[is_banned] [bit] NULL,
+	[ban_reason] [nvarchar](max) NULL,
 	[created_at] [datetime2](7) NULL,
 PRIMARY KEY CLUSTERED 
 (
@@ -326,6 +329,9 @@ CREATE TABLE [dbo].[users](
 	[address] [varchar](255) NULL,
 	[role] [nvarchar](20) NOT NULL,
 	[is_verified] [bit] NULL,
+	[is_banned] [bit] NULL DEFAULT 0,
+	[status] [nvarchar](20) NULL DEFAULT 'ACTIVE',
+	[banned] [bit] NULL DEFAULT 0,
 	[created_at] [datetime2](7) NULL,
 	[updated_at] [datetime2](7) NULL,
 	[deleted_at] [datetime2](7) NULL,
@@ -372,23 +378,70 @@ CREATE TABLE [dbo].[vouchers](
 	[min_order_value] [decimal](10, 2) NULL,
 	[expiry_date] [date] NOT NULL,
 	[max_uses] [int] NULL,
+	[quantity] [int] NULL,
 	[used_count] [int] NULL,
 	[created_by] [int] NOT NULL,
 	[created_at] [datetime2](7) NULL,
+	[is_active] [bit] NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
+/****** Object:  Table [dbo].[role_applications]    Script Date: 11/05/2025 10:36:52 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[role_applications](
+	[id] [int] IDENTITY(1,1) NOT NULL,
+	[user_id] [int] NOT NULL,
+	[requested_role] [nvarchar](50) NOT NULL,
+	[status] [nvarchar](50) NOT NULL,
+	[reason] [nvarchar](max) NULL,
+	[admin_note] [nvarchar](max) NULL,
+	[reviewed_by] [int] NULL,
+	[created_at] [datetime2](7) NULL,
+	[reviewed_at] [datetime2](7) NULL,
+	[shop_name] [nvarchar](255) NULL,
+	[shop_address] [nvarchar](max) NULL,
+	[shop_description] [nvarchar](max) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[user_vouchers]    Script Date: 11/05/2025 10:36:52 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[user_vouchers](
+	[id] [int] IDENTITY(1,1) NOT NULL,
+	[user_id] [int] NOT NULL,
+	[voucher_id] [int] NOT NULL,
+	[is_used] [bit] NOT NULL,
+	[used_at] [datetime2](7) NULL,
+	[claimed_at] [datetime2](7) NULL,
+	[order_id] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[categories]    Script Date: 11/05/2025 10:36:52 AM ******/ 
 SET IDENTITY_INSERT [dbo].[categories] ON 
-
-INSERT [dbo].[categories] ([id], [name], [description], [created_at]) VALUES (1, N'Phở', N'Vietnamese noodle soup, ready-to-eat', CAST(N'2025-09-30T19:54:50.1633333' AS DateTime2))
+GO
+INSERT [dbo].[categories] ([id], [name], [description], [created_at]) VALUES (1, N'Ph?', N'Vietnamese noodle soup, ready-to-eat', CAST(N'2025-09-30T19:54:50.1633333' AS DateTime2))
 INSERT [dbo].[categories] ([id], [name], [description], [created_at]) VALUES (2, N'Bánh Mì', N'Vietnamese sandwich, ready-to-eat', CAST(N'2025-09-30T19:54:50.1633333' AS DateTime2))
-INSERT [dbo].[categories] ([id], [name], [description], [created_at]) VALUES (3, N'Cơm', N'Rice dishes, ready-to-eat', CAST(N'2025-09-30T19:54:50.1633333' AS DateTime2))
-INSERT [dbo].[categories] ([id], [name], [description], [created_at]) VALUES (4, N'Nước uống', N'Beverages including coffee, tea, and soft drinks', CAST(N'2025-10-09T07:32:55.2700000' AS DateTime2))
-INSERT [dbo].[categories] ([id], [name], [description], [created_at]) VALUES (5, N'Pizza', N'Món pizza phong cách Ý, nhiều loại topping đa dạng.', CAST(N'2025-10-10T15:57:31.6000000' AS DateTime2))
-INSERT [dbo].[categories] ([id], [name], [description], [created_at]) VALUES (6, N'Bún', N'Món bún Việt Nam truyền thống, dùng với thịt, chả hoặc hải sản.', CAST(N'2025-10-10T15:57:31.6000000' AS DateTime2))
+INSERT [dbo].[categories] ([id], [name], [description], [created_at]) VALUES (3, N'Com', N'Rice dishes, ready-to-eat', CAST(N'2025-09-30T19:54:50.1633333' AS DateTime2))
+INSERT [dbo].[categories] ([id], [name], [description], [created_at]) VALUES (4, N'Nu?c u?ng', N'Beverages including coffee, tea, and soft drinks', CAST(N'2025-10-09T07:32:55.2700000' AS DateTime2))
+INSERT [dbo].[categories] ([id], [name], [description], [created_at]) VALUES (5, N'Pizza', N'Món pizza phong cách Ý, nhi?u lo?i topping da d?ng.', CAST(N'2025-10-10T15:57:31.6000000' AS DateTime2))
+INSERT [dbo].[categories] ([id], [name], [description], [created_at]) VALUES (6, N'Bún', N'Món bún Vi?t Nam truy?n th?ng, dùng v?i th?t, ch? ho?c h?i s?n.', CAST(N'2025-10-10T15:57:31.6000000' AS DateTime2))
+GO
 SET IDENTITY_INSERT [dbo].[categories] OFF
 GO
 SET IDENTITY_INSERT [dbo].[chats] ON 
@@ -463,35 +516,35 @@ INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], 
 INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (2, 1, 1, N'Pho Ga', N'Pho ga thom ngon, nuoc dung dam da, giao hang nong', 4.5, 1, N'http://localhost:8080/uploads/product-images/853f1d3f-9620-44ee-b400-69a7423ae9f9.png', N'active', CAST(N'2025-09-30T19:54:50.1766667' AS DateTime2), CAST(N'2025-10-09T09:53:59.9733333' AS DateTime2))
 INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (3, 2, 2, N'Banh Mi Thit', N'Banh mi thit nuong thom ngon, rau tuoi, giao hang nhanh', 3, 1, N'http://localhost:8080/uploads/product-images/ea11bcc5-f9e0-47d8-bca8-b7c651f23f95.png', N'active', CAST(N'2025-09-30T19:54:50.1766667' AS DateTime2), CAST(N'2025-10-09T18:48:02.6233333' AS DateTime2))
 INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (4, 2, 3, N'Com Ga', N'Com ga Hoi An thom ngon, gao vang nghe, nuoc cham dam da', 4, 1, N'http://localhost:8080/uploads/product-images/2c2e5602-bbf3-4e52-9a21-fcd18e4dc2d9.png', N'active', CAST(N'2025-09-30T19:54:50.1766667' AS DateTime2), CAST(N'2025-10-09T18:48:53.4233333' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (5, 3, 1, N'Mì Quảng Tôm Thịt', N'Mi Quang dac san Da Nang voi tom, thit va rau song. (Traditional Da Nang Quang noodles with shrimp, pork, and fresh herbs.)', 4, 1, N'http://localhost:8080/uploads/product-images/a47535d5-188c-4415-be4e-9bcfe297b040.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:49:30.3633333' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (6, 3, 1, N'Mì Quảng Gà', N'Mi Quang ga thom ngon, an kem rau thom va dau phong. (Chicken Quang noodles served with herbs and roasted peanuts.)', 3.8, 1, N'http://localhost:8080/uploads/product-images/0934f1d8-025d-4055-8a86-bd63d614d6b9.jpg', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:50:28.9066667' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (7, 3, 3, N'Bánh Tráng Cuốn Thịt Heo', N'Banh trang cuon thit heo tuoi ngon, nuoc cham dam vi mien Trung. (Pork and vegetables rolled in rice paper with Central-style dipping sauce.)', 4.5, 1, N'http://localhost:8080/uploads/product-images/ecfcd397-682a-4774-9e96-b5f5f6715908.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:51:29.9033333' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (8, 3, 3, N'Bún Mắm', N'Bun mam Da Nang, huong vi dac trung manh me. (Fermented fish noodle soup — strong Da Nang flavor.)', 4.2, 1, N'http://localhost:8080/uploads/product-images/6f053d01-3de4-4645-90f0-f4857cb52cba.jpg', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:52:54.1700000' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (9, 3, 3, N'Cơm Hến', N'Com hen Hue cay nhe, topping hen xao thom ngon. (Hue-style baby clam rice with mild chili and peanuts.)', 3.5, 1, N'http://localhost:8080/uploads/product-images/d0d057ac-d2a1-4edd-be68-fc3758592166.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:53:35.2700000' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (10, 4, 3, N'Cơm Gà Hội An', N'Com ga Hoi An noi tieng, gao vang nghe va nuoc cham cay. (Hoi An-style chicken rice with turmeric and chili sauce.)', 4.5, 1, N'http://localhost:8080/uploads/product-images/97d7c395-c9fd-4889-90f4-b387b1022845.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:54:12.9100000' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (11, 4, 3, N'Cơm Sườn', N'Com suon nuong thom lung, an kem canh va dua leo. (Grilled pork ribs with rice, soup, and cucumber.)', 4, 1, N'http://localhost:8080/uploads/product-images/12ab4828-0801-44b5-afc0-f82cf7348b74.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:55:16.9700000' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (12, 4, 3, N'Cơm Cá Kho', N'Com ca kho dam da, nau theo phong cach gia dinh. (Home-style braised fish with rice.)', 4.2, 1, N'http://localhost:8080/uploads/product-images/70c908ae-f941-4f87-8e3d-7a94bbcd91d4.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:56:51.3000000' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (13, 4, 3, N'Cơm Thịt Kho', N'Com thit kho trung beo ngay, huong vi truyen thong. (Stewed pork and egg rice — traditional flavor.)', 3.8, 1, N'http://localhost:8080/uploads/product-images/f67a785e-3676-42dd-906b-66deccb4a868.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:57:23.4900000' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (5, 3, 1, N'Mì Qu?ng Tôm Th?t', N'Mi Quang dac san Da Nang voi tom, thit va rau song. (Traditional Da Nang Quang noodles with shrimp, pork, and fresh herbs.)', 4, 1, N'http://localhost:8080/uploads/product-images/a47535d5-188c-4415-be4e-9bcfe297b040.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:49:30.3633333' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (6, 3, 1, N'Mì Qu?ng Gà', N'Mi Quang ga thom ngon, an kem rau thom va dau phong. (Chicken Quang noodles served with herbs and roasted peanuts.)', 3.8, 1, N'http://localhost:8080/uploads/product-images/0934f1d8-025d-4055-8a86-bd63d614d6b9.jpg', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:50:28.9066667' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (7, 3, 3, N'Bánh Tráng Cu?n Th?t Heo', N'Banh trang cuon thit heo tuoi ngon, nuoc cham dam vi mien Trung. (Pork and vegetables rolled in rice paper with Central-style dipping sauce.)', 4.5, 1, N'http://localhost:8080/uploads/product-images/ecfcd397-682a-4774-9e96-b5f5f6715908.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:51:29.9033333' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (8, 3, 3, N'Bún M?m', N'Bun mam Da Nang, huong vi dac trung manh me. (Fermented fish noodle soup — strong Da Nang flavor.)', 4.2, 1, N'http://localhost:8080/uploads/product-images/6f053d01-3de4-4645-90f0-f4857cb52cba.jpg', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:52:54.1700000' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (9, 3, 3, N'Com H?n', N'Com hen Hue cay nhe, topping hen xao thom ngon. (Hue-style baby clam rice with mild chili and peanuts.)', 3.5, 1, N'http://localhost:8080/uploads/product-images/d0d057ac-d2a1-4edd-be68-fc3758592166.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:53:35.2700000' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (10, 4, 3, N'Com Gà H?i An', N'Com ga Hoi An noi tieng, gao vang nghe va nuoc cham cay. (Hoi An-style chicken rice with turmeric and chili sauce.)', 4.5, 1, N'http://localhost:8080/uploads/product-images/97d7c395-c9fd-4889-90f4-b387b1022845.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:54:12.9100000' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (11, 4, 3, N'Com Su?n', N'Com suon nuong thom lung, an kem canh va dua leo. (Grilled pork ribs with rice, soup, and cucumber.)', 4, 1, N'http://localhost:8080/uploads/product-images/12ab4828-0801-44b5-afc0-f82cf7348b74.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:55:16.9700000' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (12, 4, 3, N'Com Cá Kho', N'Com ca kho dam da, nau theo phong cach gia dinh. (Home-style braised fish with rice.)', 4.2, 1, N'http://localhost:8080/uploads/product-images/70c908ae-f941-4f87-8e3d-7a94bbcd91d4.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:56:51.3000000' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (13, 4, 3, N'Com Th?t Kho', N'Com thit kho trung beo ngay, huong vi truyen thong. (Stewed pork and egg rice — traditional flavor.)', 3.8, 1, N'http://localhost:8080/uploads/product-images/f67a785e-3676-42dd-906b-66deccb4a868.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:57:23.4900000' AS DateTime2))
 INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (14, 4, 2, N'Bánh Mì Gà Xé', N'Banh mi ga xe an kem do chua, phu hop bua sang. (Shredded chicken Banh Mi with pickles, perfect for breakfast.)', 3, 1, N'http://localhost:8080/uploads/product-images/0a1ef7fd-5318-46bd-9cc9-b8cb754456a5.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:57:56.2533333' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (15, 5, 1, N'Bún Chả Cá', N'Bun cha ca Da Nang noi tieng, nuoc dung ca chua thanh ngot. (Da Nang fish cake noodle soup with light tomato broth.)', 4, 1, N'http://localhost:8080/uploads/product-images/b78ecd3f-3089-470d-99d3-edc8aecb7bc9.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:58:34.3900000' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (15, 5, 1, N'Bún Ch? Cá', N'Bun cha ca Da Nang noi tieng, nuoc dung ca chua thanh ngot. (Da Nang fish cake noodle soup with light tomato broth.)', 4, 1, N'http://localhost:8080/uploads/product-images/b78ecd3f-3089-470d-99d3-edc8aecb7bc9.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:58:34.3900000' AS DateTime2))
 INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (16, 5, 1, N'Bún Riêu', N'Bun rieu cua, dau hu va rau thom. (Crab noodle soup with tofu and herbs.)', 3.8, 1, N'http://localhost:8080/uploads/product-images/66cc71f2-047d-4d4f-9954-147ef5b5d1c1.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T18:59:37.6533333' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (17, 5, 3, N'Cơm Cá Chiên', N'Com ca chien gion voi nuoc mam chanh ot. (Crispy fried fish with chili-lime fish sauce.)', 4.2, 1, N'http://localhost:8080/uploads/product-images/16c14da9-763c-4443-aa75-ea8aa802e988.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:00:26.1733333' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (18, 5, 3, N'Cơm Tôm Rim', N'Com tom rim dam vi, tom tuoi rim man ngot. (Caramelized shrimp rice — savory and sweet flavor.)', 4.5, 1, N'http://localhost:8080/uploads/product-images/cbbaff4f-0f26-4856-9135-cf1fbb79dcb7.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:01:36.1066667' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (19, 5, 3, N'Cơm Bò Lúc Lắc', N'Com bo luc lac, an kem trung op la va salad. (Shaking beef rice with fried egg and salad.)', 5, 1, N'http://localhost:8080/uploads/product-images/aa8ba17a-5213-4de8-98f1-5ac362d66f85.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:02:29.0700000' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (17, 5, 3, N'Com Cá Chiên', N'Com ca chien gion voi nuoc mam chanh ot. (Crispy fried fish with chili-lime fish sauce.)', 4.2, 1, N'http://localhost:8080/uploads/product-images/16c14da9-763c-4443-aa75-ea8aa802e988.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:00:26.1733333' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (18, 5, 3, N'Com Tôm Rim', N'Com tom rim dam vi, tom tuoi rim man ngot. (Caramelized shrimp rice — savory and sweet flavor.)', 4.5, 1, N'http://localhost:8080/uploads/product-images/cbbaff4f-0f26-4856-9135-cf1fbb79dcb7.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:01:36.1066667' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (19, 5, 3, N'Com Bò Lúc L?c', N'Com bo luc lac, an kem trung op la va salad. (Shaking beef rice with fried egg and salad.)', 5, 1, N'http://localhost:8080/uploads/product-images/aa8ba17a-5213-4de8-98f1-5ac362d66f85.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:02:29.0700000' AS DateTime2))
 INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (20, 6, 2, N'Pizza Margherita', N'Pizza Margherita truyen thong voi ca chua, pho mai mozzarella va hung que. (Classic pizza with tomato, mozzarella, and basil.)', 6.5, 1, N'http://localhost:8080/uploads/product-images/f1bf4a36-b61c-4b17-aeac-3e16698ad1da.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:02:56.9533333' AS DateTime2))
 INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (21, 6, 2, N'Pizza Hawaiian', N'Pizza Hawaiian voi giam bong va dua, vi ngot nhe. (Ham, pineapple, and cheese on a thin crust.)', 7, 1, N'http://localhost:8080/uploads/product-images/10bd41c7-eac7-4a96-a3e2-ab5b82e81c24.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:03:30.6066667' AS DateTime2))
 INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (22, 6, 2, N'Pizza Pepperoni', N'Pizza Pepperoni cay nhe, pho mai tan chay. (Spicy pepperoni pizza with melted cheese.)', 7.5, 1, N'http://localhost:8080/uploads/product-images/fb4aee94-a88c-4a99-9407-93982a2c1566.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:04:02.9500000' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (23, 6, 3, N'Cơm Bò Nướng', N'Com bo nuong voi salad tuoi va nuoc sot dac biet. (Grilled beef rice with salad and house sauce.)', 5.5, 1, N'http://localhost:8080/uploads/product-images/242db6b1-0ab4-49e2-b3ff-ab38e544805d.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:04:49.9533333' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (24, 6, 3, N'Cơm Gà Nướng', N'Com ga nuong thom lung, an kem dua leo va trung. (Grilled chicken rice with cucumber and egg.)', 5, 1, N'http://localhost:8080/uploads/product-images/365d7b1a-45f7-4b75-9cb9-bf2f1fea759c.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:05:41.7500000' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (23, 6, 3, N'Com Bò Nu?ng', N'Com bo nuong voi salad tuoi va nuoc sot dac biet. (Grilled beef rice with salad and house sauce.)', 5.5, 1, N'http://localhost:8080/uploads/product-images/242db6b1-0ab4-49e2-b3ff-ab38e544805d.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:04:49.9533333' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (24, 6, 3, N'Com Gà Nu?ng', N'Com ga nuong thom lung, an kem dua leo va trung. (Grilled chicken rice with cucumber and egg.)', 5, 1, N'http://localhost:8080/uploads/product-images/365d7b1a-45f7-4b75-9cb9-bf2f1fea759c.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:05:41.7500000' AS DateTime2))
 INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (25, 7, 2, N'Bánh Mì Pate', N'Banh mi pate gion, nhan pate va dua leo. (Crispy Banh Mi with pate and cucumber.)', 2.5, 1, N'http://localhost:8080/uploads/product-images/40ecf903-27e1-4c6a-b9c4-2acd6860aeb4.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:06:32.4333333' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (26, 7, 2, N'Bánh Mì Trứng', N'Banh mi trung chien, mon sang quen thuoc cua nguoi Viet. (Fried egg Banh Mi — a classic Vietnamese breakfast.)', 2.8, 1, N'http://localhost:8080/uploads/product-images/03f8a199-34ff-40fa-b9f2-92b5a74182a8.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:07:10.3933333' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (27, 7, 3, N'Cơm Tấm Bì', N'Com tam bi voi thit nuong va trung. (Broken rice with grilled pork and shredded pork skin.)', 4, 1, N'http://localhost:8080/uploads/product-images/a0bc5b00-a161-41a5-bfdf-17722f0f87b2.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:07:57.3633333' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (28, 7, 1, N'Phở Tái', N'Pho tai bo tuoi, nuoc dung trong ngot thanh. (Beef noodle soup with rare steak slices.)', 5, 1, N'http://localhost:8080/uploads/product-images/b81cc1e5-03f7-4fd4-8aeb-1622ba9c2dcf.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:08:30.5933333' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (29, 7, 1, N'Phở Hải Sản', N'Pho hai san voi tom va muc tuoi. (Seafood noodle soup with shrimp and squid.)', 5.5, 1, N'http://localhost:8080/uploads/product-images/fb6f5e0e-3e88-418c-b8d0-2f500d37d15c.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:08:49.6466667' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (30, 7, 4, N'Cà Phê Sữa Đá', N'Ca phe sua da dam vi Viet Nam, pha phin truyen thong. (Vietnamese iced coffee with condensed milk, brewed drip-style.)', 2.5, 1, N'http://localhost:8080/uploads/product-images/c9aee168-a10c-42bb-820b-d47144c84e95.png', N'active', CAST(N'2025-10-09T07:43:05.7233333' AS DateTime2), CAST(N'2025-10-09T19:09:13.1366667' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (31, 7, 4, N'Trà Đào Cam Sả', N'Tra dao cam sa tuoi mat, huong thom diu nhe. (Peach tea with lemongrass and citrus flavor.)', 3, 1, N'http://localhost:8080/uploads/product-images/61693157-d9f5-45f8-b120-623d6f72d21a.png', N'active', CAST(N'2025-10-09T07:43:05.7233333' AS DateTime2), CAST(N'2025-10-09T19:09:31.9666667' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (32, 7, 4, N'Sinh Tố Bơ', N'Sinh to bo beo ngay, xay cung sua dac. (Creamy avocado smoothie with milk.)', 3.5, 1, N'http://localhost:8080/uploads/product-images/246cde1d-e181-47f0-b90b-7ab194e551fc.png', N'active', CAST(N'2025-10-09T07:43:05.7233333' AS DateTime2), CAST(N'2025-10-09T19:10:22.8933333' AS DateTime2))
-INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (33, 7, 4, N'Nước Ép Dưa Hấu', N'Nuoc ep dua hau tuoi, khong them duong. (Fresh watermelon juice, naturally sweet.)', 3, 1, N'http://localhost:8080/uploads/product-images/f8d20c7e-3473-4bf8-9167-cab581e8fbe0.png', N'active', CAST(N'2025-10-09T07:43:05.7233333' AS DateTime2), CAST(N'2025-10-09T19:11:11.8633333' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (26, 7, 2, N'Bánh Mì Tr?ng', N'Banh mi trung chien, mon sang quen thuoc cua nguoi Viet. (Fried egg Banh Mi — a classic Vietnamese breakfast.)', 2.8, 1, N'http://localhost:8080/uploads/product-images/03f8a199-34ff-40fa-b9f2-92b5a74182a8.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:07:10.3933333' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (27, 7, 3, N'Com T?m Bì', N'Com tam bi voi thit nuong va trung. (Broken rice with grilled pork and shredded pork skin.)', 4, 1, N'http://localhost:8080/uploads/product-images/a0bc5b00-a161-41a5-bfdf-17722f0f87b2.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:07:57.3633333' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (28, 7, 1, N'Ph? Tái', N'Pho tai bo tuoi, nuoc dung trong ngot thanh. (Beef noodle soup with rare steak slices.)', 5, 1, N'http://localhost:8080/uploads/product-images/b81cc1e5-03f7-4fd4-8aeb-1622ba9c2dcf.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:08:30.5933333' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (29, 7, 1, N'Ph? H?i S?n', N'Pho hai san voi tom va muc tuoi. (Seafood noodle soup with shrimp and squid.)', 5.5, 1, N'http://localhost:8080/uploads/product-images/fb6f5e0e-3e88-418c-b8d0-2f500d37d15c.png', N'active', CAST(N'2025-10-09T07:20:20.8466667' AS DateTime2), CAST(N'2025-10-09T19:08:49.6466667' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (30, 7, 4, N'Cà Phê S?a Ðá', N'Ca phe sua da dam vi Viet Nam, pha phin truyen thong. (Vietnamese iced coffee with condensed milk, brewed drip-style.)', 2.5, 1, N'http://localhost:8080/uploads/product-images/c9aee168-a10c-42bb-820b-d47144c84e95.png', N'active', CAST(N'2025-10-09T07:43:05.7233333' AS DateTime2), CAST(N'2025-10-09T19:09:13.1366667' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (31, 7, 4, N'Trà Ðào Cam S?', N'Tra dao cam sa tuoi mat, huong thom diu nhe. (Peach tea with lemongrass and citrus flavor.)', 3, 1, N'http://localhost:8080/uploads/product-images/61693157-d9f5-45f8-b120-623d6f72d21a.png', N'active', CAST(N'2025-10-09T07:43:05.7233333' AS DateTime2), CAST(N'2025-10-09T19:09:31.9666667' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (32, 7, 4, N'Sinh T? Bo', N'Sinh to bo beo ngay, xay cung sua dac. (Creamy avocado smoothie with milk.)', 3.5, 1, N'http://localhost:8080/uploads/product-images/246cde1d-e181-47f0-b90b-7ab194e551fc.png', N'active', CAST(N'2025-10-09T07:43:05.7233333' AS DateTime2), CAST(N'2025-10-09T19:10:22.8933333' AS DateTime2))
+INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (33, 7, 4, N'Nu?c Ép Dua H?u', N'Nuoc ep dua hau tuoi, khong them duong. (Fresh watermelon juice, naturally sweet.)', 3, 1, N'http://localhost:8080/uploads/product-images/f8d20c7e-3473-4bf8-9167-cab581e8fbe0.png', N'active', CAST(N'2025-10-09T07:43:05.7233333' AS DateTime2), CAST(N'2025-10-09T19:11:11.8633333' AS DateTime2))
 INSERT [dbo].[products] ([id], [shop_id], [category_id], [name], [description], [price], [is_available], [image_url], [status], [created_at], [updated_at]) VALUES (34, 7, 4, N'Matcha Latte', N'Matcha latte mat lanh, lop sua beo min. (Iced matcha latte with creamy milk foam.)', 3.8, 1, N'http://localhost:8080/uploads/product-images/67ec3246-5620-4b75-8b8f-749deb8389af.png', N'active', CAST(N'2025-10-09T07:43:05.7233333' AS DateTime2), CAST(N'2025-10-09T19:11:16.2266667' AS DateTime2))
 SET IDENTITY_INSERT [dbo].[products] OFF
 GO
@@ -509,11 +562,11 @@ SET IDENTITY_INSERT [dbo].[shops] ON
 
 INSERT [dbo].[shops] ([id], [seller_id], [name], [description], [address], [opening_hours], [rating], [created_at]) VALUES (1, 2, N'Pho Delicious', N'Best ready-to-eat Pho in town, delivered hot', N'100 Pho St, Hanoi', N'8AM-10PM', CAST(4.50 AS Decimal(3, 2)), CAST(N'2025-09-30T19:54:50.1700000' AS DateTime2))
 INSERT [dbo].[shops] ([id], [seller_id], [name], [description], [address], [opening_hours], [rating], [created_at]) VALUES (2, 3, N'Banh Mi King', N'Fresh ready-to-eat Banh Mi daily, fast delivery', N'200 Banh Mi Ave, Saigon', N'7AM-9PM', CAST(4.80 AS Decimal(3, 2)), CAST(N'2025-09-30T19:54:50.1700000' AS DateTime2))
-INSERT [dbo].[shops] ([id], [seller_id], [name], [description], [address], [opening_hours], [rating], [created_at]) VALUES (3, 4, N'Mì Quảng 123', N'Mì Quảng truyền thống Đà Nẵng với tôm, thịt và rau thơm tươi.', N'12 Nguyễn Văn Linh, Hải Châu, Đà Nẵng', N'7AM-9PM', CAST(4.60 AS Decimal(3, 2)), CAST(N'2025-10-09T07:16:38.6200000' AS DateTime2))
-INSERT [dbo].[shops] ([id], [seller_id], [name], [description], [address], [opening_hours], [rating], [created_at]) VALUES (4, 5, N'Cơm Gà Bà Buội', N'Món cơm gà Hội An nổi tiếng, gạo vàng nghệ, nước chấm cay đặc trưng.', N'45 Lê Duẩn, Hải Châu, Đà Nẵng', N'8AM-10PM', CAST(4.70 AS Decimal(3, 2)), CAST(N'2025-10-09T07:16:38.6200000' AS DateTime2))
-INSERT [dbo].[shops] ([id], [seller_id], [name], [description], [address], [opening_hours], [rating], [created_at]) VALUES (5, 6, N'Bún Chả Cá 109', N'Bún chả cá Đà Nẵng tươi ngon, nước dùng đậm đà, phục vụ nhanh chóng.', N'109 Nguyễn Chí Thanh, Hải Châu, Đà Nẵng', N'6AM-8PM', CAST(4.50 AS Decimal(3, 2)), CAST(N'2025-10-09T07:16:38.6200000' AS DateTime2))
-INSERT [dbo].[shops] ([id], [seller_id], [name], [description], [address], [opening_hours], [rating], [created_at]) VALUES (6, 7, N'Pizza Zone', N'Pizza phong cách Ý với hương vị đặc trưng và giao hàng nhanh chóng.', N'80 Phan Châu Trinh, Hải Châu, Đà Nẵng', N'10AM-11PM', CAST(4.80 AS Decimal(3, 2)), CAST(N'2025-10-09T07:16:38.6200000' AS DateTime2))
-INSERT [dbo].[shops] ([id], [seller_id], [name], [description], [address], [opening_hours], [rating], [created_at]) VALUES (7, 8, N'Coffee & Chill', N'Quán cà phê ấm cúng với đồ uống đa dạng, bánh ngọt và wifi miễn phí.', N'21 Trần Phú, Hải Châu, Đà Nẵng', N'7AM-10PM', CAST(4.90 AS Decimal(3, 2)), CAST(N'2025-10-09T07:16:38.6200000' AS DateTime2))
+INSERT [dbo].[shops] ([id], [seller_id], [name], [description], [address], [opening_hours], [rating], [created_at]) VALUES (3, 4, N'Mì Qu?ng 123', N'Mì Qu?ng truy?n th?ng Ðà N?ng v?i tôm, th?t và rau thom tuoi.', N'12 Nguy?n Van Linh, H?i Châu, Ðà N?ng', N'7AM-9PM', CAST(4.60 AS Decimal(3, 2)), CAST(N'2025-10-09T07:16:38.6200000' AS DateTime2))
+INSERT [dbo].[shops] ([id], [seller_id], [name], [description], [address], [opening_hours], [rating], [created_at]) VALUES (4, 5, N'Com Gà Bà Bu?i', N'Món com gà H?i An n?i ti?ng, g?o vàng ngh?, nu?c ch?m cay d?c trung.', N'45 Lê Du?n, H?i Châu, Ðà N?ng', N'8AM-10PM', CAST(4.70 AS Decimal(3, 2)), CAST(N'2025-10-09T07:16:38.6200000' AS DateTime2))
+INSERT [dbo].[shops] ([id], [seller_id], [name], [description], [address], [opening_hours], [rating], [created_at]) VALUES (5, 6, N'Bún Ch? Cá 109', N'Bún ch? cá Ðà N?ng tuoi ngon, nu?c dùng d?m dà, ph?c v? nhanh chóng.', N'109 Nguy?n Chí Thanh, H?i Châu, Ðà N?ng', N'6AM-8PM', CAST(4.50 AS Decimal(3, 2)), CAST(N'2025-10-09T07:16:38.6200000' AS DateTime2))
+INSERT [dbo].[shops] ([id], [seller_id], [name], [description], [address], [opening_hours], [rating], [created_at]) VALUES (6, 7, N'Pizza Zone', N'Pizza phong cách Ý v?i huong v? d?c trung và giao hàng nhanh chóng.', N'80 Phan Châu Trinh, H?i Châu, Ðà N?ng', N'10AM-11PM', CAST(4.80 AS Decimal(3, 2)), CAST(N'2025-10-09T07:16:38.6200000' AS DateTime2))
+INSERT [dbo].[shops] ([id], [seller_id], [name], [description], [address], [opening_hours], [rating], [created_at]) VALUES (7, 8, N'Coffee & Chill', N'Quán cà phê ?m cúng v?i d? u?ng da d?ng, bánh ng?t và wifi mi?n phí.', N'21 Tr?n Phú, H?i Châu, Ðà N?ng', N'7AM-10PM', CAST(4.90 AS Decimal(3, 2)), CAST(N'2025-10-09T07:16:38.6200000' AS DateTime2))
 SET IDENTITY_INSERT [dbo].[shops] OFF
 GO
 SET IDENTITY_INSERT [dbo].[users] ON 
@@ -621,6 +674,12 @@ ALTER TABLE [dbo].[shops] ADD  DEFAULT ((0.00)) FOR [rating]
 GO
 ALTER TABLE [dbo].[shops] ADD  DEFAULT (getdate()) FOR [created_at]
 GO
+ALTER TABLE [dbo].[products] ADD  DEFAULT (getdate()) FOR [updated_at]
+GO
+ALTER TABLE [dbo].[user_vouchers] ADD  DEFAULT ((0)) FOR [is_used]
+GO
+ALTER TABLE [dbo].[user_vouchers] ADD  DEFAULT (getdate()) FOR [claimed_at]
+GO
 ALTER TABLE [dbo].[users] ADD  DEFAULT ('buyer') FOR [role]
 GO
 ALTER TABLE [dbo].[users] ADD  DEFAULT ((0)) FOR [is_verified]
@@ -628,12 +687,6 @@ GO
 ALTER TABLE [dbo].[users] ADD  DEFAULT (getdate()) FOR [created_at]
 GO
 ALTER TABLE [dbo].[users] ADD  DEFAULT (getdate()) FOR [updated_at]
-GO
-ALTER TABLE [dbo].[vouchers] ADD  DEFAULT (NULL) FOR [max_uses]
-GO
-ALTER TABLE [dbo].[vouchers] ADD  DEFAULT ((0)) FOR [used_count]
-GO
-ALTER TABLE [dbo].[vouchers] ADD  DEFAULT (getdate()) FOR [created_at]
 GO
 ALTER TABLE [dbo].[chats]  WITH CHECK ADD FOREIGN KEY([buyer_id])
 REFERENCES [dbo].[users] ([id])
@@ -705,7 +758,7 @@ GO
 ALTER TABLE [dbo].[payments]  WITH CHECK ADD FOREIGN KEY([payment_method_id])
 REFERENCES [dbo].[payment_methods] ([id])
 GO
-ALTER TABLE [dbo].[products]  WITH CHECK ADD FOREIGN KEY([category_id])
+ALTER TABLE [dbo].[products]  WITH NOCHECK ADD FOREIGN KEY([category_id])
 REFERENCES [dbo].[categories] ([id])
 GO
 ALTER TABLE [dbo].[products]  WITH CHECK ADD FOREIGN KEY([shop_id])
@@ -739,6 +792,22 @@ GO
 ALTER TABLE [dbo].[vouchers]  WITH CHECK ADD FOREIGN KEY([created_by])
 REFERENCES [dbo].[users] ([id])
 GO
+ALTER TABLE [dbo].[role_applications]  WITH CHECK ADD FOREIGN KEY([user_id])
+REFERENCES [dbo].[users] ([id])
+GO
+ALTER TABLE [dbo].[role_applications]  WITH CHECK ADD FOREIGN KEY([reviewed_by])
+REFERENCES [dbo].[users] ([id])
+GO
+ALTER TABLE [dbo].[user_vouchers]  WITH CHECK ADD FOREIGN KEY([user_id])
+REFERENCES [dbo].[users] ([id])
+GO
+ALTER TABLE [dbo].[user_vouchers]  WITH CHECK ADD FOREIGN KEY([voucher_id])
+REFERENCES [dbo].[vouchers] ([id])
+GO
+ALTER TABLE [dbo].[user_vouchers]  WITH CHECK ADD FOREIGN KEY([order_id])
+REFERENCES [dbo].[orders] ([id])
+ON DELETE SET NULL
+GO
 ALTER TABLE [dbo].[deliveries]  WITH CHECK ADD CHECK  (([status]='failed' OR [status]='delivered' OR [status]='in_transit' OR [status]='picked_up' OR [status]='assigned'))
 GO
 ALTER TABLE [dbo].[notifications]  WITH CHECK ADD CHECK  (([type]='admin_message' OR [type]='promotion' OR [type]='order_update'))
@@ -748,6 +817,12 @@ GO
 ALTER TABLE [dbo].[payments]  WITH CHECK ADD CHECK  (([status]='refunded' OR [status]='cancelled' OR [status]='failed' OR [status]='completed' OR [status]='pending'))
 GO
 ALTER TABLE [dbo].[products]  WITH CHECK ADD CHECK  (([status]='out_of_stock' OR [status]='inactive' OR [status]='active'))
+GO
+ALTER TABLE [dbo].[products]  WITH CHECK ADD CHECK  (([approval_status]='rejected' OR [approval_status]='approved' OR [approval_status]='pending'))
+GO
+ALTER TABLE [dbo].[role_applications]  WITH CHECK ADD CHECK  (([status]='rejected' OR [status]='approved' OR [status]='pending'))
+GO
+ALTER TABLE [dbo].[role_applications]  WITH CHECK ADD CHECK  (([requested_role]='shipper' OR [requested_role]='seller'))
 GO
 ALTER TABLE [dbo].[reviews]  WITH CHECK ADD CHECK  (([rating]>=(1) AND [rating]<=(5)))
 GO
@@ -812,24 +887,14 @@ FROM users
 GROUP BY role;
 
 ALTER TABLE users ADD is_banned BIT DEFAULT 0;
-ALTER TABLE orders ADD deleted_at DATETIME2 NULL; -- nếu cần soft delete
+ALTER TABLE orders ADD deleted_at DATETIME2 NULL; -- n?u c?n soft delete
 
 
 
 	 UPDATE users 
 SET role = 'admin', updated_at = GETDATE()
-WHERE id = 13;
-UPDATE users
-SET is_banned = 0
-WHERE is_banned IS NULL;
+WHERE id = 10;
 
--- 2️⃣ Đặt mặc định mặc định cho cột (phòng trường hợp chưa có DEFAULT)
---ALTER TABLE users
---ADD CONSTRAINT DF_users_is_banned DEFAULT 0 FOR is_banned;
-
--- 3️⃣ (Tuỳ chọn, nếu muốn cấm NULL luôn)
---ALTER TABLE users
---ALTER COLUMN is_banned BIT NOT NULL;
 
 -- =============================================
 -- Admin helper and procedures for editing/deleting users
@@ -949,6 +1014,415 @@ GO
 -- EXEC dbo.sp_admin_update_user       @admin_id = 1, @user_id = 13, @full_name = N'New Name', @role = 'seller';
 -- EXEC dbo.sp_admin_soft_delete_user  @admin_id = 1, @user_id = 13;
 -- EXEC dbo.sp_admin_hard_delete_user  @admin_id = 1, @user_id = 13; -- will fail if references exist
+-- Add new columns to users table for profile information
+-- Run this script on your database to add dateOfBirth, gender, and idNumber fields
+
+GO
+
+-- Add date_of_birth column
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[users]') AND name = 'date_of_birth')
+BEGIN
+    ALTER TABLE [dbo].[users]
+    ADD [date_of_birth] [date] NULL;
+    PRINT 'Column date_of_birth added successfully';
+END
+ELSE
+BEGIN
+    PRINT 'Column date_of_birth already exists';
+END
+GO
+
+-- Add gender column
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[users]') AND name = 'gender')
+BEGIN
+    ALTER TABLE [dbo].[users]
+    ADD [gender] [nvarchar](10) NULL;
+    PRINT 'Column gender added successfully';
+END
+ELSE
+BEGIN
+    PRINT 'Column gender already exists';
+END
+GO
+
+-- Add id_number column (CMND/CCCD)
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[users]') AND name = 'id_number')
+BEGIN
+    ALTER TABLE [dbo].[users]
+    ADD [id_number] [nvarchar](20) NULL;
+    PRINT 'Column id_number added successfully';
+END
+ELSE
+BEGIN
+    PRINT 'Column id_number already exists';
+END
+GO
+
+PRINT 'All user profile fields have been added successfully!';
+GO
 
 
 
+GO
+
+PRINT '===== Checking role_applications table =====';
+
+-- Check if table exists
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'role_applications')
+BEGIN
+    PRINT '✓ Table role_applications EXISTS';
+    
+    -- Show table structure
+    PRINT '';
+    PRINT 'Table columns:';
+    SELECT 
+        COLUMN_NAME, 
+        DATA_TYPE, 
+        CHARACTER_MAXIMUM_LENGTH,
+        IS_NULLABLE
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = 'role_applications'
+    ORDER BY ORDINAL_POSITION;
+    
+    -- Show current data
+    PRINT '';
+    PRINT 'Current applications:';
+    SELECT 
+        id, 
+        user_id, 
+        requested_role, 
+        status, 
+        created_at,
+        shop_name
+    FROM role_applications
+    ORDER BY created_at DESC;
+    
+    PRINT '';
+    -- Get count separately to avoid subquery in PRINT
+    DECLARE @appCount INT;
+    SELECT @appCount = COUNT(*) FROM role_applications;
+    PRINT 'Total applications: ' + CAST(@appCount AS VARCHAR(10));
+END
+ELSE
+BEGIN
+    PRINT '✗ Table role_applications DOES NOT EXIST';
+    PRINT '';
+    PRINT 'Creating table now...';
+    
+    -- Create the table
+    CREATE TABLE [dbo].[role_applications](
+        [id] [int] IDENTITY(1,1) NOT NULL,
+        [user_id] [int] NOT NULL,
+        [requested_role] [nvarchar](50) NOT NULL,
+        [status] [nvarchar](50) NOT NULL,
+        [reason] [nvarchar](max) NULL,
+        [admin_note] [nvarchar](max) NULL,
+        [reviewed_by] [int] NULL,
+        [created_at] [datetime2](7) NULL,
+        [reviewed_at] [datetime2](7) NULL,
+        [shop_name] [nvarchar](255) NULL,
+        [shop_address] [nvarchar](max) NULL,
+        [shop_description] [nvarchar](max) NULL,
+        PRIMARY KEY CLUSTERED ([id] ASC)
+    );
+    
+    -- Add foreign keys
+    ALTER TABLE [dbo].[role_applications]  WITH CHECK 
+    ADD FOREIGN KEY([user_id]) REFERENCES [dbo].[users] ([id]);
+    
+    ALTER TABLE [dbo].[role_applications]  WITH CHECK 
+    ADD FOREIGN KEY([reviewed_by]) REFERENCES [dbo].[users] ([id]);
+    
+    -- Add constraints
+    ALTER TABLE [dbo].[role_applications]  WITH CHECK 
+    ADD CHECK (([status]='rejected' OR [status]='approved' OR [status]='pending'));
+    
+    ALTER TABLE [dbo].[role_applications]  WITH CHECK 
+    ADD CHECK (([requested_role]='shipper' OR [requested_role]='seller'));
+    
+    PRINT '✓ Table created successfully!';
+END
+GO
+
+PRINT '';
+PRINT '===== Done =====';
+
+-- Add product approval system
+GO
+
+PRINT '===== Adding product approval columns =====';
+
+-- Add approval_status column
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[products]') AND name = 'approval_status')
+BEGIN
+    ALTER TABLE products
+    ADD [approval_status] NVARCHAR(20) NOT NULL DEFAULT 'pending';
+    PRINT '✓ Column approval_status added';
+END
+ELSE
+BEGIN
+    PRINT '✓ Column approval_status already exists';
+END
+GO
+
+-- Add admin_note column for rejection reason
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[products]') AND name = 'admin_note')
+BEGIN
+    ALTER TABLE products
+    ADD [admin_note] NVARCHAR(MAX) NULL;
+    PRINT '✓ Column admin_note added';
+END
+ELSE
+BEGIN
+    PRINT '✓ Column admin_note already exists';
+END
+GO
+
+-- Add reviewed_by column (admin ID)
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[products]') AND name = 'reviewed_by')
+BEGIN
+    ALTER TABLE products
+    ADD [reviewed_by] INT NULL;
+    PRINT '✓ Column reviewed_by added';
+END
+ELSE
+BEGIN
+    PRINT '✓ Column reviewed_by already exists';
+END
+GO
+
+-- Add reviewed_at column
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[products]') AND name = 'reviewed_at')
+BEGIN
+    ALTER TABLE products
+    ADD [reviewed_at] DATETIME2(7) NULL;
+    PRINT '✓ Column reviewed_at added';
+END
+ELSE
+BEGIN
+    PRINT '✓ Column reviewed_at already exists';
+END
+GO
+
+-- Update existing products to 'approved' so they show immediately
+UPDATE products 
+SET approval_status = 'approved'
+WHERE approval_status = 'pending' OR approval_status IS NULL;
+PRINT '✓ Existing products set to approved';
+GO
+
+-- Add constraint for approval_status
+IF NOT EXISTS (SELECT * FROM sys.check_constraints WHERE name = 'CK_products_approval_status')
+BEGIN
+    ALTER TABLE products
+    ADD CONSTRAINT CK_products_approval_status 
+    CHECK (approval_status IN ('pending', 'approved', 'rejected'));
+    PRINT '✓ Constraint CK_products_approval_status added';
+END
+ELSE
+BEGIN
+    PRINT '✓ Constraint CK_products_approval_status already exists';
+END
+GO
+
+PRINT '';
+PRINT '===== Product approval system ready! =====';
+PRINT 'New products will default to "pending" status';
+PRINT 'Existing products have been set to "approved"';
+GO
+
+-- Create Complaints System
+-- Create complaints table
+CREATE TABLE complaints (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    complaint_number VARCHAR(20) UNIQUE NOT NULL, -- Format: CPL-YYYYMMDD-XXXXX
+    complainant_id INT NOT NULL, -- User who files the complaint
+    complainant_type VARCHAR(20) NOT NULL, -- 'customer', 'seller', 'shipper'
+    respondent_id INT, -- User being complained about (nullable for system complaints)
+    respondent_type VARCHAR(20), -- 'customer', 'seller', 'shipper', 'admin', 'system'
+    category VARCHAR(50) NOT NULL, -- 'product_quality', 'delivery_issue', 'seller_service', 'payment_issue', 'account_ban', 'other'
+    subject VARCHAR(200) NOT NULL,
+    description TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'under_review', 'resolved', 'rejected'
+    priority VARCHAR(20) DEFAULT 'normal', -- 'low', 'normal', 'high', 'urgent'
+    
+    -- Admin handling
+    assigned_admin_id INT, -- Admin handling this complaint
+    admin_note TEXT,
+    admin_decision VARCHAR(20), -- 'approved', 'rejected', 'needs_more_info'
+    decision_reason TEXT,
+    
+    -- Related order/product (optional)
+    related_order_id INT,
+    related_product_id INT,
+    
+    -- Timestamps
+    created_at DATETIME DEFAULT GETDATE(),
+    updated_at DATETIME DEFAULT GETDATE(),
+    resolved_at DATETIME,
+    
+    FOREIGN KEY (complainant_id) REFERENCES users(id),
+    FOREIGN KEY (respondent_id) REFERENCES users(id),
+    FOREIGN KEY (assigned_admin_id) REFERENCES users(id)
+);
+GO
+
+-- Create complaint_images table for evidence photos
+CREATE TABLE complaint_images (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    complaint_id INT NOT NULL,
+    image_url VARCHAR(500) NOT NULL,
+    image_type VARCHAR(20) DEFAULT 'evidence', -- 'evidence', 'product', 'delivery', 'other'
+    description VARCHAR(200),
+    uploaded_at DATETIME DEFAULT GETDATE(),
+    
+    FOREIGN KEY (complaint_id) REFERENCES complaints(id) ON DELETE CASCADE
+);
+GO
+
+-- Create complaint_responses table for conversation between users and admin
+CREATE TABLE complaint_responses (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    complaint_id INT NOT NULL,
+    user_id INT NOT NULL,
+    user_role VARCHAR(20) NOT NULL, -- 'admin', 'customer', 'seller', 'shipper'
+    message TEXT NOT NULL,
+    is_internal_note BIT DEFAULT 0, -- Only visible to admins
+    created_at DATETIME DEFAULT GETDATE(),
+    
+    FOREIGN KEY (complaint_id) REFERENCES complaints(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+GO
+
+-- Create indexes for performance
+CREATE INDEX idx_complaints_status ON complaints(status);
+CREATE INDEX idx_complaints_complainant ON complaints(complainant_id);
+CREATE INDEX idx_complaints_respondent ON complaints(respondent_id);
+CREATE INDEX idx_complaints_created ON complaints(created_at DESC);
+CREATE INDEX idx_complaint_images_complaint ON complaint_images(complaint_id);
+CREATE INDEX idx_complaint_responses_complaint ON complaint_responses(complaint_id);
+GO
+
+-- Create function to generate complaint number
+CREATE FUNCTION dbo.GenerateComplaintNumber()
+RETURNS VARCHAR(20)
+AS
+BEGIN
+    DECLARE @date VARCHAR(8) = CONVERT(VARCHAR(8), GETDATE(), 112); -- YYYYMMDD
+    DECLARE @count INT;
+    DECLARE @number VARCHAR(20);
+    
+    -- Get count of complaints today
+    SELECT @count = COUNT(*) + 1 
+    FROM complaints 
+    WHERE CONVERT(DATE, created_at) = CONVERT(DATE, GETDATE());
+    
+    SET @number = 'CPL-' + @date + '-' + RIGHT('00000' + CAST(@count AS VARCHAR(5)), 5);
+    
+    RETURN @number;
+END;
+GO
+
+-- Add trigger to auto-generate complaint number
+CREATE TRIGGER trg_GenerateComplaintNumber
+ON complaints
+AFTER INSERT
+AS
+BEGIN
+    UPDATE complaints
+    SET complaint_number = dbo.GenerateComplaintNumber()
+    WHERE id IN (SELECT id FROM inserted) AND complaint_number IS NULL;
+END;
+GO
+
+-- Insert sample complaint categories lookup (optional reference table)
+CREATE TABLE complaint_categories (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    category_code VARCHAR(50) UNIQUE NOT NULL,
+    category_name_vi NVARCHAR(100) NOT NULL,
+    category_name_en VARCHAR(100) NOT NULL,
+    description NVARCHAR(200),
+    is_active BIT DEFAULT 1
+);
+GO
+
+INSERT INTO complaint_categories (category_code, category_name_vi, category_name_en, description) VALUES
+('product_quality', N'Chất lượng sản phẩm', 'Product Quality', N'Sản phẩm không đúng mô tả, hỏng hóc'),
+('delivery_issue', N'Vấn đề giao hàng', 'Delivery Issue', N'Giao hàng chậm, shipper thái độ không tốt'),
+('seller_service', N'Dịch vụ người bán', 'Seller Service', N'Người bán hỗ trợ kém, thái độ không tốt'),
+('shipper_service', N'Dịch vụ shipper', 'Shipper Service', N'Shipper giao hàng không đúng, thái độ xấu'),
+('payment_issue', N'Vấn đề thanh toán', 'Payment Issue', N'Sai số tiền, chưa nhận tiền hoàn'),
+('account_ban', N'Khiếu nại khóa tài khoản', 'Account Ban Appeal', N'Tài khoản bị khóa oan, yêu cầu mở lại'),
+('fraud_scam', N'Lừa đảo', 'Fraud/Scam', N'Nghi ngờ gian lận, lừa đảo'),
+('other', N'Khác', 'Other', N'Vấn đề khác');
+GO
+
+PRINT 'Complaints system tables created successfully!';
+-- =============================================
+-- Add status and banned columns for ban functionality
+-- =============================================
+GO
+
+PRINT '===== Adding user ban columns =====';
+
+-- Add status column
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[users]') AND name = 'status')
+BEGIN
+    ALTER TABLE [dbo].[users]
+    ADD [status] NVARCHAR(20) NULL DEFAULT 'ACTIVE';
+    PRINT '✓ Column status added';
+    
+    -- Update existing records
+    UPDATE [dbo].[users] 
+    SET status = CASE 
+        WHEN ISNULL(is_banned, 0) = 1 THEN 'BANNED'
+        ELSE 'ACTIVE'
+    END
+    WHERE status IS NULL;
+    PRINT '✓ Existing users status updated based on is_banned field';
+END
+ELSE
+BEGIN
+    PRINT '✓ Column status already exists';
+END
+GO
+
+-- Add banned column (different from is_banned)
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[users]') AND name = 'banned')
+BEGIN
+    ALTER TABLE [dbo].[users]
+    ADD [banned] BIT NULL DEFAULT 0;
+    PRINT '✓ Column banned added';
+    
+    -- Sync with is_banned field
+    UPDATE [dbo].[users] 
+    SET banned = ISNULL(is_banned, 0)
+    WHERE banned IS NULL;
+    PRINT '✓ Existing users banned field synced with is_banned';
+END
+ELSE
+BEGIN
+    PRINT '✓ Column banned already exists';
+END
+GO
+
+-- Add constraint for status
+IF NOT EXISTS (SELECT * FROM sys.check_constraints WHERE name = 'CK_users_status')
+BEGIN
+    ALTER TABLE [dbo].[users]
+    ADD CONSTRAINT CK_users_status 
+    CHECK (status IN ('ACTIVE', 'BANNED', 'SUSPENDED', 'PENDING'));
+    PRINT '✓ Constraint CK_users_status added';
+END
+ELSE
+BEGIN
+    PRINT '✓ Constraint CK_users_status already exists';
+END
+GO
+
+PRINT '';
+PRINT '===== User ban system ready! =====';
+PRINT 'Users can now be banned using status and banned columns';
+PRINT 'Backend will check these fields during login';
+GO

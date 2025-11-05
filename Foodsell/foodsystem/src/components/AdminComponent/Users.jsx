@@ -52,21 +52,27 @@ export default function Users() {
 
   const handleToggleBan = async (u) => {
     setErr('');
+    setOk('');
     setBusyId(u.id);
 
     // Cập nhật lạc quan
     const prev = [...users];
     const nextStatus = isBanned(u) ? 'ACTIVE' : 'BANNED';
+    const nextBanned = !isBanned(u);
     setUsers((list) =>
-      list.map((x) => (x.id === u.id ? { ...x, status: nextStatus } : x))
+      list.map((x) => (x.id === u.id ? { ...x, status: nextStatus, banned: nextBanned, isBanned: nextBanned } : x))
     );
 
     try {
       if (isBanned(u)) {
         await adminAPI.unbanUser(u.id);
+        setOk(`Đã mở khóa người dùng ${u.name} thành công`);
       } else {
         await adminAPI.banUser(u.id);
+        setOk(`Đã khóa người dùng ${u.name} thành công`);
       }
+      // Auto-hide success message after 3s
+      setTimeout(() => setOk(''), 3000);
     } catch (e) {
       // Rollback nếu lỗi
       console.error(e);
@@ -88,15 +94,30 @@ export default function Users() {
     setOk('');
     try {
       if (editingId) {
-        // Do not allow changing email/password when editing
-        await adminAPI.updateUser(editingId, { name: form.name, role: form.role, email: form.email, phone: form.phone, address: form.address });
+        // Update existing user
+        console.log('🔄 Updating user:', { 
+          id: editingId, 
+          data: { name: form.name, role: form.role, email: form.email, phone: form.phone, address: form.address } 
+        });
+        
+        const updateData = { 
+          name: form.name, 
+          role: form.role, 
+          email: form.email, 
+          phone: form.phone, 
+          address: form.address 
+        };
+        
+        const result = await adminAPI.updateUser(editingId, updateData);
+        console.log('✅ Update result:', result);
+        
         // Refresh list to reflect latest data from server
         await loadUsers();
         setOk('Cập nhật người dùng thành công');
         // Auto-hide after 3s
         setTimeout(() => setOk(''), 3000);
-        // keep form filled or reset
-        // resetForm();
+        // Reset form after success
+        resetForm();
       } else {
         const normalizedRole = (form.role === 'customer') ? 'buyer' : (form.role || 'buyer');
   const res = await adminAPI.addUser({ ...form, role: normalizedRole });
@@ -160,14 +181,27 @@ export default function Users() {
   };
 
   const onDelete = async (id) => {
-    if (!window.confirm('Xóa vĩnh viễn người dùng này? Hành động này không thể hoàn tác.')) return;
+    const user = users.find(u => u.id === id);
+    const userName = user?.name || 'người dùng này';
+    
+    if (!window.confirm(`Xóa vĩnh viễn người dùng "${userName}"? Hành động này không thể hoàn tác.`)) return;
+    
     setErr('');
+    setOk('');
+    setBusyId(id);
+    
     try {
       await adminAPI.deleteUser(id);
-      await loadUsers();
+      // Xóa khỏi danh sách ngay lập tức
+      setUsers(prev => prev.filter(u => u.id !== id));
+      setOk(`Đã xóa người dùng "${userName}" thành công`);
+      // Auto-hide after 3s
+      setTimeout(() => setOk(''), 3000);
     } catch (e2) {
       console.error(e2);
       setErr(e2.message || 'Không thể xóa vĩnh viễn người dùng');
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -204,12 +238,10 @@ export default function Users() {
           <label className="form-label">Tên</label>
           <input className="form-control" value={form.name} onChange={(e)=>setForm({...form, name: e.target.value})} required />
         </div>
-        {!editingId && (
-          <div className="col-md-3">
-            <label className="form-label">Email</label>
-            <input type="email" className="form-control" value={form.email} onChange={(e)=>setForm({...form, email: e.target.value})} required />
-          </div>
-        )}
+        <div className="col-md-3">
+          <label className="form-label">Email</label>
+          <input type="email" className="form-control" value={form.email} onChange={(e)=>setForm({...form, email: e.target.value})} required />
+        </div>
         <div className="col-md-3">
           <label className="form-label">SĐT</label>
           <input className="form-control" value={form.phone} onChange={(e)=>setForm({...form, phone: e.target.value})} placeholder="Ví dụ: 0901234567" />
@@ -282,18 +314,33 @@ export default function Users() {
                     </td>
                     <td className="d-flex gap-2">
                       <button
-                        className={`btn btn-sm ${banned ? 'btn-success' : 'btn-danger'}`}
+                        className={`btn btn-sm ${banned ? 'btn-success' : 'btn-warning'}`}
                         onClick={() => handleToggleBan(u)}
                         disabled={busyId === u.id}
+                        title={banned ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}
                       >
                         {busyId === u.id
-                          ? 'Đang xử lý...'
+                          ? '⏳ Đang xử lý...'
                           : banned
-                          ? 'Unban'
-                          : 'Ban'}
+                          ? '✅ Mở khóa'
+                          : '🔒 Khóa'}
                       </button>
-                      <button className="btn btn-sm btn-primary" onClick={()=>onEdit(u)}>Sửa</button>
-                      <button className="btn btn-sm btn-danger" onClick={()=>onDelete(u.id)}>Xóa</button>
+                      <button 
+                        className="btn btn-sm btn-primary" 
+                        onClick={()=>onEdit(u)}
+                        disabled={busyId === u.id}
+                        title="Chỉnh sửa thông tin"
+                      >
+                        ✏️ Sửa
+                      </button>
+                      <button 
+                        className="btn btn-sm btn-danger" 
+                        onClick={()=>onDelete(u.id)}
+                        disabled={busyId === u.id}
+                        title="Xóa vĩnh viễn"
+                      >
+                        🗑️ Xóa
+                      </button>
                     </td>
                   </tr>
                 );

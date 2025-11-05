@@ -39,6 +39,18 @@ const GoogleAuth = ({ onSuccess, onError }) => {
           console.error('❌ Google auth failed:', data.message);
           throw new Error(data.message || 'Google authentication failed');
         }
+      } else if (response.status === 403) {
+        // Handle banned account
+        const errorData = await response.json();
+        console.error('⛔ Account banned:', errorData);
+        
+        // Create error object with banned account info
+        const error = new Error(errorData.message || 'Tài khoản đã bị khóa');
+        error.isBanned = true;
+        error.bannedData = errorData.data || errorData.errors;
+        error.response = { status: 403, data: errorData };
+        
+        onError && onError(error);
       } else {
         const errorData = await response.json();
         console.error('❌ Backend error:', errorData);

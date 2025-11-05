@@ -37,6 +37,12 @@ public class Shop {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "is_banned")
+    private Boolean isBanned = false;
+
+    @Column(name = "ban_reason")
+    private String banReason;
+
     // Default constructor
     public Shop() {}
 

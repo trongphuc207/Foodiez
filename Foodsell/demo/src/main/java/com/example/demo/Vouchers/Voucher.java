@@ -36,6 +36,9 @@ public class Voucher {
     @Column(name = "max_uses")
     private Integer maxUses;
 
+    @Column(name = "quantity")
+    private Integer quantity; // Số lượng voucher có sẵn
+
     @Column(name = "used_count", nullable = false)
     private Integer usedCount = 0;
 
@@ -50,24 +53,26 @@ public class Voucher {
 
     // Constructor for creating vouchers
     public Voucher(String code, String discountType, BigDecimal discountValue, 
-                   BigDecimal minOrderValue, LocalDate expiryDate, Integer maxUses, Integer createdBy) {
+                   BigDecimal minOrderValue, LocalDate expiryDate, Integer maxUses, Integer quantity, Integer createdBy) {
         this.code = code;
         this.discountType = discountType;
         this.discountValue = discountValue;
         this.minOrderValue = minOrderValue;
         this.expiryDate = expiryDate;
         this.maxUses = maxUses;
+        this.quantity = quantity;
         this.createdBy = createdBy;
         this.usedCount = 0;
         this.isActive = true;
         this.createdAt = LocalDateTime.now();
     }
 
-    // Check if voucher is valid
+    // Check if voucher is valid and available
     public boolean isValid() {
         return isActive && 
                LocalDate.now().isBefore(expiryDate) && 
-               (maxUses == null || usedCount < maxUses);
+               (maxUses == null || usedCount < maxUses) &&
+               (quantity == null || quantity > 0);
     }
 
     // Calculate discount amount

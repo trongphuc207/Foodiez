@@ -7,9 +7,11 @@ import Users from "./Users";
 import Orders from "./Orders";
 import Vouchers from "./Vouchers";
 import Reports from "./Reports";
-import Product from "./ProductManagement";
+import Shops from "./Shops";
+import RoleApplications from "./RoleApplications";
+import ProductApproval from "./ProductApproval";
+import ComplaintManagement from "./ComplaintManagement/ComplaintManagement";
 import "./admin.css";
-import ProductManagement from "./ProductManagement";
 
 
 /**
@@ -30,8 +32,11 @@ export default function AdminApp() {
             <Route path="users" element={<Users />} />
             <Route path="orders" element={<Orders />} />
             <Route path="vouchers" element={<Vouchers />} />
+            <Route path="shops" element={<Shops />} />
+            <Route path="role-applications" element={<RoleApplications />} />
+            <Route path="product-approval" element={<ProductApproval />} />
+            <Route path="complaints" element={<ComplaintManagement />} />
             <Route path="reports" element={<Reports />} />
-            <Route path="products" element={<ProductManagement />} />
 
             {/* fallback */}
             <Route path="*" element={<Dashboard />} />
