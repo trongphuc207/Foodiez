@@ -46,6 +46,8 @@ public class ReviewService {
         }
         
         Review review = new Review(customerId, finalProductId, shopId, finalOrderId, rating, content);
+        // Đảm bảo isVisible luôn được set là true
+        review.setIsVisible(true);
         return reviewRepository.save(review);
     }
 
@@ -54,6 +56,8 @@ public class ReviewService {
                               Integer orderId, Integer rating, String content, String imageUrl) {
         Review base = writeReview(customerId, productId, shopId, orderId, rating, content);
         base.setImageUrl(imageUrl);
+        // Đảm bảo isVisible vẫn là true
+        base.setIsVisible(true);
         return reviewRepository.save(base);
     }
     
@@ -112,7 +116,16 @@ public class ReviewService {
     
     // UC50: View Customer Reviews - Merchant xem tất cả review của shop
     public List<Review> getShopReviews(Integer shopId) {
-        return reviewRepository.findByShopIdAndVisible(shopId);
+        try {
+            System.out.println("🔍 ReviewService.getShopReviews - shopId: " + shopId);
+            List<Review> reviews = reviewRepository.findByShopIdAndVisible(shopId);
+            System.out.println("✅ ReviewService.getShopReviews - found " + reviews.size() + " reviews");
+            return reviews;
+        } catch (Exception e) {
+            System.err.println("❌ ReviewService.getShopReviews - Error: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
     
     // UC51: Reply to Review - Merchant trả lời review của customer
@@ -180,7 +193,16 @@ public class ReviewService {
     
     // Lấy review của sản phẩm
     public List<Review> getProductReviews(Integer productId) {
-        return reviewRepository.findByProductIdAndVisible(productId);
+        try {
+            System.out.println("🔍 ReviewService.getProductReviews - productId: " + productId);
+            List<Review> reviews = reviewRepository.findByProductIdAndVisible(productId);
+            System.out.println("✅ ReviewService.getProductReviews - found " + reviews.size() + " reviews");
+            return reviews;
+        } catch (Exception e) {
+            System.err.println("❌ ReviewService.getProductReviews - Error: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
     
     // Lấy review của customer

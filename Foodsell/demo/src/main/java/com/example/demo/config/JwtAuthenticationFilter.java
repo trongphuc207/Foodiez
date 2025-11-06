@@ -28,6 +28,39 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private UserRepository userRepository;
     
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String requestURI = request.getRequestURI();
+        String method = request.getMethod();
+        
+        System.out.println("🔍 shouldNotFilter check - " + method + " " + requestURI);
+        
+        // Skip filter for WebSocket endpoints
+        if (requestURI.startsWith("/ws-chat/")) {
+            System.out.println("🔌 WebSocket endpoint detected, skipping JWT filter: " + requestURI);
+            return true;
+        }
+        
+        // Skip filter for PayOS endpoints (public)
+        if (requestURI.startsWith("/api/payos/")) {
+            System.out.println("💳 PayOS endpoint detected, skipping JWT filter: " + method + " " + requestURI);
+            return true;
+        }
+        
+        // Skip filter for public reviews endpoints (GET requests)
+        if (method.equals("GET") && (
+            requestURI.startsWith("/api/reviews/product/") || 
+            requestURI.startsWith("/api/reviews/shop/") ||
+            requestURI.matches("/api/reviews/\\d+/replies")
+        )) {
+            System.out.println("✅ Public reviews endpoint detected, skipping JWT filter: " + method + " " + requestURI);
+            return true;
+        }
+        
+        System.out.println("⚠️ shouldNotFilter returning false - will process request");
+        return false;
+    }
+    
     private boolean isPublicEndpoint(String uri, String method) {
         return uri.startsWith("/api/auth/login") ||
                uri.startsWith("/api/auth/register") ||
@@ -41,7 +74,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                (uri.startsWith("/api/products") && method.equals("GET")) ||
                (uri.startsWith("/api/categories") && method.equals("GET")) ||
                (uri.startsWith("/api/shops") && method.equals("GET")) ||
-               uri.startsWith("/api/payos/webhook") ||
+               // Allow public reviews endpoints (GET requests)
+               (uri.startsWith("/api/reviews/product/") && method.equals("GET")) ||
+               (uri.startsWith("/api/reviews/shop/") && method.equals("GET")) ||
+               // Allow all PayOS endpoints (public)
+               uri.startsWith("/api/payos/") ||
                uri.startsWith("/uploads/") ||
                uri.startsWith("/login/oauth2/code/");
     };
@@ -54,6 +91,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         
         // Kiểm tra nếu request là cho public endpoint
         if (isPublicEndpoint(requestURI, method)) {
+            System.out.println("✅ Public endpoint, skipping JWT validation: " + method + " " + requestURI);
             filterChain.doFilter(request, response);
             return;
         }
@@ -88,10 +126,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (userOpt.isPresent()) {
                 User user = userOpt.get();
                 
-                // Tạo authorities từ role
+                // Tạo authorities từ role - thêm cả uppercase và lowercase để tương thích với @PreAuthorize
                 List<GrantedAuthority> authorities = new ArrayList<>();
                 if (user.getRole() != null) {
-                    authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().toUpperCase()));
+                    String roleUpper = user.getRole().toUpperCase();
+                    String roleLower = user.getRole().toLowerCase();
+                    
+                    // Thêm authority cho role gốc (uppercase)
+                    authorities.add(new SimpleGrantedAuthority("ROLE_" + roleUpper));
+                    // Thêm authority cho role gốc (lowercase)
+                    authorities.add(new SimpleGrantedAuthority("ROLE_" + roleLower));
+                    
+                    // Thêm alias cho CUSTOMER/BUYER để tương thích với @PreAuthorize
+                    if (roleUpper.equals("BUYER") || roleUpper.equals("CUSTOMER")) {
+                        // Thêm tất cả variants
+                        authorities.add(new SimpleGrantedAuthority("ROLE_CUSTOMER"));
+                        authorities.add(new SimpleGrantedAuthority("ROLE_customer"));
+                        authorities.add(new SimpleGrantedAuthority("ROLE_BUYER"));
+                        authorities.add(new SimpleGrantedAuthority("ROLE_buyer"));
+                    }
                 }
                 
                 // Tạo Authentication object với authorities

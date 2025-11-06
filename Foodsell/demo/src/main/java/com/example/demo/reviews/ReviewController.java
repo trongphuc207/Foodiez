@@ -188,10 +188,14 @@ public class ReviewController {
     @GetMapping("/shop/{shopId}")
     public ResponseEntity<ApiResponse<List<Review>>> getShopReviews(@PathVariable Integer shopId) {
         try {
+            System.out.println("🔍 Getting reviews for shop ID: " + shopId);
             List<Review> reviews = reviewService.getShopReviews(shopId);
+            System.out.println("✅ Found " + reviews.size() + " reviews for shop " + shopId);
             return ResponseEntity.ok(ApiResponse.success(reviews, "Lấy danh sách đánh giá shop thành công!"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+            System.err.println("❌ Error getting shop reviews: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(ApiResponse.error("Không thể lấy đánh giá shop: " + e.getMessage()));
         }
     }
     
@@ -257,10 +261,14 @@ public class ReviewController {
     @GetMapping("/product/{productId}")
     public ResponseEntity<ApiResponse<List<Review>>> getProductReviews(@PathVariable Integer productId) {
         try {
+            System.out.println("🔍 Getting reviews for product ID: " + productId);
             List<Review> reviews = reviewService.getProductReviews(productId);
+            System.out.println("✅ Found " + reviews.size() + " reviews for product " + productId);
             return ResponseEntity.ok(ApiResponse.success(reviews, "Lấy đánh giá sản phẩm thành công!"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+            System.err.println("❌ Error getting product reviews: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(ApiResponse.error("Không thể lấy đánh giá sản phẩm: " + e.getMessage()));
         }
     }
     
@@ -285,8 +293,11 @@ public class ReviewController {
     @GetMapping("/shop/{shopId}/stats")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getShopReviewStats(@PathVariable Integer shopId) {
         try {
+            System.out.println("🔍 Getting review stats for shop ID: " + shopId);
             Integer averageRating = reviewService.getShopAverageRating(shopId);
             Long reviewCount = reviewService.getShopReviewCount(shopId);
+            
+            System.out.println("✅ Shop stats - averageRating: " + averageRating + ", reviewCount: " + reviewCount);
             
             Map<String, Object> stats = new HashMap<>();
             stats.put("averageRating", averageRating);
@@ -294,7 +305,9 @@ public class ReviewController {
             
             return ResponseEntity.ok(ApiResponse.success(stats, "Lấy thống kê đánh giá shop thành công!"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+            System.err.println("❌ Error getting shop review stats: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(ApiResponse.error("Không thể lấy thống kê đánh giá shop: " + e.getMessage()));
         }
     }
     

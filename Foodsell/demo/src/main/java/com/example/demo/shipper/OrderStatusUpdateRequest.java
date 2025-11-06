@@ -1,4 +1,4 @@
-package com.example.demo.Shipper;
+package com.example.demo.shipper;
 
 import lombok.Data;
 

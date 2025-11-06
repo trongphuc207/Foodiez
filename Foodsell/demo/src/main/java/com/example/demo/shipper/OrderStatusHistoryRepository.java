@@ -1,4 +1,4 @@
-package com.example.demo.Shipper;
+package com.example.demo.shipper;
 
 import com.example.demo.order.OrderStatusHistory;
 import org.springframework.data.jpa.repository.JpaRepository;

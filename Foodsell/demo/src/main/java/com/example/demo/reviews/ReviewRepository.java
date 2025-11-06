@@ -11,11 +11,11 @@ import java.util.Optional;
 public interface ReviewRepository extends JpaRepository<Review, Integer> {
     
     // Lấy tất cả review của một sản phẩm (visible only)
-    @Query(value = "SELECT * FROM reviews WHERE product_id = :productId AND is_visible = 1 ORDER BY created_at DESC", nativeQuery = true)
+    @Query(value = "SELECT id, customer_id, product_id, shop_id, order_id, rating, content, image_url, is_visible, created_at, updated_at FROM reviews WHERE product_id = :productId AND (is_visible = 1 OR is_visible IS NULL) ORDER BY created_at DESC", nativeQuery = true)
     List<Review> findByProductIdAndVisible(@Param("productId") Integer productId);
     
-    // Lấy tất cả review của một shop (visible only)
-    @Query(value = "SELECT * FROM reviews WHERE shop_id = :shopId AND is_visible = 1 ORDER BY created_at DESC", nativeQuery = true)
+    // Lấy tất cả review của một shop (có shop_id trong bảng reviews)
+    @Query(value = "SELECT id, customer_id, product_id, shop_id, order_id, rating, content, image_url, is_visible, created_at, updated_at FROM reviews WHERE shop_id = :shopId AND (is_visible = 1 OR is_visible IS NULL) ORDER BY created_at DESC", nativeQuery = true)
     List<Review> findByShopIdAndVisible(@Param("shopId") Integer shopId);
     
     // Lấy review của customer cho một sản phẩm cụ thể
@@ -38,19 +38,19 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
     @Query("SELECT r FROM Review r ORDER BY r.createdAt DESC")
     List<Review> findAllOrderByCreatedAtDesc();
     
-    // Tính rating trung bình của một sản phẩm
-    @Query(value = "SELECT CAST(ROUND(AVG(CAST(rating AS FLOAT)), 0) AS INT) FROM reviews WHERE product_id = :productId AND is_visible = 1", nativeQuery = true)
+    // Tính rating trung bình của một sản phẩm (chỉ tính reviews visible)
+    @Query(value = "SELECT CAST(ROUND(AVG(CAST(rating AS FLOAT)), 0) AS INT) FROM reviews WHERE product_id = :productId AND (is_visible = 1 OR is_visible IS NULL)", nativeQuery = true)
     Integer getAverageRatingByProductId(@Param("productId") Integer productId);
     
-    // Tính rating trung bình của một shop
-    @Query(value = "SELECT CAST(ROUND(AVG(CAST(rating AS FLOAT)), 0) AS INT) FROM reviews WHERE shop_id = :shopId AND is_visible = 1", nativeQuery = true)
+    // Tính rating trung bình của một shop (có shop_id trong bảng reviews)
+    @Query(value = "SELECT CAST(ROUND(AVG(CAST(rating AS FLOAT)), 0) AS INT) FROM reviews WHERE shop_id = :shopId AND (is_visible = 1 OR is_visible IS NULL)", nativeQuery = true)
     Integer getAverageRatingByShopId(@Param("shopId") Integer shopId);
     
-    // Đếm số lượng review của một sản phẩm
-    @Query(value = "SELECT COUNT(*) FROM reviews WHERE product_id = :productId AND is_visible = 1", nativeQuery = true)
+    // Đếm số lượng review của một sản phẩm (chỉ tính reviews visible)
+    @Query(value = "SELECT COUNT(*) FROM reviews WHERE product_id = :productId AND (is_visible = 1 OR is_visible IS NULL)", nativeQuery = true)
     Long countByProductIdAndVisible(@Param("productId") Integer productId);
     
-    // Đếm số lượng review của một shop
-    @Query(value = "SELECT COUNT(*) FROM reviews WHERE shop_id = :shopId AND is_visible = 1", nativeQuery = true)
+    // Đếm số lượng review của một shop (có shop_id trong bảng reviews)
+    @Query(value = "SELECT COUNT(*) FROM reviews WHERE shop_id = :shopId AND (is_visible = 1 OR is_visible IS NULL)", nativeQuery = true)
     Long countByShopIdAndVisible(@Param("shopId") Integer shopId);
 }

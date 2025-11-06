@@ -22,11 +22,31 @@ public class PayOSController {
     // Tạo payment link
     @PostMapping("/create-payment")
     public ResponseEntity<Map<String, Object>> createPayment(@RequestBody Map<String, Object> paymentData) {
-        Map<String, Object> result = payOSService.createPaymentLink(paymentData);
-        if ((Boolean) result.get("success")) {
-            return ResponseEntity.ok(result);
-        } else {
-            return ResponseEntity.badRequest().body(result);
+        try {
+            System.out.println("=== PAYOS CONTROLLER - CREATE PAYMENT ===");
+            System.out.println("Received payment data: " + paymentData);
+            
+            Map<String, Object> result = payOSService.createPaymentLink(paymentData);
+            
+            System.out.println("Service result: " + result);
+            Boolean success = (Boolean) result.get("success");
+            
+            if (success != null && success) {
+                System.out.println("✅ Payment link created successfully");
+                return ResponseEntity.ok(result);
+            } else {
+                String message = (String) result.getOrDefault("message", "Failed to create payment link");
+                System.err.println("❌ Payment link creation failed: " + message);
+                return ResponseEntity.badRequest().body(result);
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Controller error: " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, Object> errorResult = new HashMap<>();
+            errorResult.put("success", false);
+            errorResult.put("message", "Có lỗi xảy ra khi xử lý đơn hàng: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(errorResult);
         }
     }
 

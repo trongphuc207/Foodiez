@@ -83,23 +83,62 @@ public class PayOSService {
 
             Map<String, Object> result = new HashMap<>();
             Map<String, Object> responseBody = response.getBody();
-            if ("00".equals(responseBody.get("code"))) {
+            
+            if (responseBody == null) {
+                System.err.println("❌ PayOS API returned null response body");
+                result.put("success", false);
+                result.put("message", "PayOS API returned null response. Please check network connection and API credentials.");
+                return result;
+            }
+            
+            Object code = responseBody.get("code");
+            System.out.println("Response code: " + code);
+            
+            if (code != null && "00".equals(code.toString())) {
                 result.put("success", true);
                 result.put("data", responseBody.get("data"));
                 System.out.println("✅ Payment link created successfully");
             } else {
+                Object desc = responseBody.get("desc");
+                String errorMessage = desc != null ? desc.toString() : "Unknown error from PayOS API";
                 result.put("success", false);
-                result.put("message", responseBody.get("desc"));
-                System.out.println("❌ Payment creation failed: " + responseBody.get("desc"));
+                result.put("message", errorMessage);
+                result.put("code", code);
+                System.err.println("❌ Payment creation failed - Code: " + code + ", Message: " + errorMessage);
             }
             return result;
-        } catch (Exception e) {
-            System.err.println("❌ Error creating payment link: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            System.err.println("❌ Validation error: " + e.getMessage());
             e.printStackTrace();
             
             Map<String, Object> errorResult = new HashMap<>();
             errorResult.put("success", false);
-            errorResult.put("message", "Error creating payment: " + e.getMessage());
+            errorResult.put("message", "Dữ liệu không hợp lệ: " + e.getMessage());
+            return errorResult;
+        } catch (org.springframework.web.client.ResourceAccessException e) {
+            System.err.println("❌ Network error connecting to PayOS API: " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, Object> errorResult = new HashMap<>();
+            errorResult.put("success", false);
+            errorResult.put("message", "Không thể kết nối đến PayOS. Vui lòng kiểm tra kết nối mạng và thử lại.");
+            return errorResult;
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            System.err.println("❌ PayOS API HTTP error: " + e.getStatusCode() + " - " + e.getMessage());
+            System.err.println("Response body: " + e.getResponseBodyAsString());
+            e.printStackTrace();
+            
+            Map<String, Object> errorResult = new HashMap<>();
+            errorResult.put("success", false);
+            errorResult.put("message", "Lỗi từ PayOS API: " + e.getStatusCode() + ". Vui lòng kiểm tra thông tin đăng nhập PayOS.");
+            return errorResult;
+        } catch (Exception e) {
+            System.err.println("❌ Unexpected error creating payment link: " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, Object> errorResult = new HashMap<>();
+            errorResult.put("success", false);
+            errorResult.put("message", "Có lỗi xảy ra khi tạo payment link: " + e.getMessage());
             return errorResult;
         }
     }
@@ -231,6 +270,23 @@ public class PayOSService {
         String description = (String) data.get("description");
         Integer orderCode = (Integer) data.get("orderCode");
         String returnUrl = (String) data.get("returnUrl");
+        
+        // Validate required fields
+        if (amount == null) {
+            throw new IllegalArgumentException("Amount is required");
+        }
+        if (cancelUrl == null || cancelUrl.isEmpty()) {
+            throw new IllegalArgumentException("Cancel URL is required");
+        }
+        if (description == null || description.isEmpty()) {
+            throw new IllegalArgumentException("Description is required");
+        }
+        if (orderCode == null) {
+            throw new IllegalArgumentException("Order code is required");
+        }
+        if (returnUrl == null || returnUrl.isEmpty()) {
+            throw new IllegalArgumentException("Return URL is required");
+        }
         
         System.out.println("Amount: " + amount);
         System.out.println("Cancel URL: " + cancelUrl);
