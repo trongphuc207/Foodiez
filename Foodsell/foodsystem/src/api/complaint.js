@@ -8,6 +8,11 @@ export const complaintAPI = {
   // Create new complaint
   createComplaint: async (complaintData) => {
     const token = getAuthToken();
+    
+    if (!token) {
+      throw new Error('Vui lòng đăng nhập để gửi khiếu nại');
+    }
+    
     const response = await fetch(`${API_BASE_URL}/complaints`, {
       method: 'POST',
       headers: {
@@ -18,8 +23,19 @@ export const complaintAPI = {
     });
     
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to create complaint');
+      const status = response.status;
+      try {
+        const errorData = await response.json();
+        if (status === 401) {
+          throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
+        }
+        throw new Error(errorData.message || `Lỗi khi tạo khiếu nại: ${status}`);
+      } catch (e) {
+        if (e.message.includes('Phiên đăng nhập') || e.message.includes('Lỗi khi tạo')) {
+          throw e;
+        }
+        throw new Error(`Lỗi khi tạo khiếu nại: ${status} - ${response.statusText}`);
+      }
     }
     
     return response.json();
