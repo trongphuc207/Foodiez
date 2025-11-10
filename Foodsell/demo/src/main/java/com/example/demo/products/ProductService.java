@@ -52,6 +52,26 @@ public class ProductService {
     public List<Product> getProductsByShopId(int shopId) {
         return repo.findByShopId(shopId);
     }
+    
+    // Tìm sản phẩm theo giá (dưới hoặc bằng một giá trị)
+    public List<Product> getProductsByMaxPrice(double maxPrice) {
+        return repo.findByPriceLessThanEqual(maxPrice);
+    }
+    
+    // Tìm sản phẩm theo khoảng giá
+    public List<Product> getProductsByPriceRange(double minPrice, double maxPrice) {
+        return repo.findByPriceBetween(minPrice, maxPrice);
+    }
+    
+    // Tìm sản phẩm theo giá (trên hoặc bằng một giá trị)
+    public List<Product> getProductsByMinPrice(double minPrice) {
+        return repo.findByPriceGreaterThanEqual(minPrice);
+    }
+    
+    // Tìm sản phẩm theo categoryId
+    public List<Product> getProductsByCategoryId(int categoryId) {
+        return repo.findByCategoryId(categoryId);
+    }
     public Product createProduct(Product product) {
         return repo.save(product);
     }

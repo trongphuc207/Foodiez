@@ -43,6 +43,9 @@ public class SecurityConfig {
                 // Voucher endpoints (public for now, can be restricted later)
                 .requestMatchers("/api/vouchers/**").permitAll()
                 
+                // Gemini AI Chatbot endpoints (public for easy access)
+                .requestMatchers("/api/gemini/**").permitAll()
+                
                 // Review endpoints (public for reading reviews and stats)
                 .requestMatchers("/api/reviews/product/**").permitAll()
                 .requestMatchers("/api/reviews/shop/**").permitAll()

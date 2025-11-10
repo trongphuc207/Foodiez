@@ -57,6 +57,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return true;
         }
         
+        // Don't skip Gemini AI chatbot endpoints - we want to process token if available (optional auth)
+        // This allows us to get userId for product creation while keeping endpoint public
+        
         System.out.println("⚠️ shouldNotFilter returning false - will process request");
         return false;
     }
@@ -79,6 +82,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                (uri.startsWith("/api/reviews/shop/") && method.equals("GET")) ||
                // Allow all PayOS endpoints (public)
                uri.startsWith("/api/payos/") ||
+               // Don't skip Gemini AI chatbot endpoints - we want to process token if available (optional auth)
+               // uri.startsWith("/api/gemini/") ||
                uri.startsWith("/uploads/") ||
                uri.startsWith("/login/oauth2/code/");
     };
@@ -96,25 +101,45 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         
-        System.out.println("\n🔍 JWT Filter - Processing protected endpoint: " + method + " " + requestURI);
+        System.out.println("\n🔍 JWT Filter - Processing endpoint: " + method + " " + requestURI);
         
         // Extract và validate token
         String token = extractTokenFromRequest(request);
+        
+        // Check if this is a public endpoint that allows optional authentication
+        boolean isPublicOptionalAuth = requestURI.startsWith("/api/gemini/");
+        
         if (token == null) {
-            System.out.println("❌ No token found for protected endpoint");
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error\": \"Unauthorized: No token provided\"}");
-            return;
+            if (isPublicOptionalAuth) {
+                // Public endpoint with optional auth - allow request without token
+                System.out.println("ℹ️ No token found for public endpoint (optional auth), allowing request");
+                filterChain.doFilter(request, response);
+                return;
+            } else {
+                // Protected endpoint requires token
+                System.out.println("❌ No token found for protected endpoint");
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\": \"Unauthorized: No token provided\"}");
+                return;
+            }
         }
         
         try {
             if (!jwtUtil.validateToken(token)) {
-                System.out.println("❌ Invalid token");
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.setContentType("application/json");
-                response.getWriter().write("{\"error\": \"Unauthorized: Invalid token\"}");
-                return;
+                if (isPublicOptionalAuth) {
+                    // Public endpoint with optional auth - allow request even with invalid token
+                    System.out.println("ℹ️ Invalid token for public endpoint (optional auth), allowing request");
+                    filterChain.doFilter(request, response);
+                    return;
+                } else {
+                    // Protected endpoint requires valid token
+                    System.out.println("❌ Invalid token");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"error\": \"Unauthorized: Invalid token\"}");
+                    return;
+                }
             }
 
             // Lấy email từ token

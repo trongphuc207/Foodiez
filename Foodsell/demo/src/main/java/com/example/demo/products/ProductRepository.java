@@ -23,4 +23,20 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     
     // Count products by shop and status
     long countByShopIdAndStatus(Integer shopId, String status);
+    
+    // Tìm sản phẩm theo giá (dưới hoặc bằng một giá trị)
+    @Query("SELECT p FROM Product p WHERE p.price <= :maxPrice AND p.available = true AND p.status = 'active' ORDER BY p.price ASC")
+    List<Product> findByPriceLessThanEqual(@Param("maxPrice") double maxPrice);
+    
+    // Tìm sản phẩm theo khoảng giá
+    @Query("SELECT p FROM Product p WHERE p.price >= :minPrice AND p.price <= :maxPrice AND p.available = true AND p.status = 'active' ORDER BY p.price ASC")
+    List<Product> findByPriceBetween(@Param("minPrice") double minPrice, @Param("maxPrice") double maxPrice);
+    
+    // Tìm sản phẩm theo giá (trên hoặc bằng một giá trị)
+    @Query("SELECT p FROM Product p WHERE p.price >= :minPrice AND p.available = true AND p.status = 'active' ORDER BY p.price ASC")
+    List<Product> findByPriceGreaterThanEqual(@Param("minPrice") double minPrice);
+    
+    // Tìm sản phẩm theo categoryId
+    @Query("SELECT p FROM Product p WHERE p.categoryId = :categoryId AND p.available = true AND p.status = 'active' ORDER BY p.name ASC")
+    List<Product> findByCategoryId(@Param("categoryId") int categoryId);
 }
