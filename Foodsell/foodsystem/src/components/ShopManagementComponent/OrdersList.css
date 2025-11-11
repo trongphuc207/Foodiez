@@ -130,3 +130,60 @@
 .form-group input {
   font-size: 1rem;
 }
+
+/* Card-based order list styles */
+.orders-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.order-card.large {
+  background: #fff;
+  border: 1px solid rgba(226, 101, 62, 0.06);
+  border-radius: 12px;
+  padding: 0;
+  box-shadow: 0 8px 30px rgba(15,23,42,0.04);
+}
+
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  background: linear-gradient(180deg,#fffaf0,#fffaf5);
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.header-left { display:flex; flex-direction:column; gap:6px; }
+.label-small { font-size:0.75rem; text-transform:uppercase; color:#64748b; letter-spacing:0.06em; }
+.order-number { font-size:1.5rem; font-weight:800; color:#0f172a; }
+.order-time { color:#64748b; font-size:0.95rem; }
+
+.header-right { display:flex; align-items:center; }
+.status-pill { padding:10px 16px; border-radius:999px; font-weight:700; background:#fff7cc; color:#b45309; }
+
+.card-body { padding: 28px 28px 22px 28px; }
+.products-section { padding: 4px 0 18px 0; }
+.section-title { font-weight:700; color:#0f172a; margin:0 0 16px 0; }
+.product-center { display:flex; flex-direction:column; align-items:center; gap:8px; padding:18px 0; }
+.center-image { width:72px; height:72px; border-radius:8px; object-fit:cover; box-shadow:0 6px 18px rgba(15,23,42,0.04); border:1px solid #f1f5f9; }
+.center-name { font-weight:600; color:#0f172a; }
+.center-qty { color:#64748b; }
+.center-price { color:#ea580c; font-weight:800; font-size:1.05rem; }
+
+.card-footer { display:flex; align-items:center; justify-content:space-between; padding-top:8px; border-top:1px solid #f1f5f9; }
+.total-label { color:#0f172a; font-weight:600; }
+.grand-total { font-weight:800; font-size:1.35rem; color:#0f172a; }
+
+.actions-row { display:flex; gap:16px; margin-top:18px; }
+.btn-primary { flex:1; background:#c9552b; color:#fff; padding:14px 20px; border-radius:10px; border:none; font-weight:700; cursor:pointer; }
+.btn-primary:hover { background:#b14b26; }
+.btn-cancel { flex:1; background:#fff6f6; color:#b91c1c; padding:14px 20px; border-radius:10px; border:1px solid #f5c6c6; font-weight:700; cursor:pointer; }
+
+@media (max-width: 800px) {
+  .actions-row { flex-direction:column; }
+}

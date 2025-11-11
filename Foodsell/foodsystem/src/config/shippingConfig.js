@@ -86,3 +86,35 @@ export const calculateShippingFee = (fromDistrict, toDistrict) => {
     }
   };
 };
+
+// Tính phí vận chuyển cho nhiều cửa hàng với quy tắc:
+// - Chỉ áp dụng baseFee cho cửa hàng đầu tiên
+// - Đơn giá theo km (pricePerKm) thay đổi theo tổng số sản phẩm trong phiên:
+//   1-2 sp: 1000đ/km, 3-6 sp: 2000đ/km, >6 sp: 3000đ/km
+// distancesKm: mảng số km từ từng shop tới khách, phần tử đầu là shop đầu tiên
+export const computeMultiShopShipping = (distancesKm = [], totalItems = 1) => {
+  const BASE_FEE = 15000;
+  let PRICE_PER_KM = 1000;
+  if (totalItems >= 3 && totalItems <= 6) PRICE_PER_KM = 2000;
+  else if (totalItems > 6) PRICE_PER_KM = 3000;
+
+  if (!Array.isArray(distancesKm) || distancesKm.length === 0) {
+    return { total: 0, baseFee: BASE_FEE, pricePerKm: PRICE_PER_KM, breakdown: [] };
+  }
+
+  const breakdown = distancesKm.map((d, idx) => {
+    const distance = Number(d) || 0;
+    const distanceFee = Math.round(distance * PRICE_PER_KM);
+    const totalFee = idx === 0 ? BASE_FEE + distanceFee : distanceFee;
+    return {
+      index: idx,
+      distance,
+      isBaseApplied: idx === 0,
+      distanceFee,
+      totalFee
+    };
+  });
+
+  const total = breakdown.reduce((s, b) => s + b.totalFee, 0);
+  return { total, baseFee: BASE_FEE, pricePerKm: PRICE_PER_KM, breakdown };
+};

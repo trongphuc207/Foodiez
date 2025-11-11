@@ -34,7 +34,6 @@ function App() {
           </Router>
         </CartProvider>
       </div>
-      
     </QueryClientProvider>
   );
 }

@@ -6,14 +6,15 @@ const getAuthToken = () => {
 };
 
 export const customerAPI = {
-  // Lấy danh sách đơn hàng của khách hàng
+  // Lấy danh sách đơn hàng của khách hàng (sử dụng endpoint authenticated trên server)
   getOrders: async () => {
     const token = getAuthToken();
     if (!token) {
       throw new Error('No authentication token found');
     }
 
-        const response = await fetch(`${API_BASE_URL}/customer/my-orders`, {
+    // Use server endpoint that derives current user from the auth token
+    const response = await fetch(`${API_BASE_URL}/customer/my-orders`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -22,11 +23,23 @@ export const customerAPI = {
     });
     
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to get customer orders');
+      try {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to get customer orders');
+      } catch (e) {
+        if (response.status === 401) {
+          throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        } else if (response.status === 403) {
+          throw new Error('Bạn không có quyền truy cập vào tài nguyên này.');
+        } else {
+          throw new Error(`Lỗi khi tải đơn hàng (HTTP ${response.status})`);
+        }
+      }
     }
     
-    return response.json();
+    const data = await response.json();
+    console.log('API Response:', data);
+    return data;
   },
 
   // Lấy chi tiết đơn hàng
@@ -35,8 +48,7 @@ export const customerAPI = {
     if (!token) {
       throw new Error('No authentication token found');
     }
-
-    const response = await fetch(`${API_BASE_URL}/customer/orders/${orderId}`, {
+  const response = await fetch(`${API_BASE_URL}/customer/orders/${orderId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -58,14 +70,13 @@ export const customerAPI = {
     if (!token) {
       throw new Error('No authentication token found');
     }
-
-    const response = await fetch(`${API_BASE_URL}/customer/orders/${orderId}/cancel`, {
+  const response = await fetch(`${API_BASE_URL}/customer/orders/${orderId}/cancel`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify({ reason }),
+  body: JSON.stringify({ status: 'cancelled', reason }),
     });
     
     if (!response.ok) {
@@ -82,8 +93,7 @@ export const customerAPI = {
     if (!token) {
       throw new Error('No authentication token found');
     }
-
-    const response = await fetch(`${API_BASE_URL}/customer/orders/${orderId}/review`, {
+  const response = await fetch(`${API_BASE_URL}/customer/orders/${orderId}/review`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -106,7 +116,7 @@ export const customerAPI = {
     if (!token) {
       throw new Error('No authentication token found');
     }
-const response = await fetch(`${API_BASE_URL}/customer/profile`, {
+const response = await fetch(`${API_BASE_URL}/auth/profile`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
