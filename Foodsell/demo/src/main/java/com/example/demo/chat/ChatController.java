@@ -6,6 +6,7 @@ import com.example.demo.dto.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.nio.file.Files;
@@ -22,10 +23,12 @@ import java.util.List;
 public class ChatController {
     private final ChatService chatService;
     private final RoleChecker roleChecker;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public ChatController(ChatService chatService, RoleChecker roleChecker) {
+    public ChatController(ChatService chatService, RoleChecker roleChecker, SimpMessagingTemplate messagingTemplate) {
         this.chatService = chatService;
         this.roleChecker = roleChecker;
+        this.messagingTemplate = messagingTemplate;
     }
 
     // Open chat interface: list conversations
@@ -69,6 +72,29 @@ public class ChatController {
     public ResponseEntity<ApiResponse<List<com.example.demo.chat.dto.ChatMessageResponse>>> history(@PathVariable("id") Long conversationId) {
         var list = chatService.getMessagesDTO(conversationId);
         return ResponseEntity.ok(ApiResponse.success(list, "Fetched messages"));
+    }
+
+    // Persist a text message (in addition to STOMP)
+    @PostMapping(value = "/conversations/{id}/message", consumes = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<com.example.demo.chat.dto.ChatMessageResponse>> sendText(
+            @PathVariable("id") Long conversationId,
+            @RequestBody Map<String, String> body) {
+        try {
+            String content = body.getOrDefault("content", "").trim();
+            if (content.isEmpty()) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Empty content"));
+            }
+            User me = roleChecker.getCurrentUser();
+            Message saved = chatService.sendMessage(conversationId, me.getId(), content);
+            var dto = new com.example.demo.chat.dto.ChatMessageResponse(saved.getId(), conversationId, me.getId(), saved.getContent(), saved.getImageUrl(), saved.getCreatedAt());
+            try { messagingTemplate.convertAndSend("/topic/conversations/" + conversationId, dto); } catch (Exception ignore) {}
+            return ResponseEntity.ok(ApiResponse.success(dto, "Sent"));
+        } catch (java.util.NoSuchElementException nf) {
+            return ResponseEntity.status(404).body(ApiResponse.error("Conversation or user not found"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ApiResponse.error("Internal server error: " + (e.getMessage()==null? e.getClass().getSimpleName(): e.getMessage())));
+        }
     }
 
     // Create or get conversation with another user

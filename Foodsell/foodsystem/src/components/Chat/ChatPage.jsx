@@ -17,7 +17,7 @@ const ChatPage = () => {
   if (!isAuthenticated) {
     return (
       <div style={{ padding: 20 }}>
-        <h3>{'Bạn cần đăng nhập để sử dụng chat'}</h3>
+        <h3>B?n c?n dang nh?p d? s? d?ng chat</h3>
         <p>{'Hãy bấm nút Đăng nhập ở góc trên bên phải.'}</p>
       </div>
     );
@@ -32,4 +32,5 @@ const ChatPage = () => {
 };
 
 export default ChatPage;
+
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import StarRating from './StarRating';
 import './ReviewForm.css';
 
-const ReviewForm = ({ review, onSubmit, onCancel, title = 'Viết đánh giá' }) => {
+const ReviewForm = ({ review, onSubmit, onCancel, title = 'Vi?t d�nh gi�' }) => {
   const [rating, setRating] = useState(review?.rating || 0);
   const [content, setContent] = useState(review?.content || '');
   const [orderId, setOrderId] = useState('');
@@ -90,3 +90,4 @@ const ReviewForm = ({ review, onSubmit, onCancel, title = 'Viết đánh giá' }
 };
 
 export default ReviewForm;
+
