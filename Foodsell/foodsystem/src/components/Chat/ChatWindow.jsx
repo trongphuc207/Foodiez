@@ -92,12 +92,28 @@ const ChatWindow = ({ conversation }) => {
     };
   }, [conversation]);
 
-  const send = () => {
-    if (!text.trim() || !conversation || !clientRef.current?.connected) return;
-    const payload = { conversationId: conversation.id, senderId: user?.id, content: text.trim() };
-    setMessages(prev => [...prev, { id: Date.now(), conversationId: conversation.id, senderId: user?.id, content: payload.content, createdAt: new Date().toISOString() }]);
-    clientRef.current.publish({ destination: '/app/chat.sendMessage', body: JSON.stringify(payload)});
+  const send = async () => {
+    if (!text.trim() || !conversation) return;
+    const content = text.trim();
     setText('');
+    // Optimistic UI
+    const tempId = Date.now();
+    setMessages(prev => [...prev, { id: tempId, conversationId: conversation.id, senderId: user?.id, content, createdAt: new Date().toISOString() }]);
+    try {
+      // Persist via REST so message survives reload
+      const res = await chatAPI.sendMessage(conversation.id, content);
+      if (res?.success && res.data) {
+        setMessages(prev => {
+          const filtered = prev.filter(m => m.id !== tempId);
+          return dedupeMessages([...filtered, res.data]);
+        });
+      }
+      // Server will broadcast via STOMP after persisting; no local publish to avoid duplicates
+    } catch (e) {
+      alert('Gửi tin nhắn thất bại: ' + e.message);
+      // Rollback temp message on failure
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+    }
   };
 
   const onPickFile = () => fileRef.current && fileRef.current.click();

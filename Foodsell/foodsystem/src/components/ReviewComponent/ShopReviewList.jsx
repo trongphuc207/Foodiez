@@ -11,7 +11,6 @@ const ShopReviewList = ({ shopId, userRole, currentUserId }) => {
   const [reviewStats, setReviewStats] = useState({ averageRating: 0, reviewCount: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // No shop-level write button; reviews are aggregated from dish reviews
   const [editingReview, setEditingReview] = useState(null);
   const [productNames, setProductNames] = useState({});
 
@@ -60,7 +59,7 @@ const ShopReviewList = ({ shopId, userRole, currentUserId }) => {
     return /^https?:\/\//i.test(u) ? u : `http://localhost:8080${u.startsWith('/') ? '' : '/'}${u}`;
   };
 
-  // Fetch product names for product reviews
+  // Fetch missing product names for reviews
   useEffect(() => {
     const run = async () => {
       const ids = Array.from(new Set((reviews || [])
@@ -85,8 +84,6 @@ const ShopReviewList = ({ shopId, userRole, currentUserId }) => {
     if (reviews?.length) run();
   }, [reviews]);
 
-  // Removed write-review handler; shop rating is aggregated from dish reviews
-
   const handleReplyToReview = async (reviewId, content) => {
     try {
       const response = await reviewAPI.replyToReview(reviewId, content);
@@ -104,7 +101,7 @@ const ShopReviewList = ({ shopId, userRole, currentUserId }) => {
   };
 
   const handleDeleteReview = async (reviewId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa đánh giá này?')) return;
+    if (!window.confirm('Bạn có chắc muốn xóa đánh giá này?')) return;
     try {
       const response = await reviewAPI.deleteReview(reviewId);
       if (response.success) { loadShopReviews(); loadShopReviewStats(); }
@@ -117,12 +114,12 @@ const ShopReviewList = ({ shopId, userRole, currentUserId }) => {
   return (
     <div className="shop-review-list">
       <div className="shop-review-header">
-        <h3>{'\u0110\u00e1nh gi\u00e1 shop'}</h3>
+        <h3>Đánh giá shop</h3>
         <div className="shop-review-stats">
           <div className="average-rating">
-            <StarRating rating={reviewStats.averageRating} readOnly />
+            <StarRating rating={reviewStats.averageRating} readOnly size="small" />
             <span className="rating-text">
-              {reviewStats.averageRating.toFixed(1)} ({reviewStats.reviewCount} {'\u0111\u00e1nh gi\u00e1'})
+              {reviewStats.averageRating.toFixed(1)} ({reviewStats.reviewCount} đánh giá)
             </span>
           </div>
         </div>
@@ -131,56 +128,59 @@ const ShopReviewList = ({ shopId, userRole, currentUserId }) => {
       {error && (
         <div className="shop-review-error">
           <p>{error}</p>
-          <button onClick={() => setError(null)}>{'\u0110\u00f3ng'}</button>
+          <button onClick={() => setError(null)}>Đóng</button>
         </div>
       )}
 
-
       <div className="shop-reviews-container">
         {reviews.length === 0 ? (
-          <p className="no-reviews">{'Ch\u01b0a c\u00f3 \u0111\u00e1nh gi\u00e1 n\u00e0o cho shop n\u00e0y.'}</p>
+          <p className="no-reviews">Chưa có đánh giá nào cho shop này.</p>
         ) : (
           reviews.map((review) => (
             <div key={review.id} className="shop-review-item">
               <div className="review-header-item">
                 <div className="reviewer-info">
-                  <span className="reviewer-name">{'Kh\u00e1ch h\u00e0ng'} #{review.customerId}</span>
+                  <span className="reviewer-name">Khách hàng #{review.customerId}</span>
                   <span className="review-date">{new Date(review.createdAt).toLocaleDateString('vi-VN')}</span>
                 </div>
                 <div className="review-rating"><StarRating rating={review.rating} readOnly /></div>
               </div>
-              <div className="review-content">
-                {review.productId > 0 && (
-                  <div style={{ fontSize: 13, color: '#444', marginBottom: 4 }}>{'M\u00f3n:'} {productNames[review.productId] || `#${review.productId}`}</div>
-                )}
-                {review.imageUrl ? (
-                  <a href={resolveUrl(review.imageUrl)} target="_blank" rel="noreferrer">
-                    <img
-                      alt="Ảnh đánh giá"
-                      className="review-image"
-                      src={resolveUrl(review.imageUrl)}
-                    />
-                  </a>
-                ) : null}
-                <p>{review.content}</p>
+
+              <div className="review-body">
+                <div className="review-media">
+                  {review.imageUrl ? (
+                    <a href={resolveUrl(review.imageUrl)} target="_blank" rel="noreferrer">
+                      <img alt="Ảnh đánh giá" className="review-image" src={resolveUrl(review.imageUrl)} />
+                    </a>
+                  ) : null}
+                </div>
+                <div className="review-text">
+                  {review.productId > 0 && (
+                    <div className="review-dish">Món: {productNames[review.productId] || `#${review.productId}`}</div>
+                  )}
+                  <p className="review-content-text">{review.content}</p>
+                </div>
               </div>
+
               {(() => {
                 const canEdit = (userRole === 'CUSTOMER' || userRole === 'customer' || userRole === 'buyer') && review.customerId === currentUserId;
                 return canEdit;
               })() && (
                 <div className="review-actions">
-                  <button className="edit-review-btn" onClick={() => setEditingReview(review)}>{'Ch\u1ec9nh s\u1eeda'}</button>
-                  <button className="delete-review-btn" onClick={() => handleDeleteReview(review.id)}>{'X\u00f3a'}</button>
+                  <button className="edit-review-btn" onClick={() => setEditingReview(review)}>Chỉnh sửa</button>
+                  <button className="delete-review-btn" onClick={() => handleDeleteReview(review.id)}>Xóa</button>
                 </div>
               )}
+
               {editingReview && editingReview.id === review.id && (
                 <ReviewForm
                   review={editingReview}
                   onSubmit={(data) => handleEditReview(review.id, data)}
                   onCancel={() => setEditingReview(null)}
-                  title={'Ch\u1ec9nh s\u1eeda \u0111\u00e1nh gi\u00e1 shop'}
+                  title={'Chỉnh sửa đánh giá shop'}
                 />
               )}
+
               <ReviewReply reviewId={review.id} userRole={userRole} onReply={handleReplyToReview} />
             </div>
           ))
@@ -191,3 +191,5 @@ const ShopReviewList = ({ shopId, userRole, currentUserId }) => {
 };
 
 export default ShopReviewList;
+
+

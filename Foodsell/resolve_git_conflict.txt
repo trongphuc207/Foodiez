@@ -1,0 +1,23 @@
+# Hướng dẫn resolve git conflict
+
+## Tình trạng:
+- File application.properties bị "deleted by us" trong merge
+- File hiện tại đã đúng và đầy đủ (có PayOS config)
+- Cần add file lại để Git biết giữ lại file
+
+## Các lệnh cần chạy:
+
+1. Add file application.properties:
+   git add Foodsell/demo/src/main/resources/application.properties
+
+2. Kiểm tra status:
+   git status
+
+3. Commit merge:
+   git commit -m "Resolve merge conflict: keep application.properties from mergecode branch"
+
+## Lưu ý:
+- File application.properties hiện tại đã đúng và đầy đủ
+- Không cần chỉnh sửa gì thêm
+- Chỉ cần add và commit là xong
+
