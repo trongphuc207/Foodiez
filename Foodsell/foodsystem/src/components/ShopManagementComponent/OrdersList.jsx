@@ -14,7 +14,24 @@ const OrdersList = ({ shopId, status }) => {
     refetchOnWindowFocus: false,
   });
 
-  const orders = ordersResp?.data || [];
+  // Backend may return either an array ([]) or an object like { data: [] }.
+  const orders = Array.isArray(ordersResp) ? ordersResp : (ordersResp?.data || []);
+  // Normalize orders/items so UI works regardless of backend naming
+  const normalizedOrders = (orders || []).map((o) => {
+    const items = o.items || o.orderItems || o.line_items || o.order_items || [];
+    const total = o.totalAmount || o.total_amount || o.total || o.total_price || 0;
+    return { ...o, items, total };
+  });
+
+  const formatPrice = (value) => {
+    if (value == null || value === '' || isNaN(Number(value))) return '—';
+    try {
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(value));
+    } catch (e) {
+      return `${value}đ`;
+    }
+  };
+
   // Debug: log payload to inspect assignmentStatus values
   // (temporary, remove after verification)
   console.debug('OrdersList - ordersResp:', ordersResp);
@@ -177,7 +194,7 @@ const OrdersList = ({ shopId, status }) => {
         </div>
       )}
 
-      {orders.length === 0 ? (
+      {normalizedOrders.length === 0 ? (
         <div>Không có đơn hàng.</div>
       ) : (
         <table className="orders-table">
@@ -193,14 +210,14 @@ const OrdersList = ({ shopId, status }) => {
             </tr>
           </thead>
           <tbody>
-            {orders.map((o) => (
+            {normalizedOrders.map((o) => (
               <tr key={o.id}>
                 <td>{o.id}</td>
                 <td>{o.recipientName || ('Buyer #' + (o.buyerId || '—'))}</td>
-                <td>{o.totalAmount ? o.totalAmount : o.total_price || '—'}</td>
+                <td>{formatPrice(o.total || o.totalAmount || o.total_price)}</td>
                 <td>{o.status}</td>
                 <td>{o.assignmentStatus || '—'}</td>
-                <td>{o.createdAt ? new Date(o.createdAt).toLocaleString() : ''}</td>
+                <td>{o.createdAt ? new Date(o.createdAt).toLocaleString() : (o.created_at || '')}</td>
                 <td>
                   <button 
                     onClick={() => openEditModal(o)} 
@@ -210,7 +227,6 @@ const OrdersList = ({ shopId, status }) => {
                     ✏️ Edit
                   </button>
                   {' '}
-                  {/* Always render accept button, but disable if already accepted */}
                   <button
                     onClick={() => handleAccept(o)}
                     disabled={acceptOrderMutation.isLoading}
