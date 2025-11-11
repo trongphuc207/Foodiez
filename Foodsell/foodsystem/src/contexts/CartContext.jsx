@@ -8,21 +8,35 @@ const cartReducer = (state, action) => {
   switch (action.type) {
     case 'ADD_TO_CART':
       const existingItem = state.items.find(item => item.id === action.payload.id);
+      const shopId = action.payload.shopId || action.payload.shop_id;
+      
+      // Group items by shop
+      let updatedItems;
       if (existingItem) {
-        return {
-          ...state,
-          items: state.items.map(item =>
-            item.id === action.payload.id
-              ? { ...item, quantity: item.quantity + 1 }
-              : item
-          )
-        };
+        updatedItems = state.items.map(item =>
+          item.id === action.payload.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
       } else {
-        return {
-          ...state,
-          items: [...state.items, { ...action.payload, quantity: 1 }]
-        };
+        updatedItems = [...state.items, { ...action.payload, quantity: 1, shopId }];
       }
+
+      // Organize items by shop
+      const itemsByShop = updatedItems.reduce((acc, item) => {
+        const shopId = item.shopId;
+        if (!acc[shopId]) {
+          acc[shopId] = [];
+        }
+        acc[shopId].push(item);
+        return acc;
+      }, {});
+
+      return {
+        ...state,
+        items: updatedItems,
+        itemsByShop
+      };
 
     case 'REMOVE_FROM_CART':
       return {
@@ -60,7 +74,8 @@ const cartReducer = (state, action) => {
 
 export const CartProvider = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, {
-    items: []
+    items: [],
+    itemsByShop: {}
   });
 
   // Load cart from localStorage on mount
@@ -96,6 +111,23 @@ export const CartProvider = ({ children }) => {
   const addToCart = (product) => {
     console.log('🛒 Adding to cart:', product);
     dispatch({ type: 'ADD_TO_CART', payload: product });
+  };
+
+  // Get grand total for specific shop items
+  const getShopTotal = (shopItems) => {
+    return shopItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+  };
+
+  // Get items grouped by shop
+  const getItemsByShop = () => {
+    return state.items.reduce((acc, item) => {
+      const shopId = item.shopId || item.shop_id;
+      if (!acc[shopId]) {
+        acc[shopId] = [];
+      }
+      acc[shopId].push(item);
+      return acc;
+    }, {});
   };
 
   const removeFromCart = (productId) => {
@@ -144,7 +176,9 @@ export const CartProvider = ({ children }) => {
     getTotalAmount,
     getTotalItems,
     getShippingFee,
-    getGrandTotal
+    getGrandTotal,
+    getShopTotal,
+    getItemsByShop
   };
 
   return (

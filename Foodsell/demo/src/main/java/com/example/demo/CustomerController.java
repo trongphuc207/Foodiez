@@ -148,24 +148,25 @@ public class CustomerController {
     // GET: Chi tiết đơn hàng
     @GetMapping("/orders/{orderId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Map<String, Object>> getOrderDetails(@PathVariable Integer orderId) {
+    public ResponseEntity<OrderDTO> getOrderDetails(@PathVariable Integer orderId) {
         var currentUser = roleChecker.getCurrentUser();
         if (currentUser == null) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", "User not authenticated");
-            return ResponseEntity.status(401).body(error);
+            return ResponseEntity.status(401).build();
         }
         
-        // TODO: Implement actual order details logic
-        Map<String, Object> orderDetails = new HashMap<>();
-        orderDetails.put("id", orderId);
-        orderDetails.put("status", "pending");
-        orderDetails.put("totalAmount", 15000);
-        orderDetails.put("createdAt", "2025-10-16T03:00:00Z");
-        orderDetails.put("items", List.of());
+        // Lấy order details từ OrderService
+        OrderDTO orderDTO = orderService.getOrderById(orderId);
         
-        return ResponseEntity.ok(orderDetails);
+        if (orderDTO == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        // Verify user owns this order
+        if (!orderDTO.getBuyerId().equals(currentUser.getId())) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        return ResponseEntity.ok(orderDTO);
     }
     
     // POST: Hủy đơn hàng

@@ -36,7 +36,6 @@ function App() {
           <GeminiChatbot />
         </CartProvider>
       </div>
-      
     </QueryClientProvider>
   );
 }

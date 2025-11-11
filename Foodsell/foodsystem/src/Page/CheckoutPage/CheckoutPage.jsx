@@ -12,7 +12,12 @@ import './CheckoutPage.css';
 const CheckoutPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated, loading } = useAuth();
-  const { items: cartItems, getTotalAmount, getGrandTotal, clearCart } = useCart();
+  const { 
+    items: cartItems, 
+    getTotalAmount, 
+    getGrandTotal, 
+    clearCart
+  } = useCart();
   const [currentStep, setCurrentStep] = useState(1);
   const [deliveryInfo, setDeliveryInfo] = useState({});
   const [paymentInfo, setPaymentInfo] = useState({});
@@ -122,6 +127,35 @@ const CheckoutPage = () => {
     return Math.max(0, baseTotal - voucherDiscount);
   };
 
+  // If user selected specific items to checkout (from Cart), prefer those
+  // eslint-disable-next-line no-unused-vars
+  const [selectedCheckoutItems, setSelectedCheckoutItems] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem('selectedCheckoutItems');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // Remove after reading so we don't reuse accidentally
+        sessionStorage.removeItem('selectedCheckoutItems');
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not read selectedCheckoutItems from sessionStorage', e);
+    }
+    return null;
+  });
+
+  // Active items to be used for display and order creation
+  const activeItems = selectedCheckoutItems && selectedCheckoutItems.length > 0 ? selectedCheckoutItems : cartItems;
+
+  const computeItemsTotal = (items) => {
+    return items.reduce((t, it) => t + (Number(it.price || 0) * Number(it.quantity || 0)), 0);
+  };
+
+  const activeTotalAmount = computeItemsTotal(activeItems);
+  const getFinalTotalForActive = () => Math.max(0, (activeTotalAmount + selectedShippingFee) - voucherDiscount);
+
   // Helper function để kiểm tra authentication
   const checkAuthentication = () => {
     const token = localStorage.getItem('authToken');
@@ -142,10 +176,11 @@ const CheckoutPage = () => {
     setIsProcessingPayment(true);
     try {
       console.log('=== STARTING ORDER PROCESSING ===');
-      console.log('Payment method:', paymentInfo.method);
-      console.log('Delivery info:', deliveryInfo);
-      console.log('Cart items:', cartItems);
-      console.log('Grand total:', getGrandTotal());
+  console.log('Payment method:', paymentInfo.method);
+  console.log('Delivery info:', deliveryInfo);
+  console.log('Active items (used for this checkout):', activeItems);
+  console.log('Active total amount:', activeTotalAmount);
+  console.log('Grand total (active):', activeTotalAmount + selectedShippingFee);
       
       if (paymentInfo.method === 'PayOS') {
         console.log('=== PROCESSING PAYOS PAYMENT ===');
@@ -153,8 +188,8 @@ const CheckoutPage = () => {
         // Xử lý thanh toán PayOS
         const paymentData = createPaymentData(
           deliveryInfo,
-          cartItems,
-          getFinalTotal() // Sử dụng tổng tiền sau khi áp dụng voucher
+          activeItems,
+          getFinalTotalForActive() // Sử dụng tổng tiền sau khi áp dụng voucher cho active items
         );
 
         console.log('Payment data created:', paymentData);
@@ -168,16 +203,16 @@ const CheckoutPage = () => {
           localStorage.setItem('pendingOrder', JSON.stringify({
             deliveryInfo,
             paymentInfo,
-            cartItems,
+            cartItems: activeItems,
             orderCode: paymentData.orderCode,
-            totalAmount: getGrandTotal()
+            totalAmount: getFinalTotalForActive()
           }));
 
           // Tạo đơn hàng tạm trong database với PayOS order code
           try {
             // Gọi API để tạo đơn hàng tạm (pending) với PayOS order code
             // Map cartItems để có productId thay vì id
-            const mappedCartItems = cartItems.map(item => ({
+            const mappedCartItems = activeItems.map(item => ({
               productId: item.id,
               name: item.name || item.productName || 'Sản phẩm',
               quantity: Math.round(item.quantity || 1), // Đảm bảo là số nguyên
@@ -197,8 +232,8 @@ const CheckoutPage = () => {
               paymentInfo,
               cartItems: mappedCartItems,
               payosOrderCode: paymentData.orderCode,
-              totalAmount: Math.round(getFinalTotal()), // Đảm bảo là số nguyên
-              originalAmount: Math.round(getGrandTotal()), // Đảm bảo là số nguyên
+              totalAmount: Math.round(getFinalTotalForActive()), // Đảm bảo là số nguyên
+              originalAmount: Math.round(activeTotalAmount + selectedShippingFee), // Đảm bảo là số nguyên
               voucherDiscount: Math.round(voucherDiscount), // Đảm bảo là số nguyên
               appliedVoucher: appliedVoucher,
               status: 'pending' // PayOS status - chờ thanh toán
@@ -264,16 +299,16 @@ const CheckoutPage = () => {
       } else if (paymentInfo.method === 'cod') {
         // Xử lý COD (Cash on Delivery)
         console.log('=== PROCESSING COD PAYMENT ===');
-        console.log('Order data for COD:', { deliveryInfo, paymentInfo, cartItems });
+        console.log('Order data for COD (active items):', { deliveryInfo, paymentInfo, activeItems });
         
-        // Map cartItems để có productId thay vì id
-        const mappedCartItems = cartItems.map(item => ({
-          productId: item.id,
-          name: item.name || item.productName || 'Sản phẩm',
-          quantity: Math.round(item.quantity || 1), // Đảm bảo là số nguyên
-          price: Math.round(item.price || item.unitPrice || 0) // Đảm bảo là số nguyên
-        }));
-
+        // Map activeItems để có productId thay vì id and group by shop
+        const itemsByShop = activeItems.reduce((acc, item) => {
+          const shopId = item.shopId || item.shop_id || item.sellerId || 'unknown';
+          if (!acc[shopId]) acc[shopId] = [];
+          acc[shopId].push(item);
+          return acc;
+        }, {});
+        
         // Map deliveryInfo để match với backend
         const mappedDeliveryInfo = {
           recipientName: deliveryInfo.fullName,
@@ -282,16 +317,30 @@ const CheckoutPage = () => {
           notes: deliveryInfo.notes
         };
 
-        const orderData = {
-          deliveryInfo: mappedDeliveryInfo,
-          paymentInfo,
-          cartItems: mappedCartItems,
-          totalAmount: Math.round(getFinalTotal()), // Đảm bảo là số nguyên
-          originalAmount: Math.round(getGrandTotal()), // Đảm bảo là số nguyên
-          voucherDiscount: Math.round(voucherDiscount), // Đảm bảo là số nguyên
-          appliedVoucher: appliedVoucher,
-          status: 'pending' // COD status - chờ thanh toán khi nhận hàng
-        };
+        // Tạo đơn hàng riêng cho từng shop
+        for (const [shopId, shopItems] of Object.entries(itemsByShop)) {
+          const mappedShopItems = shopItems.map(item => ({
+            productId: item.id,
+            name: item.name || item.productName || 'Sản phẩm',
+            quantity: Math.round(item.quantity || 1),
+            price: Math.round(item.price || item.unitPrice || 0)
+          }));
+
+          const shopTotal = shopItems.reduce((t, it) => t + (Number(it.price || 0) * Number(it.quantity || 0)), 0);
+          // Tính voucher discount cho shop này (có thể chia theo tỷ lệ)
+          const shopVoucherDiscount = Math.round((shopTotal / getTotalAmount()) * voucherDiscount);
+
+          const orderData = {
+            deliveryInfo: mappedDeliveryInfo,
+            paymentInfo,
+            cartItems: mappedShopItems,
+            shopId: shopId,
+            totalAmount: Math.round(shopTotal - shopVoucherDiscount),
+            originalAmount: Math.round(shopTotal),
+            voucherDiscount: shopVoucherDiscount,
+            appliedVoucher: appliedVoucher,
+            status: 'pending'
+          };
 
         console.log('=== CREATING COD ORDER IN DATABASE ===');
         console.log('Order data to send:', orderData);
@@ -308,35 +357,42 @@ const CheckoutPage = () => {
           throw new Error('Bạn cần đăng nhập để đặt hàng. Vui lòng đăng nhập và thử lại.');
         }
 
-        const orderResponse = await fetch('http://localhost:8080/api/orders', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify(orderData)
-        });
+          // Tạo đơn hàng cho shop hiện tại
+          try {
+            const orderResponse = await fetch('http://localhost:8080/api/orders', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+              },
+              body: JSON.stringify(orderData)
+            });
 
-        console.log('COD Order API response status:', orderResponse.status);
-        console.log('COD Order API response ok:', orderResponse.ok);
+            console.log(`Order API response for shop ${shopId} status:`, orderResponse.status);
+            console.log(`Order API response for shop ${shopId} ok:`, orderResponse.ok);
 
-        if (!orderResponse.ok) {
-          const errorText = await orderResponse.text();
-          console.error('COD Order API error response:', errorText);
-          
-          if (orderResponse.status === 401) {
-            throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-          } else if (orderResponse.status === 403) {
-            throw new Error('Bạn không có quyền tạo đơn hàng. Vui lòng kiểm tra tài khoản.');
-          } else if (orderResponse.status === 400) {
-            throw new Error('Dữ liệu đơn hàng không hợp lệ. Vui lòng kiểm tra lại thông tin.');
-          } else {
-            throw new Error(`Lỗi tạo đơn hàng COD: ${orderResponse.status} - ${errorText}`);
+            if (!orderResponse.ok) {
+              const errorText = await orderResponse.text();
+              console.error(`Order API error response for shop ${shopId}:`, errorText);
+              
+              if (orderResponse.status === 401) {
+                throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+              } else if (orderResponse.status === 403) {
+                throw new Error('Bạn không có quyền tạo đơn hàng. Vui lòng kiểm tra tài khoản.');
+              } else if (orderResponse.status === 400) {
+                throw new Error('Dữ liệu đơn hàng không hợp lệ. Vui lòng kiểm tra lại thông tin.');
+              } else {
+                throw new Error(`Lỗi tạo đơn hàng cho shop ${shopId}: ${orderResponse.status} - ${errorText}`);
+              }
+            }
+
+            const orderResult = await orderResponse.json();
+            console.log(`Order created successfully for shop ${shopId}:`, orderResult);
+          } catch (error) {
+            console.error(`Error creating order for shop ${shopId}:`, error);
+            throw error;
           }
-        }
-
-        const orderResult = await orderResponse.json();
-        console.log('COD Order created successfully:', orderResult);
+        } // end of shop loop
 
         // Xóa giỏ hàng sau khi tạo đơn hàng thành công
         clearCart();
@@ -380,7 +436,7 @@ const CheckoutPage = () => {
           <div>
             <VoucherSelector
               userId={1} // TODO: Lấy từ authentication context
-              orderAmount={getGrandTotal()}
+              orderAmount={activeTotalAmount + selectedShippingFee}
               onVoucherApplied={handleVoucherApplied}
               appliedVoucher={appliedVoucher}
               onRemoveVoucher={handleRemoveVoucher}
@@ -397,13 +453,13 @@ const CheckoutPage = () => {
           <OrderConfirmation 
             deliveryInfo={deliveryInfo}
             paymentInfo={paymentInfo}
-            cartItems={cartItems}
-            totalAmount={getTotalAmount()}
+            cartItems={activeItems}
+            totalAmount={activeTotalAmount}
             shippingFee={selectedShippingFee}
-            grandTotal={getTotalAmount() + selectedShippingFee}
+            grandTotal={activeTotalAmount + selectedShippingFee}
             voucherDiscount={voucherDiscount}
             appliedVoucher={appliedVoucher}
-            finalTotal={Math.max(0, (getTotalAmount() + selectedShippingFee) - voucherDiscount)}
+            finalTotal={getFinalTotalForActive()}
             onComplete={handleOrderComplete}
             onBack={() => setCurrentStep(2)}
             isProcessingPayment={isProcessingPayment}
