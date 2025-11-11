@@ -559,7 +559,7 @@ const createProductMutation = useMutation({
               className="btn btn-primary"
               onClick={() => navigate('/shop-management/products/new')}
             >
-              Thêm món ăn
+              + Thêm món
             </button>
           </div>
 
@@ -577,12 +577,12 @@ const createProductMutation = useMutation({
               productsData.data.map(product => (
                 <div 
                   key={product.id} 
-                  className="product-card"
-                  onClick={() => handleEditProduct(product)}
+                  className="product-card-new"
                 >
-                  <div className="product-image">
+                  <div className="product-image-container">
                     {product.imageUrl || product.image_url || product.image ? (
                       <img 
+                        className="product-image-new"
                         src={product.imageUrl || product.image_url || product.image} 
                         alt={product.name}
                         onError={(e) => {
@@ -593,49 +593,35 @@ const createProductMutation = useMutation({
                       />
                     ) : null}
                     <div 
-                      className="no-image"
+                      className="no-image-new"
                       style={{ display: product.imageUrl || product.image_url || product.image ? 'none' : 'flex' }}
                     >
-                      <div className="no-image-content">
-                        <div className="no-image-icon">🖼️</div>
-                        <span>Không có ảnh</span>
-                      </div>
+                      <span>🖼️</span>
                     </div>
+                    {product.status === 'active' && (
+                      <div className="stock-badge">CÒN HÀNG</div>
+                    )}
                   </div>
-                  <div className="product-info">
-                    <h3>{product.name}</h3>
-                    <p>{product.description}</p>
-                    <div className="product-details">
-                      <span className="price">{product.price.toLocaleString()} VND</span>
-                      <span className="category">{product.category?.name}</span>
+                  <div className="product-content-new">
+                    <h3 className="product-name-new">{product.name}</h3>
+                    <p className="product-description-new">{product.description || 'Chưa có mô tả'}</p>
+                    <div className="product-price-new">
+                      <span className="price-amount">{product.price.toLocaleString()}</span>
+                      <span className="price-currency"> VND</span>
                     </div>
-                    <div className="product-status">
-                      <span className={`status ${product.status === 'active' ? 'available' : 'unavailable'}`}>
-                        {product.status === 'active' ? '✅ Còn hàng' : 
-                         product.status === 'inactive' ? '⏸️ Tạm ngừng' : 
-                         product.status === 'out_of_stock' ? '🚫 Hết nguyên liệu' : '❌ Không xác định'}
-                      </span>
+                    <div className="product-actions-new">
+                      <button 
+                        className="btn-edit-new"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditProduct(product);
+                        }}
+                        title="Sửa món ăn"
+                      >
+                        <span className="btn-icon">✏️</span>
+                        <span className="btn-text">Sửa</span>
+                      </button>
                     </div>
-                  </div>
-                  <div className="product-actions">
-                    <button 
-                      className="btn btn-edit"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditProduct(product);
-                      }}
-                    >
-                      Sửa
-                    </button>
-                    <button 
-                      className="btn btn-delete"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteProduct(product.id);
-                      }}
-                    >
-                      Xóa
-                    </button>
                   </div>
                 </div>
               ))

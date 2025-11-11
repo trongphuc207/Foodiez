@@ -122,6 +122,11 @@ export const routes = [
         isShowHeader: true
     },
     {
+        path: '/about',
+        component: InformationPage,
+        isShowHeader: true
+    },
+    {
         path: '/vouchers',
         component: VoucherPage,
         isShowHeader: true
