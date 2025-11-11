@@ -81,11 +81,13 @@ export default function Reports() {
   if (!reports) return <div className="text-center mt-3">Đang tải dữ liệu...</div>;
 
   return (
-    <div>
-      <h2 className="mb-3">Báo cáo</h2>
+    <div className="admin-page">
+      <div className="page-header">
+        <h2 className="page-title">📊 Báo cáo</h2>
+      </div>
 
       {/* Revenue explorer */}
-      <div className="report-card" style={{ marginBottom: 16 }}>
+      <div className="admin-card" style={{ marginBottom: 16 }}>
         <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
           <div className="d-flex align-items-center gap-2 flex-wrap">
             <strong>Doanh thu</strong>

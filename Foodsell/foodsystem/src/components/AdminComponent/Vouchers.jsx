@@ -98,16 +98,18 @@ export default function Vouchers() {
   ) : null;
 
   return (
-    <div>
+    <div className="admin-page">
       <ErrorBanner />
       <OkBanner />
-      <div className="d-flex align-items-center justify-content-between mb-3">
-        <h2>Quản lý Voucher</h2>
-        <button className="btn btn-sm btn-outline-secondary" onClick={load}>Tải lại</button>
+      <div className="page-header">
+        <h2 className="page-title">🎫 Quản lý Voucher</h2>
+        <button className="btn btn-secondary" onClick={load}>🔄 Tải lại</button>
       </div>
 
       {/* Create / Edit */}
-      <form className="row g-3 mb-3" onSubmit={handleSubmit}>
+      <div className="admin-card">
+        <h3 className="card-title">{editingId ? '✏️ Chỉnh sửa Voucher' : '➕ Thêm Voucher mới'}</h3>
+      <form className="row g-3" onSubmit={handleSubmit}>
         <div className="col-md-3">
           <label className="form-label">Mã</label>
           <input className="form-control" value={form.code} onChange={(e)=>setForm({...form, code: e.target.value})} required />
@@ -137,7 +139,10 @@ export default function Vouchers() {
           {editingId && <button type="button" className="btn btn-outline-secondary" onClick={reset}>Hủy</button>}
         </div>
       </form>
+      </div>
 
+      <div className="admin-card">
+        <h3 className="card-title">📋 Danh sách Voucher</h3>
       <div className="table-responsive">
         <table className="table table-hover mt-3 align-middle">
           <thead className="table-light">
@@ -180,6 +185,7 @@ export default function Vouchers() {
             })}
           </tbody>
         </table>
+      </div>
       </div>
     </div>
   );

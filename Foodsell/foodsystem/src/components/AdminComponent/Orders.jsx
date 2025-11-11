@@ -150,11 +150,18 @@ export default function Orders() {
   };
 
   return (
-    <div>
-      <h2>Quản lý đơn hàng</h2>
+    <div className="admin-page">
+      <div className="page-header">
+        <h2 className="page-title">📦 Quản lý đơn hàng</h2>
+        <button className="btn btn-secondary" onClick={load} disabled={loading}>
+          🔄 Làm mới
+        </button>
+      </div>
 
       {/* Filters */}
-      <div className="d-flex gap-2 align-items-end flex-wrap mt-2">
+      <div className="admin-card">
+        <h3 className="card-title">🔍 Bộ lọc</h3>
+      <div className="d-flex gap-2 align-items-end flex-wrap">
         <div>
           <label className="form-label">Tìm kiếm</label>
           <input className="form-control" placeholder="ID, tên, trạng thái" value={keyword} onChange={(e)=>setKeyword(e.target.value)} />
@@ -233,9 +240,14 @@ export default function Orders() {
         </div>
       </form>
 
-      {error && <div className="alert alert-danger mt-3">{error}</div>}
+      </div>
 
-      <table className="table table-striped mt-3">
+      {error && <div className="alert alert-danger">{error}</div>}
+
+      <div className="admin-card">
+        <h3 className="card-title">📋 Danh sách đơn hàng</h3>
+      <div className="table-responsive">
+      <table className="table table-striped">
         <thead>
           <tr>
             <th>Mã đơn</th>
@@ -273,6 +285,8 @@ export default function Orders() {
           )}
         </tbody>
       </table>
+      </div>
+      </div>
     </div>
   );
 }

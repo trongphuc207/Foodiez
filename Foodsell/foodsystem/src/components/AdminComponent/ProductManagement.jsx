@@ -166,9 +166,13 @@ export default function ProductManagement() {
   }, [products, keyword, catText, minPrice, maxPrice]);
 
   return (
-    <div className="container mt-4">
-      <h2 className="mb-3 text-center">📦 Quản lý sản phẩm</h2>
+    <div className="admin-page">
+      <div className="page-header">
+        <h2 className="page-title">📦 Quản lý sản phẩm</h2>
+      </div>
 
+      <div className="admin-card">
+        <h3 className="card-title">🔍 Tìm kiếm và lọc</h3>
       {/* Top search bar */}
       <div className="mb-2">
         <input
@@ -320,11 +324,15 @@ export default function ProductManagement() {
           </div>
         </div>
         <div className="text-center mt-3">
-          <button type="submit" className="btn btn-success px-4">Thêm sản phẩm</button>
-          <button type="button" className="btn btn-secondary ms-2 px-4" onClick={resetForm}>Làm mới</button>
+          <button type="submit" className="btn btn-success px-4">➕ Thêm sản phẩm</button>
+          <button type="button" className="btn btn-secondary ms-2 px-4" onClick={resetForm}>🔄 Làm mới</button>
         </div>
       </form>
+      </div>
 
+      <div className="admin-card">
+        <h3 className="card-title">📋 Danh sách sản phẩm</h3>
+        <div className="table-responsive">
       <table className="table table-bordered table-hover">
         <thead className="table-dark">
           <tr>
@@ -479,6 +487,8 @@ export default function ProductManagement() {
           </div>
         </div>
       )}
+      </div>
+      </div>
     </div>
   );
 }

@@ -169,6 +169,14 @@ export const productAPI = {
       const data = await response.json();
       console.log('📥 API: Product details:', data);
       
+      // Debug image fields
+      const product = data.data || data;
+      console.log('🖼️ Product image fields:', {
+        imageUrl: product.imageUrl,
+        image_url: product.image_url,
+        image: product.image
+      });
+      
       // Debug status field
       if (data.data) {
         console.log('🔍 Product status fields:', {
@@ -193,6 +201,8 @@ export const productAPI = {
 
   // Tạo sản phẩm mới
   createProduct: async (productData) => {
+    console.log('📤 API: Creating product with data:', productData);
+    
     // Chuẩn hóa payload cho backend (backend dùng field 'available')
     const payload = {
       name: productData.name,
@@ -204,15 +214,39 @@ export const productAPI = {
       status: productData.status || 'active'
     };
 
-    const response = await fetch(`${API_BASE_URL}/products`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to create product');
+    console.log('📤 API: Sending payload:', payload);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/products`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload),
+      });
+      
+      console.log('📥 API: Response status:', response.status);
+      
+      if (!response.ok) {
+        let errorMessage = 'Failed to create product';
+        try {
+          const errorData = await response.json();
+          console.error('❌ API: Create product error:', errorData);
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (parseError) {
+          console.error('❌ API: Could not parse error response');
+          const textError = await response.text();
+          console.error('❌ API: Error response text:', textError);
+          errorMessage = `Server error (${response.status}): ${textError || response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+      
+      const result = await response.json();
+      console.log('✅ API: Product created successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ API: Create product error:', error);
+      throw error;
     }
-    return response.json();
   },
 
   // Upload ảnh cho sản phẩm

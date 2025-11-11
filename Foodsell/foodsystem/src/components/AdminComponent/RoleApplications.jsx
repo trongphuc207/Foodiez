@@ -242,24 +242,24 @@ export default function RoleApplications() {
   };
 
   return (
-    <div>
+    <div className="admin-page">
       {err && <div className="alert alert-danger" role="alert">{err}</div>}
       {ok && <div className="alert alert-success" role="alert">{ok}</div>}
       
-      <div className="d-flex align-items-center justify-content-between mb-3">
-        <h2>Đơn xin chuyển vai trò</h2>
-        <button className="btn btn-sm btn-outline-secondary" onClick={load}>
-          Tải lại
+      <div className="page-header">
+        <h2 className="page-title">📋 Đơn xin chuyển vai trò</h2>
+        <button className="btn btn-secondary" onClick={load}>
+          🔄 Tải lại
         </button>
       </div>
 
       {/* Pending Applications */}
-      <div className="mb-4">
-        <h4>
+      <div className="admin-card mb-4">
+        <h3 className="card-title">
           <span className="badge bg-warning text-dark">
-            Đang chờ duyệt ({pendingApps.length})
+            ⏳ Đang chờ duyệt ({pendingApps.length})
           </span>
-        </h4>
+        </h3>
         {pendingApps.length === 0 ? (
           <div className="alert alert-info">Không có đơn nào đang chờ duyệt</div>
         ) : (
@@ -268,12 +268,12 @@ export default function RoleApplications() {
       </div>
 
       {/* Processed Applications */}
-      <div>
-        <h4>
+      <div className="admin-card">
+        <h3 className="card-title">
           <span className="badge bg-secondary">
-            Đã xử lý ({processedApps.length})
+            ✅ Đã xử lý ({processedApps.length})
           </span>
-        </h4>
+        </h3>
         {processedApps.length === 0 ? (
           <div className="alert alert-secondary">Chưa có đơn nào được xử lý</div>
         ) : (

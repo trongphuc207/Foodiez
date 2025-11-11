@@ -5,7 +5,6 @@ import { useAuth } from '../../hooks/useAuth';
 import { productAPI } from '../../api/product';
 import { shopAPI } from '../../api/shop';
 import { categoryNames } from '../../constants/categoryNames';
-import ImageUpload from '../AdminComponent/ImageUpload';
 import './ProductFormPage.css';
 
 const ProductFormPage = () => {
@@ -87,8 +86,15 @@ const ProductFormPage = () => {
           price: product.price,
           categoryId: product.categoryId,
           is_available: product.is_available,
-          status: product.status
+          status: product.status,
+          imageUrl: product.imageUrl,
+          image_url: product.image_url,
+          image: product.image
         });
+        
+        // Extract image URL from multiple possible field names
+        const imageUrl = product.imageUrl || product.image_url || product.image || null;
+        console.log('🖼️ Current product image URL:', imageUrl);
         
         setProductForm({
           name: product.name || '',
@@ -99,12 +105,27 @@ const ProductFormPage = () => {
           is_available: product.is_available !== undefined ? product.is_available : (product.available !== undefined ? product.available : true),
           status: product.status || 'active'
         });
-        setProductImageUrl(product.imageUrl || product.image_url || product.image);
+        
+        setProductImageUrl(imageUrl);
+        
+        if (!imageUrl) {
+          console.warn('⚠️ No image URL found for this product');
+        }
       } else {
         console.warn('⚠️ Product data structure not recognized:', productData);
       }
     }
   }, [isEditMode, productData]);
+
+  // Cleanup preview URL when component unmounts to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (productImageUrl && productImageUrl.startsWith('blob:')) {
+        console.log('🧹 Cleaning up preview URL:', productImageUrl);
+        URL.revokeObjectURL(productImageUrl);
+      }
+    };
+  }, [productImageUrl]);
 
   // Mutations
   const createProductMutation = useMutation({
@@ -248,18 +269,52 @@ const ProductFormPage = () => {
     // Upload image after product creation/update if image is provided
     const uploadImageIfNeeded = async (productId) => {
       if (productForm.image && productId) {
-        console.log('📤 Uploading image for product:', productId);
+        console.log('�️ Starting image upload for product:', productId);
+        console.log('📁 File details:', {
+          name: productForm.image.name,
+          size: productForm.image.size,
+          type: productForm.image.type
+        });
+        
         setIsUploadingImage(true);
         try {
           const uploadResult = await productAPI.uploadProductImage(productId, productForm.image);
-          console.log('✅ Image uploaded successfully:', uploadResult);
-          queryClient.invalidateQueries(['products']);
+          console.log('✅ Image upload API returned:', uploadResult);
+          
+          // Extract image URL from different possible response formats
+          const imageUrl = uploadResult?.data?.imageUrl || 
+                          uploadResult?.imageUrl || 
+                          uploadResult?.data?.image_url ||
+                          uploadResult?.image_url;
+          
+          console.log('🖼️ Extracted image URL:', imageUrl);
+          
+          if (imageUrl) {
+            console.log('✅ Image uploaded successfully! URL:', imageUrl);
+            // Force refresh all product queries to show new image
+            await queryClient.invalidateQueries(['products']);
+            await queryClient.invalidateQueries(['product', productId]);
+            console.log('✅ Product cache invalidated, image will appear on list');
+            return true;
+          } else {
+            console.warn('⚠️ Upload succeeded but no imageUrl in response:', uploadResult);
+            return false;
+          }
         } catch (imageError) {
           console.error('❌ Image upload failed:', imageError);
-          alert('⚠️ Sản phẩm đã được ' + (isEditMode ? 'cập nhật' : 'tạo') + ' nhưng không thể tải ảnh lên. Vui lòng thử lại sau.');
+          alert('⚠️ Sản phẩm đã được ' + (isEditMode ? 'cập nhật' : 'tạo') + ' nhưng không thể tải ảnh lên.\nLỗi: ' + imageError.message);
+          return false;
         } finally {
           setIsUploadingImage(false);
         }
+      } else {
+        if (!productForm.image) {
+          console.log('ℹ️ No image selected, skipping upload');
+        }
+        if (!productId) {
+          console.error('❌ No product ID provided for image upload!');
+        }
+        return false;
       }
     };
 
@@ -267,12 +322,20 @@ const ProductFormPage = () => {
     if (isEditMode) {
       // Update existing product
       const productIdNum = parseInt(productId);
+      console.log('🔄 Updating product ID:', productIdNum);
+      
       updateProductMutation.mutate(
         { id: productIdNum, data: productData },
         {
           onSuccess: async (result) => {
-            await uploadImageIfNeeded(productIdNum);
-            alert('✅ Cập nhật món ăn thành công!');
+            console.log('✅ Product updated! Server response:', result);
+            const uploadSuccess = await uploadImageIfNeeded(productIdNum);
+            
+            if (productForm.image && !uploadSuccess) {
+              alert('⚠️ Cập nhật thông tin thành công nhưng ảnh chưa được tải lên.');
+            } else {
+              alert('✅ Cập nhật món ăn thành công!');
+            }
             navigate('/shop-management');
           }
         }
@@ -281,9 +344,46 @@ const ProductFormPage = () => {
       // Create new product
       createProductMutation.mutate(productData, {
         onSuccess: async (result) => {
-          const newProductId = result?.data?.id;
-          await uploadImageIfNeeded(newProductId);
-          alert('✅ Thêm món ăn thành công!');
+          console.log('📥 Product created! Server response:', result);
+          console.log('📋 Response structure:', JSON.stringify(result, null, 2));
+          
+          // Extract product ID from various possible response formats
+          let newProductId = null;
+          
+          // Try different response structures
+          if (result?.data?.id) {
+            newProductId = result.data.id;
+            console.log('✅ Found product ID in result.data.id:', newProductId);
+          } else if (result?.id) {
+            newProductId = result.id;
+            console.log('✅ Found product ID in result.id:', newProductId);
+          } else if (result?.data?.product?.id) {
+            newProductId = result.data.product.id;
+            console.log('✅ Found product ID in result.data.product.id:', newProductId);
+          } else if (result?.product?.id) {
+            newProductId = result.product.id;
+            console.log('✅ Found product ID in result.product.id:', newProductId);
+          }
+          
+          if (!newProductId) {
+            console.error('❌ Could not find product ID in response!');
+            console.error('❌ Response object:', result);
+            alert('❌ Lỗi: Không thể lấy ID sản phẩm sau khi tạo. Sản phẩm có thể đã được tạo nhưng không thể upload ảnh.');
+            navigate('/shop-management');
+            return;
+          }
+          
+          console.log('🆔 Product ID for upload:', newProductId);
+          
+          // Upload image if provided
+          const uploadSuccess = await uploadImageIfNeeded(newProductId);
+          
+          if (productForm.image && !uploadSuccess) {
+            alert('⚠️ Sản phẩm đã được tạo nhưng ảnh chưa được tải lên. Vui lòng thử chỉnh sửa sản phẩm để thêm ảnh.');
+          } else {
+            alert('✅ Thêm món ăn thành công!');
+          }
+          
           navigate('/shop-management');
         }
       });
@@ -310,6 +410,14 @@ const ProductFormPage = () => {
       }
       
       console.log('📁 Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
+      
+      // Create preview URL for the selected image
+      const imageUrl = URL.createObjectURL(file);
+      setProductImageUrl(imageUrl);
+      console.log('🖼️ Preview URL created:', imageUrl);
+    } else {
+      // Clear preview if no file selected
+      setProductImageUrl(null);
     }
     
     setProductForm({ ...productForm, image: file });
@@ -426,35 +534,145 @@ const ProductFormPage = () => {
 
           <div className="form-group">
             <label>Ảnh món ăn:</label>
-            {isEditMode ? (
-              <ImageUpload
-                productId={productId}
-                currentImageUrl={productImageUrl}
-                onImageUpdate={(newImageUrl) => {
-                  setProductImageUrl(newImageUrl);
-                  queryClient.invalidateQueries(['products']);
-                }}
-              />
-            ) : (
-              <div className="image-upload-section">
+            <div className="image-upload-section">
+              {/* Display current image if exists */}
+              {productImageUrl && !productForm.image && (
+                <div className="current-image-display" style={{ marginBottom: '15px' }}>
+                  <p style={{ marginBottom: '10px', fontWeight: 'bold', color: '#2c3e50' }}>
+                    🖼️ Ảnh hiện tại:
+                  </p>
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <img 
+                      src={productImageUrl} 
+                      alt="Current product" 
+                      style={{ 
+                        maxWidth: '300px', 
+                        maxHeight: '300px', 
+                        borderRadius: '8px',
+                        border: '2px solid #3498db',
+                        objectFit: 'cover',
+                        display: 'block'
+                      }}
+                      onError={(e) => {
+                        console.error('❌ Error loading current image:', productImageUrl);
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = '<p style="color: #e74c3c;">❌ Không thể tải ảnh hiện tại</p>';
+                      }}
+                    />
+                  </div>
+                  <p style={{ marginTop: '10px', fontSize: '14px', color: '#7f8c8d' }}>
+                    💡 Chọn ảnh mới bên dưới nếu muốn thay đổi
+                  </p>
+                </div>
+              )}
+
+              {/* File input for new image */}
+              <div style={{ marginBottom: '15px' }}>
+                <label 
+                  htmlFor="product-image-input" 
+                  style={{ 
+                    display: 'inline-block',
+                    padding: '10px 20px',
+                    backgroundColor: '#3498db',
+                    color: 'white',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  📁 {productImageUrl && !productForm.image ? 'Chọn ảnh mới' : 'Chọn ảnh'}
+                </label>
                 <input
+                  id="product-image-input"
                   type="file"
                   accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                   onChange={handleImageChange}
+                  style={{ display: 'none' }}
                 />
-                {productForm.image && (
-                  <div className="file-info">
-                    <p>📁 File đã chọn: {productForm.image.name}</p>
-                    <p>📏 Kích thước: {(productForm.image.size / 1024 / 1024).toFixed(2)} MB</p>
-                  </div>
-                )}
-                {isUploadingImage && (
-                  <div className="upload-status">
-                    <p>⏳ Đang upload ảnh...</p>
-                  </div>
-                )}
               </div>
-            )}
+
+              {/* Display selected new file info */}
+              {productForm.image && (
+                <div className="file-info" style={{ 
+                  padding: '15px', 
+                  backgroundColor: '#e8f5e9', 
+                  borderRadius: '5px',
+                  marginBottom: '15px',
+                  border: '1px solid #4caf50'
+                }}>
+                  <p style={{ margin: '0 0 5px 0', fontWeight: 'bold', color: '#2e7d32' }}>
+                    ✅ Ảnh mới đã chọn:
+                  </p>
+                  <p style={{ margin: '5px 0', fontSize: '14px' }}>
+                    📁 Tên file: <strong>{productForm.image.name}</strong>
+                  </p>
+                  <p style={{ margin: '5px 0', fontSize: '14px' }}>
+                    📏 Kích thước: <strong>{(productForm.image.size / 1024 / 1024).toFixed(2)} MB</strong>
+                  </p>
+                  <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#666' }}>
+                    💡 Ảnh sẽ được tải lên khi bạn click "{isEditMode ? 'Cập nhật' : 'Thêm món'}"
+                  </p>
+                </div>
+              )}
+
+              {/* Preview new selected image */}
+              {productImageUrl && productForm.image && (
+                <div className="image-preview" style={{ marginTop: '15px' }}>
+                  <p style={{ marginBottom: '10px', fontWeight: 'bold', color: '#2c3e50' }}>
+                    🖼️ Xem trước ảnh mới:
+                  </p>
+                  <img 
+                    src={productImageUrl} 
+                    alt="Preview" 
+                    style={{ 
+                      maxWidth: '300px', 
+                      maxHeight: '300px', 
+                      borderRadius: '8px',
+                      border: '2px solid #f39c12',
+                      objectFit: 'cover'
+                    }}
+                    onError={(e) => {
+                      console.error('❌ Error loading preview image');
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Upload status indicator */}
+              {isUploadingImage && (
+                <div className="upload-status" style={{
+                  padding: '15px',
+                  backgroundColor: '#fff3cd',
+                  borderRadius: '5px',
+                  marginTop: '15px',
+                  border: '1px solid #ffc107',
+                  textAlign: 'center'
+                }}>
+                  <p style={{ margin: 0, fontWeight: 'bold', color: '#856404' }}>
+                    ⏳ Đang upload ảnh...
+                  </p>
+                </div>
+              )}
+
+              {/* Guidelines */}
+              <div style={{ 
+                marginTop: '15px', 
+                padding: '10px', 
+                backgroundColor: '#f8f9fa', 
+                borderRadius: '5px',
+                fontSize: '12px',
+                color: '#666'
+              }}>
+                <p style={{ margin: '0 0 5px 0', fontWeight: 'bold' }}>📋 Hướng dẫn:</p>
+                <ul style={{ margin: '5px 0 0 20px', paddingLeft: 0 }}>
+                  <li>✅ Định dạng: JPG, PNG, GIF, WebP</li>
+                  <li>✅ Kích thước tối đa: 5MB</li>
+                  <li>✅ Khuyến nghị: 300x300px trở lên</li>
+                </ul>
+              </div>
+            </div>
           </div>
 
           <div className="form-group">

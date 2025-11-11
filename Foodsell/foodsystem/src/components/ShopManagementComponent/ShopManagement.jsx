@@ -63,7 +63,9 @@ const ShopManagement = () => {
   const { data: productsData, isLoading: productsLoading, error: productsError } = useQuery({
     queryKey: ['products', shopData?.data?.id],
     queryFn: () => productAPI.getProductsByShopId(shopData?.data?.id),
-    enabled: !!shopData?.data?.id
+    enabled: !!shopData?.data?.id,
+    refetchOnMount: 'always', // Always refetch when component mounts
+    refetchOnWindowFocus: true // Refetch when window gains focus
   });
   // Reviews: stats + list for this shop (seller view)
   const shopId = shopData?.data?.id;

@@ -52,46 +52,59 @@ export default function Header() {
   };
 
   return (
-    <header className="admin-header d-flex justify-content-between align-items-center p-3">
-      <h4 className="m-0">Admin Dashboard</h4>
+    <header className="admin-header-modern">
+      <h4 className="header-title">Admin Dashboard</h4>
 
-      <div className="d-flex align-items-center gap-2">
-        {/* Nút Thông tin với icon mặt người */}
-        <div className="position-relative" ref={menuRef}>
+      <div className="header-actions">
+        {/* User Menu */}
+        <div className="user-menu-container" ref={menuRef}>
           <button
-            className="btn btn-light btn-sm d-flex align-items-center gap-2"
+            className="user-menu-trigger"
             onClick={() => setShowMenu((v) => !v)}
           >
             <img
               src={user?.avatar || personIcon}
               alt="avatar"
-              style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover" }}
+              className="user-avatar"
             />
-            <span>Thông tin</span>
+            <span className="user-name">{user?.name || 'Thông tin'}</span>
+            <span className="dropdown-arrow">{showMenu ? '▼' : '▶'}</span>
           </button>
 
           {showMenu && (
-            <div
-              className="card shadow"
-              style={{ position: "absolute", right: 0, top: "110%", minWidth: 200, zIndex: 1000 }}
-            >
-              <div className="list-group list-group-flush">
-                <button className="list-group-item list-group-item-action" onClick={openProfile}>
-                  Xem thông tin
-                </button>
-                <button
-                  className="list-group-item list-group-item-action"
-                  onClick={() => { setShowChangePwd(true); setShowMenu(false); }}
-                >
-                  Đổi mật khẩu
-                </button>
+            <div className="user-dropdown-menu">
+              <div className="dropdown-header">
+                <img
+                  src={user?.avatar || personIcon}
+                  alt="avatar"
+                  className="dropdown-avatar"
+                />
+                <div className="dropdown-user-info">
+                  <div className="dropdown-name">{user?.name || 'Admin'}</div>
+                  <div className="dropdown-email">{user?.email || 'admin@foodiez.com'}</div>
+                </div>
               </div>
+              <div className="dropdown-divider"></div>
+              <button className="dropdown-item" onClick={openProfile}>
+                <span className="item-icon">👤</span>
+                <span>Xem thông tin</span>
+              </button>
+              <button
+                className="dropdown-item"
+                onClick={() => { setShowChangePwd(true); setShowMenu(false); }}
+              >
+                <span className="item-icon">🔐</span>
+                <span>Đổi mật khẩu</span>
+              </button>
             </div>
           )}
         </div>
 
-        {/* Logout */}
-        <button className="btn btn-outline-light btn-sm" onClick={handleLogout}>Logout</button>
+        {/* Logout Button */}
+        <button className="logout-button" onClick={handleLogout}>
+          <span className="logout-icon">🚪</span>
+          <span>Logout</span>
+        </button>
       </div>
 
       {/* Overlay xem thông tin tài khoản */}

@@ -155,21 +155,21 @@ export default function Shops() {
   );
 
   return (
-    <div>
+    <div className="admin-page">
       {err && <div className="alert alert-danger" role="alert">{err}</div>}
       {ok && <div className="alert alert-success" role="alert">{ok}</div>}
       
-      <div className="d-flex align-items-center justify-content-between mb-3">
-        <h2>Quản lý Shop</h2>
+      <div className="page-header">
+        <h2 className="page-title">🏪 Quản lý Shop</h2>
         <div className="d-flex gap-2">
           <button 
-            className={`btn btn-sm ${showLowRating ? 'btn-outline-warning' : 'btn-warning'}`}
+            className={`btn ${showLowRating ? 'btn-secondary' : 'btn-warning'}`}
             onClick={() => setShowLowRating(!showLowRating)}
           >
-            {showLowRating ? 'Hiện tất cả' : `Shop rating < 2.5 (${lowRatingShops.length})`}
+            {showLowRating ? '📋 Hiện tất cả' : `⚠️ Shop rating < 2.5 (${lowRatingShops.length})`}
           </button>
-          <button className="btn btn-sm btn-outline-secondary" onClick={() => { load(); loadLowRating(); }}>
-            Tải lại
+          <button className="btn btn-secondary" onClick={() => { load(); loadLowRating(); }}>
+            🔄 Tải lại
           </button>
         </div>
       </div>
@@ -221,14 +221,17 @@ export default function Shops() {
       )}
 
       {showLowRating ? (
-        <div>
-          <h4 className="mb-3">
-            <span className="badge bg-warning text-dark">Shop có rating &lt; 2.5 ⭐</span>
-          </h4>
+        <div className="admin-card">
+          <h3 className="card-title">
+            <span className="badge bg-warning" style={{fontSize: '1rem', padding: '0.5em 1em'}}>⭐ Shop có rating &lt; 2.5</span>
+          </h3>
           {renderShopList(lowRatingShops)}
         </div>
       ) : (
-        renderShopList(shops)
+        <div className="admin-card">
+          <h3 className="card-title">📋 Danh sách tất cả Shop</h3>
+          {renderShopList(shops)}
+        </div>
       )}
     </div>
   );

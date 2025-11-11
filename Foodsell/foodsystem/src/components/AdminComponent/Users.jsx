@@ -84,7 +84,6 @@ export default function Users() {
   };
 
   const resetForm = () => {
-    setEditingId(null);
     setForm({ id: null, name: '', email: '', role: 'buyer', password: '', phone: '', address: '' });
   };
 
@@ -93,12 +92,10 @@ export default function Users() {
     setErr('');
     setOk('');
     try {
-      if (editingId) {
-        // Update existing user
-        console.log('🔄 Updating user:', { 
-          id: editingId, 
-          data: { name: form.name, role: form.role, email: form.email, phone: form.phone, address: form.address } 
-        });
+      // Chỉ cho phép thêm mới, không cho edit
+      if (false) {
+        // Disabled edit functionality
+        console.log('Edit disabled');
         
         const updateData = { 
           name: form.name, 
@@ -173,12 +170,7 @@ export default function Users() {
     }
   };
 
-  const onEdit = (u) => {
-    setEditingId(u.id);
-    const role = (u.role === 'customer') ? 'buyer' : (u.role || 'buyer');
-    setForm({ id: u.id, name: u.name || '', email: u.email || '', role, password: '', phone: u.phone || '', address: u.address || '' });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+
 
   const onDelete = async (id) => {
     const user = users.find(u => u.id === id);
@@ -222,58 +214,64 @@ export default function Users() {
   );
 
   return (
-    <div>
+    <div className="admin-page">
       <ErrorBanner />
       <OkBanner />
-      <div className="d-flex align-items-center justify-content-between mb-3">
-        <h2>Quản lý người dùng</h2>
-        <button className="btn btn-sm btn-outline-secondary" onClick={loadUsers}>
-          Tải lại
+      <div className="page-header">
+        <h2 className="page-title">Quản lý người dùng</h2>
+        <button className="btn btn-secondary" onClick={loadUsers}>
+          🔄 Tải lại
         </button>
       </div>
 
       {/* Create / Edit */}
-      <form className="row g-3 mb-3" onSubmit={handleSubmit}>
-        <div className="col-md-3">
-          <label className="form-label">Tên</label>
-          <input className="form-control" value={form.name} onChange={(e)=>setForm({...form, name: e.target.value})} required />
-        </div>
-        <div className="col-md-3">
-          <label className="form-label">Email</label>
-          <input type="email" className="form-control" value={form.email} onChange={(e)=>setForm({...form, email: e.target.value})} required />
-        </div>
-        <div className="col-md-3">
-          <label className="form-label">SĐT</label>
-          <input className="form-control" value={form.phone} onChange={(e)=>setForm({...form, phone: e.target.value})} placeholder="Ví dụ: 0901234567" />
-        </div>
-        <div className="col-md-6">
-          <label className="form-label">Địa chỉ</label>
-          <input className="form-control" value={form.address} onChange={(e)=>setForm({...form, address: e.target.value})} placeholder="Số nhà, đường, quận/huyện, TP" />
-        </div>
-        <div className="col-md-2">
-          <label className="form-label">Vai trò</label>
-          <select className="form-select" value={form.role} onChange={(e)=>setForm({...form, role: e.target.value})}>
-            <option value="buyer">buyer</option>
-            <option value="admin">admin</option>
-            <option value="seller">seller</option>
-            <option value="shipper">shipper</option>
-          </select>
-        </div>
-        {!editingId && (
-          <div className="col-md-3">
-            <label className="form-label">Mật khẩu</label>
-            <input type="password" className="form-control" value={form.password} onChange={(e)=>setForm({...form, password: e.target.value})} required />
+      <div className="admin-card">
+        <h3 className="card-title">➕ Thêm người dùng mới</h3>
+      <form className="admin-form" onSubmit={handleSubmit}>
+        <div className="form-grid">
+          <div className="admin-form-group">
+            <label>Tên</label>
+            <input className="form-control" value={form.name} onChange={(e)=>setForm({...form, name: e.target.value})} required placeholder="Nhập tên người dùng" />
           </div>
-        )}
-        <div className="col-12 d-flex gap-2">
-          <button type="submit" className="btn btn-primary">{editingId ? 'Lưu sửa' : 'Thêm người dùng'}</button>
-          {editingId && <button type="button" className="btn btn-outline-secondary" onClick={resetForm}>Hủy</button>}
+          <div className="admin-form-group">
+            <label>Email</label>
+            <input type="email" className="form-control" value={form.email} onChange={(e)=>setForm({...form, email: e.target.value})} required placeholder="example@email.com" />
+          </div>
+          <div className="admin-form-group">
+            <label>Số điện thoại</label>
+            <input className="form-control" value={form.phone} onChange={(e)=>setForm({...form, phone: e.target.value})} placeholder="0901234567" />
+          </div>
+          <div className="admin-form-group">
+            <label>Vai trò</label>
+            <select className="form-control" value={form.role} onChange={(e)=>setForm({...form, role: e.target.value})}>
+              <option value="buyer">BUYER</option>
+              <option value="admin">ADMIN</option>
+              <option value="seller">SELLER</option>
+              <option value="shipper">SHIPPER</option>
+            </select>
+          </div>
+          <div className="admin-form-group">
+            <label>Mật khẩu</label>
+            <input type="password" className="form-control" value={form.password} onChange={(e)=>setForm({...form, password: e.target.value})} required placeholder="Mật khẩu mạnh" />
+          </div>
+          <div className="admin-form-group" style={{ gridColumn: '1 / -1' }}>
+            <label>Địa chỉ</label>
+            <input className="form-control" value={form.address} onChange={(e)=>setForm({...form, address: e.target.value})} placeholder="Số nhà, đường, quận/huyện, thành phố" />
+          </div>
+        </div>
+        <div className="form-actions">
+          <button type="submit" className="btn btn-primary">
+            ➕ Thêm người dùng
+          </button>
         </div>
       </form>
+      </div>
 
-      <div className="table-responsive">
-        <table className="table table-bordered align-middle">
-          <thead className="table-light">
+      <div className="admin-card">
+        <h3 className="card-title">📋 Danh sách người dùng</h3>
+        <div className="admin-table-wrapper">
+        <table className="table-modern">
+          <thead>
             <tr>
               <th style={{ width: 80 }}>ID</th>
               <th>Tên</th>
@@ -281,15 +279,16 @@ export default function Users() {
               <th style={{ width: 140 }}>SĐT</th>
               <th>Địa chỉ</th>
               <th style={{ width: 140 }}>Vai trò</th>
-              <th style={{ width: 160 }}>Trạng thái</th> {/* cột mới */}
-              <th style={{ width: 220 }}>Hành động</th>
+              <th style={{ width: 160 }}>Trạng thái</th>
+              <th style={{ width: 280 }}>Hành động</th>
             </tr>
           </thead>
           <tbody>
             {users.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center">
-                  Chưa có người dùng.
+                <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👥</div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: '600' }}>Chưa có người dùng nào</div>
                 </td>
               </tr>
             ) : (
@@ -297,50 +296,49 @@ export default function Users() {
                 const banned = isBanned(u);
                 return (
                   <tr key={u.id}>
-                    <td>{u.id}</td>
-                    <td>{u.name}</td>
+                    <td><strong>#{u.id}</strong></td>
+                    <td><strong>{u.name}</strong></td>
                     <td>{u.email}</td>
-                    <td>{u.phone || '-'}</td>
-                    <td>{u.address || '-'}</td>
+                    <td>{u.phone || <span style={{color:'#666'}}>-</span>}</td>
+                    <td>{u.address || <span style={{color:'#666'}}>-</span>}</td>
                     <td>
-                      <span className="badge bg-secondary">{(u.role || 'customer').toUpperCase()}</span>
+                      <span className="badge bg-secondary" style={{ textTransform: 'uppercase', fontSize: '0.85rem', padding: '0.5em 1em' }}>
+                        {(u.role || 'customer').toUpperCase()}
+                      </span>
                     </td>
                     <td>
                       {banned ? (
-                        <span className="badge bg-danger">BANNED</span>
+                        <span className="badge bg-danger" style={{ fontSize: '0.85rem', padding: '0.5em 1em' }}>BANNED</span>
                       ) : (
-                        <span className="badge bg-success">ACTIVE</span>
+                        <span className="badge bg-success" style={{ fontSize: '0.85rem', padding: '0.5em 1em' }}>ACTIVE</span>
                       )}
                     </td>
-                    <td className="d-flex gap-2">
-                      <button
-                        className={`btn btn-sm ${banned ? 'btn-success' : 'btn-warning'}`}
-                        onClick={() => handleToggleBan(u)}
-                        disabled={busyId === u.id}
-                        title={banned ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}
-                      >
-                        {busyId === u.id
-                          ? '⏳ Đang xử lý...'
-                          : banned
-                          ? '✅ Mở khóa'
-                          : '🔒 Khóa'}
-                      </button>
-                      <button 
-                        className="btn btn-sm btn-primary" 
-                        onClick={()=>onEdit(u)}
-                        disabled={busyId === u.id}
-                        title="Chỉnh sửa thông tin"
-                      >
-                        ✏️ Sửa
-                      </button>
-                      <button 
-                        className="btn btn-sm btn-danger" 
-                        onClick={()=>onDelete(u.id)}
-                        disabled={busyId === u.id}
-                        title="Xóa vĩnh viễn"
-                      >
-                        🗑️ Xóa
-                      </button>
+                    <td>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <button
+                          className={`btn btn-sm ${banned ? 'btn-success' : 'btn-warning'}`}
+                          onClick={() => handleToggleBan(u)}
+                          disabled={busyId === u.id}
+                          title={banned ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}
+                          style={{ minWidth: '90px' }}
+                        >
+                          {busyId === u.id
+                            ? '⏳'
+                            : banned
+                            ? '🔓 Khóa'
+                            : '🔒 Khóa'}
+                        </button>
+
+                        <button 
+                          className="btn btn-sm btn-danger" 
+                          onClick={()=>onDelete(u.id)}
+                          disabled={busyId === u.id}
+                          title="Xóa vĩnh viễn"
+                          style={{ minWidth: '70px' }}
+                        >
+                          🗑️ Xóa
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -348,6 +346,7 @@ export default function Users() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

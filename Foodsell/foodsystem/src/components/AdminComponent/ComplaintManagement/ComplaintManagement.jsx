@@ -134,6 +134,7 @@ export default function ComplaintManagement() {
   const localStats = calculateStats();
 
   return (
+    <div className="admin-page">
     <div className="complaint-management">
       <div className="page-header">
         <h1>📋 Quản lý Khiếu nại</h1>
@@ -316,6 +317,7 @@ export default function ComplaintManagement() {
           }}
         />
       )}
+    </div>
     </div>
   );
 }

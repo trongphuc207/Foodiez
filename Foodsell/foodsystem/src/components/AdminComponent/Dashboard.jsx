@@ -66,24 +66,139 @@ export default function Dashboard() {
   const fmtMoney = (n) => fmtNumber(n) + ' ₫';
 
   return (
-    <div className="container mt-4">
-      <h2 className="text-center mb-4">📊 Bảng điều khiển Admin</h2>
-      <div className="stat-grid">
-        <StatCard title="Người dùng" value={fmtNumber(stats.users)} icon="👥" onClick={()=>navigate('users')} />
-        <StatCard title="Đơn hàng" value={fmtNumber(stats.orders)} icon="🛍️" onClick={()=>navigate('orders')} />
-        <StatCard title="Sản phẩm có sẵn" value={fmtNumber(availableProductCount)} icon="📦" onClick={()=>navigate('products')} />
-        <StatCard title="Tổng doanh thu" value={fmtMoney(totalRevenue)} icon="💰" onClick={()=>navigate('reports')} />
-        <StatCard title="Voucher" value={fmtNumber(stats.vouchers)} icon="🎟️" onClick={()=>navigate('vouchers')} />
+    <div className="admin-page">
+    <div className="dashboard-container">
+      {/* Header */}
+      <div className="dashboard-header">
+        <div className="header-content">
+          <h1 className="dashboard-title">
+            <span className="title-icon">📊</span>
+            Bảng điều khiển
+          </h1>
+          <p className="dashboard-subtitle">Tổng quan hệ thống Foodiez</p>
+        </div>
+        <div className="dashboard-date">
+          <span className="date-icon">📅</span>
+          <span>{new Date().toLocaleDateString('vi-VN', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })}</span>
+        </div>
       </div>
 
-      <div className="mt-5 text-center">
-        <img
-          src="https://cdn-icons-png.flaticon.com/512/2292/2292038.png"
-          alt="Dashboard"
-          style={{ width: '120px', opacity: 0.7 }}
+      {/* Stats Grid */}
+      <div className="stat-grid">
+        <StatCard 
+          title="Người dùng" 
+          value={fmtNumber(stats.users)} 
+          icon="👥" 
+          onClick={()=>navigate('users')}
+          color="primary"
         />
-        <p className="text-muted mt-2">Tổng quan dữ liệu quản trị cửa hàng Foodiez</p>
+        <StatCard 
+          title="Đơn hàng" 
+          value={fmtNumber(stats.orders)} 
+          icon="🛍️" 
+          onClick={()=>navigate('orders')}
+          color="accent"
+        />
+        <StatCard 
+          title="Sản phẩm có sẵn" 
+          value={fmtNumber(availableProductCount)} 
+          icon="📦" 
+          onClick={()=>navigate('products')}
+          color="success"
+        />
+        <StatCard 
+          title="Tổng doanh thu" 
+          value={fmtMoney(totalRevenue)} 
+          icon="💰" 
+          onClick={()=>navigate('reports')}
+          color="warning"
+        />
+        <StatCard 
+          title="Voucher" 
+          value={fmtNumber(stats.vouchers)} 
+          icon="🎟️" 
+          onClick={()=>navigate('vouchers')}
+          color="danger"
+        />
       </div>
+
+      {/* Quick Actions */}
+      <div className="quick-actions-section">
+        <h3 className="section-title">⚡ Thao tác nhanh</h3>
+        <div className="quick-actions-grid">
+          <button className="quick-action-card" onClick={()=>navigate('product-approval')}>
+            <div className="action-icon">✅</div>
+            <div className="action-content">
+              <h4>Duyệt sản phẩm</h4>
+              <p>Kiểm duyệt sản phẩm mới</p>
+            </div>
+          </button>
+          <button className="quick-action-card" onClick={()=>navigate('role-applications')}>
+            <div className="action-icon">📝</div>
+            <div className="action-content">
+              <h4>Đơn xin vai trò</h4>
+              <p>Xử lý yêu cầu vai trò</p>
+            </div>
+          </button>
+          <button className="quick-action-card" onClick={()=>navigate('complaints')}>
+            <div className="action-icon">⚠️</div>
+            <div className="action-content">
+              <h4>Khiếu nại</h4>
+              <p>Xử lý khiếu nại người dùng</p>
+            </div>
+          </button>
+          <button className="quick-action-card" onClick={()=>navigate('shops')}>
+            <div className="action-icon">🏪</div>
+            <div className="action-content">
+              <h4>Quản lý Shop</h4>
+              <p>Xem và quản lý cửa hàng</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* System Status */}
+      <div className="system-status-section">
+        <div className="admin-card">
+          <h3 className="section-title">🔧 Trạng thái hệ thống</h3>
+          <div className="status-grid">
+            <div className="status-item">
+              <div className="status-indicator online"></div>
+              <div className="status-info">
+                <span className="status-label">Backend API</span>
+                <span className="status-value online">Hoạt động</span>
+              </div>
+            </div>
+            <div className="status-item">
+              <div className="status-indicator online"></div>
+              <div className="status-info">
+                <span className="status-label">Database</span>
+                <span className="status-value online">Kết nối</span>
+              </div>
+            </div>
+            <div className="status-item">
+              <div className="status-indicator online"></div>
+              <div className="status-info">
+                <span className="status-label">File Storage</span>
+                <span className="status-value online">Sẵn sàng</span>
+              </div>
+            </div>
+            <div className="status-item">
+              <div className="status-indicator online"></div>
+              <div className="status-info">
+                <span className="status-label">Admin Panel</span>
+                <span className="status-value online">Online</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     </div>
   );
 }

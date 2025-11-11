@@ -532,11 +532,13 @@ public int sumProductStock() {
     public List<Map<String, Object>> findProductsByApprovalStatus(String status) {
         String sql = """
             SELECT p.id, p.name, p.description, p.price, p.shop_id, p.category_id,
-                   p.approval_status, p.rejection_reason, p.created_at,
-                   s.name AS shop_name, u.full_name AS seller_name
+                   p.approval_status, p.rejection_reason, p.created_at, p.image_url,
+                   s.name AS shop_name, u.full_name AS seller_name,
+                   c.name AS category_name
             FROM products p
             LEFT JOIN shops s ON p.shop_id = s.id
             LEFT JOIN users u ON s.seller_id = u.id
+            LEFT JOIN categories c ON p.category_id = c.id
             WHERE p.approval_status = ?
             ORDER BY p.created_at ASC
         """;
