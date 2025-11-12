@@ -67,6 +67,18 @@ public class Order {
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "is_cancelled")
+    private Boolean isCancelled = false;
+
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
+
+    @Column(name = "cancelled_by")
+    private Integer cancelledBy;
+
+    @Column(name = "cancel_reason", columnDefinition = "NVARCHAR(MAX)")
+    private String cancelReason;
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 

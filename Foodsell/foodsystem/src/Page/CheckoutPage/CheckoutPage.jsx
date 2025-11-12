@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../hooks/useAuth';
 import DeliveryInformationForm from '../../components/CheckoutComponent/DeliveryInformationForm';
+import { shopAPI } from '../../api/shop';
+import { inferDistrictFromAddress } from '../../config/shippingConfig';
 import PaymentMethodForm from '../../components/CheckoutComponent/PaymentMethodForm';
 import OrderConfirmation from '../../components/CheckoutComponent/OrderConfirmation';
 import VoucherSelector from '../../components/VoucherComponent/VoucherSelector';
@@ -16,7 +18,8 @@ const CheckoutPage = () => {
     items: cartItems, 
     getTotalAmount, 
     getGrandTotal, 
-    clearCart
+    clearCart,
+    getItemsByShop
   } = useCart();
   const [currentStep, setCurrentStep] = useState(1);
   const [deliveryInfo, setDeliveryInfo] = useState({});
@@ -25,6 +28,7 @@ const CheckoutPage = () => {
   const [appliedVoucher, setAppliedVoucher] = useState(null);
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [selectedShippingFee, setSelectedShippingFee] = useState(15000); // Default base fee
+  const [restaurantDistrict, setRestaurantDistrict] = useState(null);
 
   // Kiểm tra authentication - chờ load xong trạng thái đăng nhập rồi mới quyết định
   useEffect(() => {
@@ -75,6 +79,61 @@ const CheckoutPage = () => {
       }
     }
   }, []);
+
+  // Derive restaurant/shop district from cart's shop (if available)
+  useEffect(() => {
+    const itemsByShop = getItemsByShop();
+    const shopIds = Object.keys(itemsByShop || {});
+    if (shopIds.length === 0) {
+      setRestaurantDistrict(null);
+      return;
+    }
+    const shopId = shopIds[0]; // If multiple shops, pick the first for this checkout flow
+    // Testing fallback map when backend is not available
+    const TEST_SHOP_DISTRICT_MAP = {
+      '1': 'Hải Châu',
+      '2': 'Thanh Khê',
+      '3': 'Liên Chiểu',
+      '4': 'Sơn Trà',
+      '5': 'Ngũ Hành Sơn',
+      '6': 'Cẩm Lệ',
+      '7': 'Hòa Vang'
+    };
+    let mounted = true;
+    console.log('[Checkout] itemsByShop keys:', shopIds, 'selected shopId:', shopId);
+    shopAPI.getShopById(shopId)
+      .then(shop => {
+        if (!mounted) return;
+        console.log('[Checkout] fetched shop:', shop);
+        // Prefer explicit district field if backend provides it
+        const explicitDistrict = shop.district || shop?.addressDistrict || null;
+        if (explicitDistrict) {
+          console.log('[Checkout] using explicit shop district:', explicitDistrict);
+          setRestaurantDistrict(explicitDistrict);
+          return;
+        }
+        // Otherwise infer from address text
+        const addressText = shop.address || shop?.addressText || '';
+        const inferred = inferDistrictFromAddress(addressText);
+        console.log('[Checkout] inferred district from address:', addressText, '=>', inferred);
+        if (inferred) {
+          setRestaurantDistrict(inferred);
+        } else {
+          // Fallback for testing if API returns no district or address cannot be parsed
+          const fallback = TEST_SHOP_DISTRICT_MAP[String(shopId)] || null;
+          console.log('[Checkout] fallback TEST_SHOP_DISTRICT_MAP for shopId', shopId, '=>', fallback);
+          setRestaurantDistrict(fallback);
+        }
+      })
+      .catch(err => {
+        console.warn('Could not fetch shop to infer district:', err);
+        // Backend có thể chưa chạy. Dùng fallback test theo shopId để tiếp tục tính phí ship.
+        const fallback = TEST_SHOP_DISTRICT_MAP[String(shopId)] || null;
+        console.log('[Checkout] using fallback district due to fetch error:', fallback);
+        setRestaurantDistrict(fallback);
+      });
+    return () => { mounted = false };
+  }, [cartItems, getItemsByShop]);
 
   const steps = [
     {
@@ -268,16 +327,28 @@ const CheckoutPage = () => {
             
             if (!orderResponse.ok) {
               const errorText = await orderResponse.text();
-              console.error('PayOS Order API error response:', errorText);
-              
+              // Try to parse backend JSON message if available
+              let backendMessage = null;
+              try {
+                const parsed = JSON.parse(errorText);
+                backendMessage = parsed.message || parsed.error || (parsed.data && parsed.data.message) || null;
+              } catch (e) {
+                backendMessage = errorText;
+              }
+
+              console.error('=== PAYOS ORDER API ERROR ===');
+              console.error('Status:', orderResponse.status);
+              console.error('Parsed backend message:', backendMessage);
+              console.error('Raw response text:', errorText);
+
               if (orderResponse.status === 401) {
                 throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
               } else if (orderResponse.status === 403) {
-                throw new Error('Bạn không có quyền tạo đơn hàng. Vui lòng kiểm tra tài khoản.');
+                throw new Error(backendMessage || 'Bạn không có quyền tạo đơn hàng. Vui lòng kiểm tra tài khoản.');
               } else if (orderResponse.status === 400) {
-                throw new Error('Dữ liệu đơn hàng không hợp lệ. Vui lòng kiểm tra lại thông tin.');
+                throw new Error(backendMessage || 'Dữ liệu đơn hàng không hợp lệ. Vui lòng kiểm tra lại thông tin.');
               } else {
-                throw new Error(`Lỗi tạo đơn hàng PayOS: ${orderResponse.status} - ${errorText}`);
+                throw new Error(backendMessage || `Lỗi tạo đơn hàng PayOS: ${orderResponse.status} - ${errorText}`);
               }
             }
             
@@ -373,16 +444,27 @@ const CheckoutPage = () => {
 
             if (!orderResponse.ok) {
               const errorText = await orderResponse.text();
-              console.error(`Order API error response for shop ${shopId}:`, errorText);
-              
+              let backendMessage = null;
+              try {
+                const parsed = JSON.parse(errorText);
+                backendMessage = parsed.message || parsed.error || (parsed.data && parsed.data.message) || null;
+              } catch (e) {
+                backendMessage = errorText;
+              }
+
+              console.error(`=== COD ORDER API ERROR (shop ${shopId}) ===`);
+              console.error('Status:', orderResponse.status);
+              console.error('Parsed backend message:', backendMessage);
+              console.error('Raw response text:', errorText);
+
               if (orderResponse.status === 401) {
                 throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
               } else if (orderResponse.status === 403) {
-                throw new Error('Bạn không có quyền tạo đơn hàng. Vui lòng kiểm tra tài khoản.');
+                throw new Error(backendMessage || 'Bạn không có quyền tạo đơn hàng. Vui lòng kiểm tra tài khoản.');
               } else if (orderResponse.status === 400) {
-                throw new Error('Dữ liệu đơn hàng không hợp lệ. Vui lòng kiểm tra lại thông tin.');
+                throw new Error(backendMessage || 'Dữ liệu đơn hàng không hợp lệ. Vui lòng kiểm tra lại thông tin.');
               } else {
-                throw new Error(`Lỗi tạo đơn hàng cho shop ${shopId}: ${orderResponse.status} - ${errorText}`);
+                throw new Error(backendMessage || `Lỗi tạo đơn hàng cho shop ${shopId}: ${orderResponse.status} - ${errorText}`);
               }
             }
 
@@ -429,6 +511,7 @@ const CheckoutPage = () => {
           <DeliveryInformationForm 
             onSubmit={handleDeliverySubmit}
             initialData={deliveryInfo}
+            restaurantDistrict={restaurantDistrict}
           />
         );
       case 2:

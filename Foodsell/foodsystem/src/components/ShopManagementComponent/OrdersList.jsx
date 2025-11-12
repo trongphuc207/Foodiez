@@ -20,6 +20,9 @@ const OrdersList = ({ shopId, status }) => {
   const normalizedOrders = (orders || []).map((o) => {
     const items = o.items || o.orderItems || o.line_items || o.order_items || [];
     const total = o.totalAmount || o.total_amount || o.total || o.total_price || 0;
+    const isCancelled = o.isCancelled || o.is_cancelled || false;
+    const cancelledAt = o.cancelledAt || o.cancelled_at || null;
+    const cancelReason = o.cancelReason || o.cancel_reason || null;
     return { ...o, items, total };
   });
 
@@ -102,6 +105,32 @@ const OrdersList = ({ shopId, status }) => {
     onError: (err) => { 
       console.error(err); 
       alert('Không thể chấp nhận đơn hàng: ' + (err.message || '')); 
+    }
+  });
+
+  // Seller cancel order (mark as cancelled). Prompt for confirmation and optional reason.
+  const cancelOrderMutation = useMutation({
+    mutationFn: ({ orderId, reason }) => shopOrdersAPI.cancelOrder(orderId, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['sellerOrders']);
+      alert('Đã huỷ đơn hàng thành công');
+    },
+    onError: (err) => {
+      console.error(err);
+      alert('Không thể huỷ đơn hàng: ' + (err.message || ''));
+    }
+  });
+
+  // Delete cancelled order
+  const deleteOrderMutation = useMutation({
+    mutationFn: (orderId) => shopOrdersAPI.deleteOrder(orderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['sellerOrders']);
+      alert('Đã xóa đơn hàng thành công');
+    },
+    onError: (err) => {
+      console.error(err);
+      alert('Không thể xóa đơn hàng: ' + (err.message || ''));
     }
   });
 
@@ -215,13 +244,21 @@ const OrdersList = ({ shopId, status }) => {
                 <td>{o.id}</td>
                 <td>{o.recipientName || ('Buyer #' + (o.buyerId || '—'))}</td>
                 <td>{formatPrice(o.total || o.totalAmount || o.total_price)}</td>
-                <td>{o.status}</td>
+                <td>
+                  { (o.isCancelled || false) ? (
+                    <span className="badge badge-danger" title={`Lý do: ${o.cancelReason || 'N/A'}\nNgày: ${o.cancelledAt || ''}`}>
+                      Đã huỷ
+                    </span>
+                  ) : (
+                    o.status
+                  ) }
+                </td>
                 <td>{o.assignmentStatus || '—'}</td>
                 <td>{o.createdAt ? new Date(o.createdAt).toLocaleString() : (o.created_at || '')}</td>
                 <td>
                   <button 
                     onClick={() => openEditModal(o)} 
-                    disabled={updateDetailsMutation.isLoading}
+                    disabled={updateDetailsMutation.isLoading || o.isCancelled}
                     className="edit-btn"
                   >
                     ✏️ Edit
@@ -229,11 +266,47 @@ const OrdersList = ({ shopId, status }) => {
                   {' '}
                   <button
                     onClick={() => handleAccept(o)}
-                    disabled={acceptOrderMutation.isLoading}
+                    disabled={acceptOrderMutation.isLoading || o.isCancelled}
                     className="accept-btn"
                   >
                     ✅ Chấp nhận
                   </button>
+                  {' '}
+                  {/* Seller cancel button: visible when order not cancelled (no other conditions) */}
+                  {!o.isCancelled && (
+                    <>
+                      {' '}
+                      <button
+                        onClick={() => {
+                          if (!window.confirm(`Bạn có chắc chắn muốn huỷ đơn #${o.id}?`)) return;
+                          // Optional: prompt for a short reason
+                          const reason = window.prompt('Lý do huỷ (tùy chọn):', 'Seller cancelled');
+                          cancelOrderMutation.mutate({ orderId: o.id, reason });
+                        }}
+                        disabled={cancelOrderMutation.isLoading}
+                        className="cancel-btn"
+                        style={{ marginLeft: '8px', background: '#d9534f', color: '#fff' }}
+                      >
+                        ❌ Hủy
+                      </button>
+                    </>
+                  )}
+                  {' '}
+                  {o.isCancelled && (
+                    <>
+                      <button
+                        onClick={() => {
+                          if (!window.confirm(`Xác nhận xóa đơn hàng #${o.id}? Đây là hành động không thể quay lại.`)) return;
+                          deleteOrderMutation.mutate(o.id);
+                        }}
+                        disabled={deleteOrderMutation.isLoading}
+                        className="delete-btn"
+                        style={{ marginLeft: '8px', background: '#d9534f', color: '#fff' }}
+                      >
+                        🗑️ Xóa
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}

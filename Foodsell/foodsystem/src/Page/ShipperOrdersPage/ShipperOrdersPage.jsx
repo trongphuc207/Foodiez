@@ -10,9 +10,11 @@ export default function ShipperOrdersPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Fetch shipper orders from backend (uses auth token from localStorage)
-  const { data: ordersResp, isLoading, error } = useQuery({
+  const { data: ordersResp, isLoading, error, refetch } = useQuery({
     queryKey: ['shipperOrders', activeTab],
-    queryFn: () => shipperAPI.getOrders(activeTab === 'all' ? undefined : activeTab),
+    // Use the backend "available" endpoint when viewing the "all" tab so
+    // the shipper dashboard only shows orders that are available/accepted for pickup.
+    queryFn: () => shipperAPI.getOrders(activeTab === 'all' ? 'available' : activeTab),
     refetchOnWindowFocus: false,
   })
 
@@ -35,6 +37,22 @@ export default function ShipperOrdersPage() {
   const filteredOrders = activeTab === 'all' || activeTab === 'available'
     ? orders
     : orders.filter(order => order.status === activeTab)
+
+  const [accepting, setAccepting] = React.useState(null);
+
+  const handleAcceptOrder = async (orderId) => {
+    try {
+      setAccepting(orderId);
+      await shipperAPI.acceptOrder(orderId);
+      // refresh list
+      if (refetch) await refetch();
+    } catch (err) {
+      console.error('Failed to accept order', err);
+      alert('Không thể nhận đơn: ' + (err?.message || 'Lỗi'));
+    } finally {
+      setAccepting(null);
+    }
+  }
 
   const getStatusLabel = (status) => {
     switch (status) {
@@ -141,8 +159,11 @@ export default function ShipperOrdersPage() {
             </div>
 
             <div className="order-actions">
-              {order.status === 'pending' && (
-                <button className="action-btn primary">Nhận đơn</button>
+              {/* Show receive button for all orders that passed assignment_status === 'accepted' filter */}
+              {!order.isCancelled && (
+                <button className="action-btn primary" onClick={() => { if (window.confirm(`Xác nhận nhận đơn #${order.id}?`)) handleAcceptOrder(order.id); }} disabled={accepting === order.id}>
+                  {accepting === order.id ? 'Đang xử lý...' : 'Nhận đơn'}
+                </button>
               )}
               {order.status === 'delivering' && (
                 <div className="action-group">

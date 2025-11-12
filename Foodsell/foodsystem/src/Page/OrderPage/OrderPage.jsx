@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { customerAPI } from '../../api/customer';
+import { openChatWithMerchantByOrder } from '../../utils/openChat';
 import './OrderPage.css';
 
 function OrderPage() {
@@ -87,14 +88,42 @@ function OrderPage() {
 
   const handleCancelOrder = async (orderId) => {
     try {
-      await customerAPI.cancelOrder(orderId, 'Khách hàng hủy đơn hàng');
-      alert('Đơn hàng đã được hủy thành công!');
-      // Reload orders
-      const ordersData = await customerAPI.getOrders();
-      setOrders(ordersData);
+      const res = await customerAPI.cancelOrder(orderId, 'Khách hàng hủy đơn hàng');
+      // If backend forwarded the cancel request to shop chat, open the chat for the order
+      if (res && res.forwardedToChat) {
+        // Optionally navigate to the conversation returned by backend
+        try {
+          if (res.conversationId) {
+            // Direct navigation using conversation id
+            window.location.href = `/chat?cid=${res.conversationId}`;
+            return;
+          }
+        } catch (e) {
+          // fallback to helper which will ensure conversation exists then open
+        }
+        // Fallback: use helper to create/get conversation and navigate
+        await openChatWithMerchantByOrder(orderId);
+        return;
+      }
+
+      if (res && res.success) {
+        alert('Đơn hàng đã được hủy thành công!');
+        // Reload orders
+        const ordersData = await customerAPI.getOrders();
+        setOrders(ordersData);
+      } else {
+        // Unexpected but handled
+        alert('Không thể huỷ đơn hàng: ' + (res && res.message ? res.message : 'Không xác định'));
+      }
     } catch (error) {
       console.error('Error cancelling order:', error);
-      alert('Có lỗi xảy ra khi hủy đơn hàng: ' + error.message);
+      // Map backend error codes to friendly Vietnamese messages
+      const cancelWindowExpiredCodes = ['cancel_window_expired'];
+      if (error && (cancelWindowExpiredCodes.includes(error.code) || (error.message && error.message.toLowerCase().includes('cancel window expired')))) {
+        alert('Không thể hủy sau 3 phút kể từ khi đặt. Vui lòng liên hệ cửa hàng/shipper để được hỗ trợ.');
+      } else {
+        alert('Có lỗi xảy ra khi hủy đơn hàng: ' + (error && error.message ? error.message : 'Lỗi không xác định'));
+      }
     }
   };
 
@@ -125,6 +154,9 @@ function OrderPage() {
 
   // Map assignmentStatus or order.status to a user-facing Vietnamese label
   const getStatusDisplay = (order) => {
+    // If backend sets an explicit cancelled flag, prefer that as display
+    if (order.isCancelled || order.is_cancelled) return 'Đã hủy';
+
     const assign = (order.assignmentStatus || order.assigned_status || order.Assigned_status || '').toString().toLowerCase();
     if (assign) {
       if (assign === 'assigned') return 'Chờ xử lý';
@@ -296,27 +328,35 @@ function OrderPage() {
         {/* Customer order lists for different statuses */}
         {(activeTab === 'processing' || activeTab === 'completed' || activeTab === 'cancelled') && (
           <div className="filtered-orders-section">
-            {orders.filter(order => 
-              activeTab === 'processing' ? order.status === 'PROCESSING' :
-              activeTab === 'completed' ? order.status === 'COMPLETED' :
-              order.status === 'CANCELLED'
-            ).length === 0 ? (
-              <div className="empty-orders">
-                <div className="empty-icon">📦</div>
-                <h3>Không có đơn hàng</h3>
-                <p>Không có đơn hàng nào trong trạng thái này.</p>
-              </div>
-            ) : (
-              <div className="orders-list">
-                {orders
-                  .filter(order => 
-                    activeTab === 'processing' ? order.status === 'PROCESSING' :
-                    activeTab === 'completed' ? order.status === 'COMPLETED' :
-                    order.status === 'CANCELLED'
-                  )
-                  .map(order => (
+            {/*
+              For the "processing" tab we want to show orders whose assignment status is 'accepted'.
+              We check common field names used across the app: assignmentStatus and assignment_status.
+            */}
+            {(() => {
+              const filtered = orders.filter(order => {
+                if (activeTab === 'processing') {
+                  const assign = (order.assignmentStatus || order.assignment_status || '').toString().toLowerCase();
+                  return assign === 'accepted';
+                }
+                if (activeTab === 'completed') return (order.status || '').toString().toUpperCase() === 'COMPLETED';
+                // Include orders explicitly marked cancelled by flag in addition to status === 'CANCELLED'
+                return (order.status || '').toString().toUpperCase() === 'CANCELLED' || !!(order.isCancelled || order.is_cancelled);
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="empty-orders">
+                    <div className="empty-icon">📦</div>
+                    <h3>Không có đơn hàng</h3>
+                    <p>Không có đơn hàng nào trong trạng thái này.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="orders-list">
+                  {filtered.map(order => (
                     <div className="order-card" key={order.id}>
-                      {/* Reuse the same order card structure as in the "all" tab */}
                       <div className="order-card-header">
                         <div className="order-card-header-left">
                           <div className="order-card-number">
@@ -326,8 +366,8 @@ function OrderPage() {
                           <div className="order-card-separator"></div>
                           <div className="order-card-timestamp">📅 {new Date().toLocaleString('vi-VN')}</div>
                         </div>
-                        <span className={`order-card-status ${order.status.toLowerCase()}`}>
-                          {order.status}
+                        <span className={`order-card-status ${getStatusKey(order)}`}>
+                          {getStatusDisplay(order)}
                         </span>
                       </div>
 
@@ -337,11 +377,11 @@ function OrderPage() {
                           <div className="order-card-products">
                             {order.orderItems && order.orderItems.map((item, index) => (
                               <div key={index} className="order-card-product-item">
-                                  <img 
-                                    src={item.productImage || item.image || item.imageUrl || "/placeholder.svg"} 
-                                    alt={item.productName || item.name}
-                                    className="order-card-product-image"
-                                  />
+                                <img 
+                                  src={item.productImage || item.image || item.imageUrl || "/placeholder.svg"} 
+                                  alt={item.productName || item.name}
+                                  className="order-card-product-image"
+                                />
                                 <p className="order-card-product-name">
                                   {item.productName || item.name}
                                 </p>
@@ -371,7 +411,8 @@ function OrderPage() {
                             >
                               Xem chi tiết →
                             </button>
-                            {order.status === 'PROCESSING' && (
+                            {/* Only show cancel button when order status is PROCESSING (server-driven) */}
+                            {((order.status || '').toString().toUpperCase() === 'PROCESSING') && (
                               <button 
                                 className="order-card-button order-card-button-danger"
                                 onClick={() => handleCancelOrder(order.id)}
@@ -384,8 +425,9 @@ function OrderPage() {
                       </div>
                     </div>
                   ))}
-              </div>
-            )}
+                </div>
+              );
+            })()}
           </div>
         )}
 

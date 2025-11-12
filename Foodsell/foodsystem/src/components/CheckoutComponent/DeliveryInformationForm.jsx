@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './DeliveryInformationForm.css';
-import { calculateShippingFee } from '../../config/shippingConfig';
+import { calculateShippingFee, inferDistrictFromAddress, STREET_TO_DISTRICT } from '../../config/shippingConfig';
 
-const DeliveryInformationForm = ({ onSubmit, initialData = {} }) => {
+const DeliveryInformationForm = ({ onSubmit, initialData = {}, restaurantDistrict = null }) => {
   const [formData, setFormData] = useState({
     fullName: initialData.fullName || '',
     phone: initialData.phone || '',
@@ -44,6 +44,54 @@ const districts = {
         [name]: ''
       }));
     }
+      // If user types address and district is empty, try to infer district and auto-set it
+      if (name === 'address') {
+        try {
+          // Try to detect a street -> district mapping specifically, but DO NOT auto-set the district.
+          // Instead record the inferredStreetDistrict and show a warning at selection/submit time.
+          const norm = removeDiacritics(value || '');
+          let mapped = null;
+          for (const sk of Object.keys(STREET_TO_DISTRICT)) {
+            // Normalize the mapping key first so it matches the normalized address
+            const skNorm = removeDiacritics(sk || '');
+            const escaped = skNorm.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+            const pattern = '\\b' + escaped.replace(/\s+/g, '\\s+') + '\\b';
+            const re = new RegExp(pattern, 'i');
+            if (re.test(norm)) { mapped = STREET_TO_DISTRICT[sk]; break; }
+          }
+          if (mapped) {
+            setInferredStreetDistrict(mapped);
+            console.log('[handleInputChange] detected street-mapped district:', mapped, 'for address:', value, 'addrNorm=', norm);
+            // update shipping preview only when user has chosen a district matching the mapping
+            if (formData.district && removeDiacritics(formData.district) === removeDiacritics(mapped)) {
+              const details = calculateShippingFee((restaurantDistrict || 'Hải Châu'), mapped);
+              setShippingDetails(details);
+              setMismatchWarning('');
+            } else {
+              setMismatchWarning(`Địa chỉ chứa đường thuộc quận ${mapped} — vui lòng chọn quận tương ứng.`);
+            }
+          } else {
+            // No street-specific mapping found, try the general inference function
+            const inferred = inferDistrictFromAddress(value || '');
+            if (inferred) {
+              setInferredStreetDistrict(inferred);
+              console.log('[handleInputChange] inferred district from address:', inferred, 'for address:', value);
+              if (formData.district && removeDiacritics(formData.district) === removeDiacritics(inferred)) {
+                const details = calculateShippingFee((restaurantDistrict || 'Hải Châu'), inferred);
+                setShippingDetails(details);
+                setMismatchWarning('');
+              } else {
+                setMismatchWarning(`Địa chỉ có thể thuộc quận ${inferred} — vui lòng chọn quận tương ứng.`);
+              }
+            } else {
+              setInferredStreetDistrict(null);
+              setMismatchWarning('');
+            }
+          }
+        } catch (err) {
+          console.warn('Error inferring district from address:', err);
+        }
+      }
   };
 
   // Danh sách các từ khóa không hợp lệ
@@ -60,7 +108,12 @@ const districts = {
   // Loại bỏ dấu để so sánh chuỗi một cách linh hoạt
   const removeDiacritics = (str) => {
     if (!str) return '';
-    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .toLowerCase();
   };
 
   // Danh sách từ khóa thường xuất hiện trong địa chỉ cụ thể
@@ -72,10 +125,40 @@ const districts = {
   // Danh sách các đường chính phổ biến ở Đà Nẵng (mẫu) - dùng để kiểm tra đầu vào
   // Bạn có thể mở rộng hoặc thay đổi danh sách này theo dữ liệu thực tế của cửa hàng
   const mainStreetList = [
-    'lê duẩn','le duan','trần phú','tran phu','nguyễn văn linh','nguyen van linh','nguyễn chí thanh','nguyen chi thanh',
-    'phạm văn đồng','pham van dong','hùng vương','hung vuong','hoàng diệu','hoang dieu','ngô quyền','ngo quyen',
-    'nguyễn văn thọ','nguyen van thoai','đặng thị nho','dang thi nho','quang trung','quang trung','phan đình phùng','phan dinh phung',
-    'lý tự trọng','ly tu trong','lê văn hiến','le van hien','nguyễn hữu thọ','nguyen huu tho','trường chinh','truong chinh'
+    // Common main streets in Đà Nẵng (accented + ascii variants)
+    'lê duẩn','le duan',
+    'trần phú','tran phu',
+    'nguyễn văn linh','nguyen van linh',
+    'nguyễn chí thanh','nguyen chi thanh',
+    'phạm văn đồng','pham van dong',
+    'hùng vương','hung vuong',
+    'hoàng diệu','hoang dieu',
+    'ngô quyền','ngo quyen',
+    'nguyễn văn thọ','nguyen van thoai',
+    'đặng thị nho','dang thi nho',
+    'quang trung','quang trung',
+    'phan đình phùng','phan dinh phung',
+    'lý tự trọng','ly tu trong',
+    'lê văn hiến','le van hien',
+    'nguyễn hữu thọ','nguyen huu tho',
+    'trường chinh','truong chinh',
+    'trần hưng đạo','tran hung dao',
+    'trưng nữ vương','trung nu vuong',
+    'nguyễn tất thành','nguyen tat thanh',
+    'hoàng văn thái','hoang van thai',
+    'phan chu trinh','phan chu trinh',
+    'nguyễn tri phương','nguyen tri phuong',
+    'nguyễn công trứ','nguyen cong tru',
+    'võ nguyên giáp','vo nguyen giap',
+    'hoàng sa','hoang sa',
+    'trường sa','truong sa',
+    'hai bà trưng','hai ba trung',
+    'phan châu trinh','phan chau trinh',
+    'nguyễn tường quảng','nguyen tuong quang',
+    'nguyễn hoàng','nguyen hoang',
+    'võ thị sáu','vo thi sau',
+    'nguyễn minh thức','nguyen minh thuc',
+    'ngô gia tự','ngo gia tu'
   ];
 
   const isValidAddress = (address) => {
@@ -107,6 +190,26 @@ const districts = {
 
     return false;
   };
+
+  // Helper: check if address contains any street that maps to given district
+  const addressContainsStreetForDistrict = (address, district) => {
+    if (!address || !district) return false;
+    const norm = removeDiacritics(address || '');
+  console.log('[addressContainsStreetForDistrict] addrNorm=', norm, 'district=', district);
+    for (const [streetKey, d] of Object.entries(STREET_TO_DISTRICT)) {
+      if (d === district) {
+        // Normalize mapping key to match normalized address
+        const keyNorm = removeDiacritics(streetKey || '');
+        const escaped = keyNorm.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+        const pattern = '\\b' + escaped.replace(/\s+/g, '\\s+') + '\\b';
+        const re = new RegExp(pattern, 'i');
+  const ok = re.test(norm);
+  console.log('[addressContainsStreetForDistrict] testing key=', keyNorm, 'pattern=', pattern, 'match=', ok);
+        if (ok) return true;
+      }
+    }
+    return false;
+  }
 
   const validateForm = () => {
     const newErrors = {};
@@ -143,12 +246,74 @@ const districts = {
       newErrors.district = 'Vui lòng chọn quận/huyện';
     }
 
+    // Enforce street->district mapping: if address contains a street mapped to a district,
+    // require the selected district to be that district.
+    try {
+      const addrNorm = removeDiacritics(formData.address || '');
+      let mappedDistrict = null;
+      for (const [sk, d] of Object.entries(STREET_TO_DISTRICT)) {
+        // Normalize mapping key so it matches the normalized address string
+        const skNorm = removeDiacritics(sk || '');
+        const escaped = skNorm.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+        const pattern = '\\b' + escaped.replace(/\s+/g, '\\s+') + '\\b';
+        const re = new RegExp(pattern, 'i');
+        if (re.test(addrNorm)) { mappedDistrict = d; break; }
+      }
+  // DEBUG: log address normalization and mapped district for troubleshooting
+  console.log('[validateForm] addrNorm=', addrNorm, 'mappedDistrict=', mappedDistrict, 'selectedDistrict=', formData.district);
+      if (mappedDistrict) {
+        // Compare normalized district names to avoid mismatches caused by diacritics/encoding
+  const selectedNorm = removeDiacritics(formData.district || '');
+  const mappedNorm = removeDiacritics(mappedDistrict || '');
+  console.log('[validateForm] selectedNorm=', selectedNorm, 'mappedNorm=', mappedNorm);
+        // If mapped district exists but user selected a different district, block submit
+        if (formData.district && selectedNorm !== mappedNorm) {
+          newErrors.district = `Địa chỉ chứa đường thuộc quận ${mappedDistrict} — vui lòng chọn quận tương ứng.`;
+          setMismatchWarning(`Địa chỉ chứa đường thuộc quận ${mappedDistrict} — vui lòng chọn quận tương ứng.`);
+        }
+      }
+    } catch (err) {
+      console.warn('Error enforcing street->district mapping during validation:', err);
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Block submit if there's a mismatch warning present (prevents Enter or other bypass)
+    if (mismatchWarning) {
+      setErrors(prev => ({ ...prev, district: prev.district || mismatchWarning }));
+      console.log('[handleSubmit] blocked due to mismatchWarning:', mismatchWarning);
+      return;
+    }
+    // Extra guard: re-check street->district mapping right before submit to
+    // ensure transient UI state or race conditions can't bypass validation.
+    try {
+      const addrNorm = removeDiacritics(formData.address || '');
+      let mappedDistrict = null;
+      for (const [sk, d] of Object.entries(STREET_TO_DISTRICT)) {
+        const skNorm = removeDiacritics(sk || '');
+        const escaped = skNorm.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+        const pattern = '\\b' + escaped.replace(/\s+/g, '\\s+') + '\\b';
+        const re = new RegExp(pattern, 'i');
+        if (re.test(addrNorm)) { mappedDistrict = d; break; }
+      }
+      if (mappedDistrict) {
+        const selNorm = removeDiacritics(formData.district || '');
+        const mapNorm = removeDiacritics(mappedDistrict || '');
+        if (selNorm !== mapNorm) {
+          setErrors(prev => ({ ...prev, district: `Địa chỉ chứa đường thuộc quận ${mappedDistrict} — vui lòng chọn quận tương ứng.` }));
+          setMismatchWarning(`Địa chỉ chứa đường thuộc quận ${mappedDistrict} — vui lòng chọn quận tương ứng.`);
+          return; // block submit
+        }
+      }
+
+    } catch (err) {
+      console.warn('Error during submit guard check:', err);
+    }
+
     if (validateForm()) {
       // Pass both form data and shipping details to parent
       onSubmit({
@@ -168,8 +333,52 @@ const districts = {
     }
   });
 
-  // Giả sử nhà hàng ở Hải Châu
-  const RESTAURANT_DISTRICT = "Hải Châu";
+  // Inferred district based on street keywords in the address
+  const [inferredStreetDistrict, setInferredStreetDistrict] = useState(null);
+  // Warning when district and address-derived district mismatch
+  const [mismatchWarning, setMismatchWarning] = useState('');
+
+  // Fallback quận của cửa hàng nếu chưa suy luận được (tránh khoảng cách = 0 do fromDistrict = null)
+  // Đặt trước khi dùng trong useEffect để tránh ReferenceError trong TDZ.
+  const RESTAURANT_DISTRICT = restaurantDistrict || 'Hải Châu';
+
+  // Ensure validations and shipping details are computed when component mounts
+  // or when initialData provides prefilled address/district values.
+  useEffect(() => {
+    try {
+      // If district is selected, compute shipping details
+      if (formData.district) {
+        const details = calculateShippingFee(RESTAURANT_DISTRICT, formData.district);
+        if (!details.breakdown.isResolved) {
+          console.log('[Shipping] distance unresolved (from/to not matched). from=', RESTAURANT_DISTRICT, 'to=', formData.district, 'breakdown=', details.breakdown);
+        }
+        setShippingDetails(details);
+      }
+
+      // Re-run mapping inference to set mismatch warning if needed
+      if (formData.address) {
+        const addrNorm = removeDiacritics(formData.address || '');
+        let mapped = null;
+        for (const [sk, d] of Object.entries(STREET_TO_DISTRICT)) {
+          const skNorm = removeDiacritics(sk || '');
+          const escaped = skNorm.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+          const pattern = '\\b' + escaped.replace(/\s+/g, '\\s+') + '\\b';
+          const re = new RegExp(pattern, 'i');
+          if (re.test(addrNorm)) { mapped = d; break; }
+        }
+        setInferredStreetDistrict(mapped);
+        if (mapped && formData.district && formData.district !== mapped) {
+          setMismatchWarning(`Địa chỉ chứa đường thuộc quận ${mapped} — vui lòng chọn quận tương ứng.`);
+        } else if (mapped) {
+          setMismatchWarning('');
+        }
+      }
+    } catch (err) {
+      console.warn('Error during initial mapping/shipping computation:', err);
+    }
+  }, [formData.address, formData.district, RESTAURANT_DISTRICT]);
+
+  // RESTAURANT_DISTRICT đã được định nghĩa phía trên với fallback
 
   const handleCityChange = (e) => {
     const selectedCity = e.target.value;
@@ -191,6 +400,41 @@ const handleDistrictChange = (e) => {
       const details = calculateShippingFee(RESTAURANT_DISTRICT, selectedDistrict);
       setShippingDetails(details);
     }
+
+    // If address contains a street mapped to a different district, warn the user
+    try {
+      if (formData.address) {
+  console.log('[handleDistrictChange] selectedDistrict=', selectedDistrict, 'address=', formData.address);
+  const containsForSelected = addressContainsStreetForDistrict(formData.address, selectedDistrict);
+  console.log('[handleDistrictChange] containsForSelected=', containsForSelected);
+        if (!containsForSelected) {
+          // If address contains a street mapped to another district, show mismatch
+          let mappedOther = null;
+          const norm = removeDiacritics(formData.address || '');
+          for (const [sk, d] of Object.entries(STREET_TO_DISTRICT)) {
+            const skNorm = removeDiacritics(sk || '');
+            const escaped = skNorm.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+            const pattern = '\\b' + escaped.replace(/\s+/g, '\\s+') + '\\b';
+            const re = new RegExp(pattern, 'i');
+            const ok = re.test(norm);
+            console.log('[handleDistrictChange] testing sk=', skNorm, 'pattern=', pattern, 'match=', ok, 'mapsTo=', d);
+            if (ok && d !== selectedDistrict) { mappedOther = d; break; }
+          }
+          if (mappedOther) {
+            setMismatchWarning(`Địa chỉ chứa đường thuộc quận ${mappedOther} — quận bạn chọn là ${selectedDistrict}. Vui lòng kiểm tra lại.`);
+            setErrors(prev => ({ ...prev, district: '' }));
+          } else {
+            setMismatchWarning('');
+          }
+        } else {
+          setMismatchWarning('');
+        }
+      } else {
+        setMismatchWarning('');
+      }
+    } catch (err) {
+      console.warn('Error checking district/street match:', err);
+    }
   };
 
   return (
@@ -200,7 +444,7 @@ const handleDistrictChange = (e) => {
         <p>Vui lòng điền đầy đủ thông tin để nhận hàng</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="delivery-form">
+  <form onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === 'Enter' && mismatchWarning) { e.preventDefault(); console.log('[form] prevented Enter submit due to mismatchWarning'); } }} className="delivery-form">
         {/* Full Name and Phone */}
         <div className="form-row">
           <div className="form-group">
@@ -297,6 +541,7 @@ value={formData.city}
               ))}
             </select>
             {errors.district && <span className="error-message">{errors.district}</span>}
+            {mismatchWarning && <span className="error-message">{mismatchWarning}</span>}
           </div>
         </div>
 
@@ -327,7 +572,12 @@ value={formData.city}
         </div>
 
         {/* Submit Button */}
-        <button type="submit" className="delivery-continue-btn">
+        <button
+          type="submit"
+          className="delivery-continue-btn"
+          disabled={Boolean(mismatchWarning)}
+          title={mismatchWarning || 'Tiếp tục để sang bước thanh toán'}
+        >
           Tiếp tục
         </button>
       </form>

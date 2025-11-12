@@ -5,6 +5,8 @@ import AddressDetailModal from './AddressDetailModal'
 import SidebarComponent from '../SidebarComponent/SidebarComponent'
 import { shipperAPI } from '../../api/shipper'
 import { FiPackage, FiCheck, FiTruck, FiDollarSign,FiMenu,FiUser,FiMapPin,FiPhone} from 'react-icons/fi'
+// Fallback shipping distance/fee helpers (used when backend distance is 0 or missing)
+import { calculateShippingFee, DISTRICT_DISTANCES, inferDistrictFromAddress } from '../../config/shippingConfig'
 
 export default function ShipperDashboard() {
   const [activeTab, setActiveTab] = useState('all')
@@ -44,7 +46,9 @@ export default function ShipperDashboard() {
 
       // Load orders based on active tab and dashboard data in parallel
       const [ordersResponse, dashboardResponse] = await Promise.all([
-        shipperAPI.getOrders(activeTab !== 'all' ? activeTab : null),
+        // Use the dedicated "available" endpoint for the default "all" tab so
+        // the dashboard shows available/accepted orders rather than all assigned orders.
+        shipperAPI.getOrders(activeTab !== 'all' ? activeTab : 'available'),
         shipperAPI.getDashboard()
       ])
 
@@ -146,6 +150,40 @@ export default function ShipperDashboard() {
     ...acceptedOrders,
     ...filteredOrders.filter(o => !(o.assignmentStatus === 'accepted' || o.assignment_status === 'accepted'))
   ]
+
+  // Use central helper to infer district from address (district name or street -> district mapping)
+  const extractDistrictFromAddress = (address) => inferDistrictFromAddress(address)
+
+  // Returns a user-friendly distance string. Use backend distance when available and non-zero,
+  // otherwise attempt to estimate from districts using calculateShippingFee
+  const getDisplayDistance = (order) => {
+    try {
+      const raw = order && (order.distance || order.distanceText || order.distance_km)
+      if (raw) {
+        // Try to extract numeric value; backend returns strings like "4.2 km"
+        const n = parseFloat(String(raw).replace(',', '.'))
+        if (!isNaN(n) && n > 0) {
+          // Preserve backend formatting if it's already a string
+          return typeof raw === 'string' ? raw : `${n.toFixed(1)} km`
+        }
+      }
+
+      // Fallback: estimate from districts derived from addresses
+  const shopDistrict = extractDistrictFromAddress(order.pickupAddress || order.pickup_address || '')
+  const orderDistrict = extractDistrictFromAddress(order.deliveryAddress || order.delivery_address || order.addressText || '')
+      if (shopDistrict && orderDistrict) {
+        const details = calculateShippingFee(shopDistrict, orderDistrict)
+        if (details && typeof details.distance === 'number') {
+          return `${details.distance.toFixed(1)} km (ước tính)`
+        }
+      }
+
+      return '—'
+    } catch (err) {
+      console.error('getDisplayDistance error', err)
+      return '—'
+    }
+  }
 
   const getStatusLabel = (status) => {
     switch (status) {
@@ -336,7 +374,7 @@ export default function ShipperDashboard() {
               <div className="summary-left">
                 <span>{order.items} món ăn</span>
                 <span className="separator">•</span>
-                <span>{order.distance}</span>
+                <span>{getDisplayDistance(order)}</span>
               </div>
               <div className="summary-right">
                 <span className="price">↗ {order.price}</span>

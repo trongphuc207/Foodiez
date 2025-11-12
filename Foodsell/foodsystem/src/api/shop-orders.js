@@ -88,6 +88,37 @@ export const shopOrdersAPI = {
     }
     return res.json();
   }
+,
+
+  // Delete an order (seller/admin) - typically only for cancelled orders
+  deleteOrder: async (orderId) => {
+    const res = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      throw new Error(err?.message || 'Failed to delete order');
+    }
+    return res.json();
+  }
+,
+
+  // Cancel an order from seller side: mark is_cancelled and optionally include a reason and timestamp
+  cancelOrder: async (orderId, reason) => {
+    const payload = { reason: reason || 'Cancelled by seller' };
+    // Use seller force-cancel endpoint which expects POST /orders/{id}/cancel-by-seller
+    const res = await fetch(`${API_BASE_URL}/orders/${orderId}/cancel-by-seller`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      throw new Error(err?.message || 'Failed to cancel order');
+    }
+    return res.json();
+  }
 };
 
 export default shopOrdersAPI;
