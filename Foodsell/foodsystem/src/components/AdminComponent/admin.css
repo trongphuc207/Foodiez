@@ -281,7 +281,7 @@ html, body {
 /* ====== Header ====== */
 .admin-header {
   background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
-  color: white;
+  color: #ffffff !important;
   padding: 1.5rem 2.5rem;
   font-size: 1.5rem;
   font-weight: 700;
@@ -1496,7 +1496,7 @@ label, .form-label {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 800;
-  color: #ffffff;
+  color: #ffffff !important;
   letter-spacing: -0.5px;
 }
 
