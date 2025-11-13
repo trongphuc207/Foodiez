@@ -1,0 +1,169 @@
+/* ================================================
+   ADMIN WHITE THEME GLOBAL OVERRIDE
+   This file ensures ALL admin components use white theme
+   Import this AFTER all other admin CSS files
+   ================================================ */
+
+/* Reset all backgrounds to white (except sidebar/header) */
+.admin-page *:not(.admin-sidebar):not(.admin-header):not(.admin-sidebar *):not(.admin-header *):not(.badge):not(.btn) {
+  background-color: transparent !important;
+}
+
+.admin-page,
+.admin-content {
+  background: #ffffff !important;
+  color: #212529 !important;
+}
+
+/* All cards, sections, divs with dark backgrounds -> white */
+.admin-page .card,
+.admin-page [class*="card"],
+.admin-page [class*="-card"],
+.admin-page .stat-card,
+.admin-page .stats-card,
+.admin-page .quick-action,
+.admin-page .quick-action-item,
+.admin-page .system-status,
+.admin-page .status-item,
+.admin-page .report-item,
+.admin-page .activity-item,
+.admin-page .dashboard-card,
+.admin-page .admin-card,
+.admin-page section,
+.admin-page article {
+  background: #ffffff !important;
+  color: #212529 !important;
+  border-color: #dee2e6 !important;
+}
+
+/* All headings and text */
+.admin-page h1,
+.admin-page h2,
+.admin-page h3,
+.admin-page h4,
+.admin-page h5,
+.admin-page h6 {
+  color: #212529 !important;
+}
+
+.admin-page p,
+.admin-page span:not(.badge),
+.admin-page div:not(.badge):not(.btn),
+.admin-page label,
+.admin-page .title,
+.admin-page .value,
+.admin-page strong,
+.admin-page .stat-value,
+.admin-page .stats-value {
+  color: #212529 !important;
+}
+
+.admin-page .text-muted,
+.admin-page .subtitle,
+.admin-page .description,
+.admin-page small,
+.admin-page .stat-label,
+.admin-page .stats-label {
+  color: #6c757d !important;
+}
+
+/* Tables */
+.admin-page table,
+.admin-page .table {
+  background: #ffffff !important;
+  color: #212529 !important;
+}
+
+.admin-page table thead,
+.admin-page .table thead {
+  background: #f8f9fa !important;
+}
+
+.admin-page table th,
+.admin-page .table th {
+  color: #212529 !important;
+  border-color: #dee2e6 !important;
+}
+
+.admin-page table td,
+.admin-page .table td {
+  color: #212529 !important;
+  border-color: #dee2e6 !important;
+}
+
+.admin-page table tbody tr,
+.admin-page .table tbody tr {
+  background: #ffffff !important;
+}
+
+.admin-page table tbody tr:hover,
+.admin-page .table tbody tr:hover {
+  background: #f8f9fa !important;
+}
+
+/* Forms */
+.admin-page input,
+.admin-page textarea,
+.admin-page select,
+.admin-page .form-control,
+.admin-page .form-select {
+  background: #ffffff !important;
+  color: #212529 !important;
+  border-color: #dee2e6 !important;
+}
+
+.admin-page input::placeholder,
+.admin-page textarea::placeholder {
+  color: #6c757d !important;
+}
+
+/* Modals */
+.admin-page .modal-content,
+.admin-page [class*="modal"] {
+  background: #ffffff !important;
+  color: #212529 !important;
+}
+
+.admin-page .modal-header {
+  background: #f8f9fa !important;
+  border-bottom-color: #dee2e6 !important;
+}
+
+/* Keep sidebar and header black */
+.admin-sidebar {
+  background: #1a1a1a !important;
+  color: #ffffff !important;
+}
+
+.admin-sidebar * {
+  color: #b0b0b0 !important;
+}
+
+.admin-sidebar .nav-link {
+  color: #b0b0b0 !important;
+}
+
+.admin-sidebar .nav-link:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.admin-sidebar .nav-link.active {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+.admin-header {
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%) !important;
+  color: #ffffff !important;
+}
+
+.admin-header * {
+  color: #ffffff !important;
+}
+
+.admin-logo {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border-color: #2a2a2a !important;
+}

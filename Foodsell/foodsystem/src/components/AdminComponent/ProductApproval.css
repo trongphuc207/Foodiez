@@ -1045,15 +1045,15 @@
 .product-approval-container .product-header,
 .product-approval-container .modal-header,
 .product-approval-container .section-header {
-  background: linear-gradient(135deg, #252525 0%, #1a1a1a 100%) !important;
-  border-color: #2a2a2a !important;
+  background: #f8f9fa !important;
+  border-color: #dee2e6 !important;
 }
 
 .product-approval-container .product-meta,
 .product-approval-container .info-row,
 .product-approval-container .form-row {
-  background: #252525 !important;
-  border-color: #3a3a3a !important;
+  background: #ffffff !important;
+  border-color: #dee2e6 !important;
 }
 
 .product-approval-container h1,
@@ -1064,31 +1064,31 @@
 .product-approval-container .stats-value,
 .product-approval-container label,
 .product-approval-container strong {
-  color: #ffffff !important;
+  color: #212529 !important;
 }
 
 .product-approval-container p,
 .product-approval-container span,
 .product-approval-container .product-description,
 .product-approval-container .info-value {
-  color: #e0e0e0 !important;
+  color: #212529 !important;
 }
 
 .product-approval-container .info-label,
 .product-approval-container .meta-label,
 .product-approval-container small {
-  color: #b0b0b0 !important;
+  color: #6c757d !important;
 }
 
 .product-approval-container input,
 .product-approval-container textarea,
 .product-approval-container select {
-  background: #2a2a2a !important;
-  color: #ffffff !important;
-  border-color: #3a3a3a !important;
+  background: #ffffff !important;
+  color: #212529 !important;
+  border-color: #dee2e6 !important;
 }
 
 .product-approval-container .empty-state,
 .product-approval-container .loading-message {
-  color: #b0b0b0 !important;
+  color: #6c757d !important;
 }

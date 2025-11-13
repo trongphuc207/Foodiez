@@ -503,7 +503,9 @@ INSERT INTO [dbo].[categories] ([id], [name], [description], [created_at]) VALUE
 (3, 'Cơm', 'Rice dishes, ready-to-eat', '2025-09-30T19:54:50.163'),
 (4, 'Nước uống', 'Beverages including coffee, tea, and soft drinks', '2025-10-09T07:32:55.270'),
 (5, 'Pizza', 'Món pizza phong cách Ý, nhiều loại topping đa dạng.', '2025-10-10T15:57:31.600'),
-(6, 'Bún', 'Món bún Việt Nam truyền thống, dùng với thịt, chả hoặc hải sản.', '2025-10-10T15:57:31.600');
+(6, 'Bún', 'Món bún Việt Nam truyền thống, dùng với thịt, chả hoặc hải sản.', '2025-10-10T15:57:31.600'),
+(7, 'Mì', 'Món mì Việt Nam truyền thống, dùng với thịt, chả hoặc hải sản.', '2025-10-10T15:57:31.600'),
+(8, 'Cuốn', 'Món cuốn Việt Nam truyền thống, dùng với thịt, chả hoặc hải sản.', '2025-10-10T15:57:31.600');
 SET IDENTITY_INSERT [dbo].[categories] OFF;
 GO
 SET IDENTITY_INSERT [dbo].[products] ON;

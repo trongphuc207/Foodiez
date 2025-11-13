@@ -12,6 +12,7 @@ import RoleApplications from "./RoleApplications";
 import ProductApproval from "./ProductApproval";
 import ComplaintManagement from "./ComplaintManagement/ComplaintManagement";
 import "./admin.css";
+import "./admin-white-theme-override.css";
 
 
 /**

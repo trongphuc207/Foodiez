@@ -38,6 +38,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                uri.startsWith("/api/auth/validate-reset-token") ||
                // Allow Google auth endpoints (login via Google should be public)
                uri.startsWith("/api/auth/google") ||
+               // Allow banned users to create complaints without authentication
+               uri.startsWith("/api/complaints/banned-user") ||
                (uri.startsWith("/api/products") && method.equals("GET")) ||
                (uri.startsWith("/api/categories") && method.equals("GET")) ||
                (uri.startsWith("/api/shops") && method.equals("GET")) ||

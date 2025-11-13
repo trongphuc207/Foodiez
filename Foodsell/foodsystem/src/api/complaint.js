@@ -2,6 +2,62 @@ const API_BASE_URL = 'http://localhost:8080/api';
 
 const getAuthToken = () => localStorage.getItem('authToken');
 
+// Helper function to handle API errors
+const handleApiError = async (response, defaultMessage) => {
+  const status = response.status;
+  try {
+    const errorData = await response.json();
+    console.log('🔍 API Error Response:', { status, errorData });
+    
+    // Handle 401 Unauthorized
+    if (status === 401) {
+      const errorMsg = errorData.error || errorData.message || '';
+      
+      // Check for "No token provided"
+      if (errorMsg.includes('No token provided') || errorMsg.includes('token') || errorMsg.includes('Unauthorized')) {
+        console.log('🔍 Token issue detected, checking localStorage...');
+        const currentToken = localStorage.getItem('authToken');
+        console.log('🔍 Current token in localStorage:', currentToken ? `Exists (${currentToken.length} chars)` : 'NULL');
+        
+        if (!currentToken) {
+          throw new Error('Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.');
+        }
+        
+        // Token exists but server rejects it
+        localStorage.removeItem('authToken');
+        throw new Error('Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.');
+      }
+      
+      // Check if user is banned
+      if (errorMsg.includes('banned') || errorMsg.includes('bị cấm') || errorMsg.includes('ban')) {
+        localStorage.removeItem('authToken');
+        throw new Error('Tài khoản của bạn đã bị cấm. Vui lòng liên hệ admin để biết thêm chi tiết.');
+      }
+      
+      // Generic token error
+      localStorage.removeItem('authToken');
+      throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+    }
+    
+    // Handle 403 Forbidden
+    if (status === 403) {
+      throw new Error('Bạn không có quyền thực hiện hành động này. Tài khoản có thể đã bị hạn chế.');
+    }
+    
+    // Return custom error message from server
+    throw new Error(errorData.message || errorData.error || defaultMessage);
+  } catch (e) {
+    // If error already thrown or JSON parsing failed
+    if (e.message.includes('đăng nhập') || 
+        e.message.includes('bị cấm') || 
+        e.message.includes('không có quyền') ||
+        e.message.includes('chưa đăng nhập')) {
+      throw e;
+    }
+    throw new Error(`${defaultMessage}: ${status} - ${response.statusText}`);
+  }
+};
+
 export const complaintAPI = {
   // User endpoints
   
@@ -9,36 +65,86 @@ export const complaintAPI = {
   createComplaint: async (complaintData) => {
     const token = getAuthToken();
     
-    if (!token) {
-      throw new Error('Vui lòng đăng nhập để gửi khiếu nại');
-    }
+    console.log('🔍 CreateComplaint - Debug Info:');
+    console.log('  - Token exists:', token ? 'YES' : 'NO');
+    console.log('  - Token length:', token?.length || 0);
+    console.log('  - Token preview:', token ? `${token.substring(0, 20)}...` : 'null');
+    console.log('  - LocalStorage keys:', Object.keys(localStorage));
     
-    const response = await fetch(`${API_BASE_URL}/complaints`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(complaintData),
-    });
-    
-    if (!response.ok) {
-      const status = response.status;
-      try {
-        const errorData = await response.json();
-        if (status === 401) {
-          throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
+    if (!token || token.trim() === '') {
+      console.warn('⚠️ No token found - checking for banned user scenario');
+      
+      // Try to get user info from localStorage (for banned users)
+      const userInfoStr = localStorage.getItem('user');
+      if (userInfoStr) {
+        try {
+          const userInfo = JSON.parse(userInfoStr);
+          console.log('📋 User info found - using banned-user endpoint:', { id: userInfo.id });
+          
+          // Use banned-user endpoint (no auth required)
+          const bannedUserData = {
+            ...complaintData,
+            complainantId: userInfo.id,
+            complainantType: 'user',
+            category: complaintData.category || 'account_ban',
+            priority: 'high'
+          };
+          
+          const response = await fetch(`${API_BASE_URL}/complaints/banned-user`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(bannedUserData),
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Không thể gửi khiếu nại');
+          }
+          
+          const result = await response.json();
+          console.log('✅ Complaint created via banned-user endpoint');
+          return result;
+        } catch (error) {
+          console.error('❌ Error with banned-user endpoint:', error);
+          throw error;
         }
-        throw new Error(errorData.message || `Lỗi khi tạo khiếu nại: ${status}`);
-      } catch (e) {
-        if (e.message.includes('Phiên đăng nhập') || e.message.includes('Lỗi khi tạo')) {
-          throw e;
-        }
-        throw new Error(`Lỗi khi tạo khiếu nại: ${status} - ${response.statusText}`);
       }
+      
+      // No user info at all - need to login
+      console.error('❌ No token or user info found');
+      throw new Error('Bạn chưa đăng nhập. Vui lòng đăng nhập để gửi khiếu nại.');
     }
     
-    return response.json();
+    try {
+      console.log('📤 Sending complaint request...');
+      const response = await fetch(`${API_BASE_URL}/complaints`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(complaintData),
+      });
+      
+      console.log('� Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+      
+      if (!response.ok) {
+        await handleApiError(response, 'Lỗi khi tạo khiếu nại');
+      }
+      
+      const result = await response.json();
+      console.log('✅ Complaint created successfully');
+      return result;
+    } catch (error) {
+      console.error('❌ CreateComplaint - Error:', error);
+      throw error;
+    }
   },
 
   // Get my complaints
@@ -53,8 +159,7 @@ export const complaintAPI = {
     });
     
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch complaints');
+      await handleApiError(response, 'Không thể tải danh sách khiếu nại');
     }
     
     return response.json();
@@ -111,8 +216,7 @@ export const complaintAPI = {
     });
     
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to add response');
+      await handleApiError(response, 'Không thể thêm phản hồi');
     }
     
     return response.json();
