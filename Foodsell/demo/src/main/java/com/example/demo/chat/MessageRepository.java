@@ -28,7 +28,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     @Query(value = "SELECT id as id, conversationId as conversationId, sender_id as senderId, content as content, image_url as imageUrl, created_at as createdAt FROM messages WHERE conversationId = :cid ORDER BY created_at ASC", nativeQuery = true)
     List<MessageProjection> projByConversationCamelMixed(@Param("cid") Long conversationId);
 
-    @Query("select m from Message m where (:q is null or lower(m.content) like lower(concat('%', :q, '%'))) order by m.createdAt desc")
+    @Query("select m from Message m left join fetch m.conversation left join fetch m.sender where (:q is null or lower(m.content) like lower(concat('%', :q, '%'))) order by m.createdAt desc")
     List<Message> searchAll(@Param("q") String query);
 
     // Count unread messages in a conversation for a specific user (not sent by that user)

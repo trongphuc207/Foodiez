@@ -203,7 +203,7 @@ public class ChatController {
     // Admin: monitor chat logs
     @GetMapping("/admin/logs")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<Message>>> adminLogs(@RequestParam(value = "q", required = false) String q) {
+    public ResponseEntity<ApiResponse<List<com.example.demo.chat.dto.AdminMessageLogDTO>>> adminLogs(@RequestParam(value = "q", required = false) String q) {
         var list = chatService.adminSearchMessages(q);
         return ResponseEntity.ok(ApiResponse.success(list, "Logs fetched"));
     }

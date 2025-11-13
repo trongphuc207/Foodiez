@@ -12,7 +12,12 @@ import com.example.demo.notifications.NotificationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class ChatService {
@@ -245,7 +250,56 @@ public class ChatService {
         );
     }
 
-    public List<Message> adminSearchMessages(String q) { return messageRepository.searchAll(q); }
+    @Transactional(readOnly = true)
+    public List<com.example.demo.chat.dto.AdminMessageLogDTO> adminSearchMessages(String q) {
+        String query = (q == null || q.trim().isEmpty()) ? null : q.trim();
+        List<Message> messages = messageRepository.searchAll(query);
+
+        Map<Long, MessageReport> latestReports = Collections.emptyMap();
+        List<Long> reportedIds = messages.stream()
+                .filter(Message::isReported)
+                .map(Message::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (!reportedIds.isEmpty()) {
+            var reports = reportRepository.findLatestByMessageIds(reportedIds);
+            Map<Long, MessageReport> map = new HashMap<>();
+            for (MessageReport report : reports) {
+                Long messageId = report.getMessage() != null ? report.getMessage().getId() : null;
+                if (messageId == null) continue;
+                if (!map.containsKey(messageId)) {
+                    map.put(messageId, report);
+                }
+            }
+            latestReports = map;
+        }
+
+        Map<Long, MessageReport> reportsFinal = latestReports;
+
+        return messages.stream().map(m -> {
+            Long convId = m.getConversation() != null ? m.getConversation().getId() : null;
+            Integer senderId = m.getSender() != null ? m.getSender().getId() : null;
+            String senderName = m.getSender() != null ? m.getSender().getFullName() : null;
+            String senderEmail = m.getSender() != null ? m.getSender().getEmail() : null;
+            MessageReport report = reportsFinal.get(m.getId());
+            String reason = report != null ? report.getReason() : null;
+            LocalDateTime reportCreatedAt = report != null ? report.getCreatedAt() : null;
+            return new com.example.demo.chat.dto.AdminMessageLogDTO(
+                    m.getId(),
+                    convId,
+                    senderId,
+                    senderName,
+                    senderEmail,
+                    m.getContent(),
+                    m.getImageUrl(),
+                    m.getCreatedAt(),
+                    m.isReported(),
+                    reason,
+                    reportCreatedAt
+            );
+        }).toList();
+    }
 
     @Transactional
     public void deleteConversation(Long conversationId) { conversationRepository.deleteById(conversationId); }
