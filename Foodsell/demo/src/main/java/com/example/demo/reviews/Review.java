@@ -40,6 +40,9 @@ public class Review {
     @Column(name = "is_visible", nullable = false)
     private Boolean isVisible = true;
 
+    @Column(name = "resolution_notes", columnDefinition = "NVARCHAR(MAX)")
+    private String resolutionNotes;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -56,6 +59,7 @@ public class Review {
         this.rating = rating;
         this.content = content;
         this.isVisible = true;
+        this.resolutionNotes = null;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }

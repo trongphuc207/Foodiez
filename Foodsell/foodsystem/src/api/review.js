@@ -93,11 +93,33 @@ export const reviewAPI = {
   },
 
   // ===== ADMIN API (giữ chỗ – có thể mở rộng) =====
+  getAllReviews: async () => {
+    const response = await fetch(`${API_BASE_URL}/reviews/admin/all`, { method: 'GET', headers: getHeaders() });
+    if (!response.ok) {
+      const errorData = await response.json().catch(()=>({}));
+      throw new Error(errorData.message || 'Không thể lấy danh sách đánh giá');
+    }
+    return response.json();
+  },
+
   hideReview: async (reviewId) => {
     const response = await fetch(`${API_BASE_URL}/reviews/admin/${reviewId}/hide`, { method: 'PUT', headers: getHeaders() });
     if (!response.ok) {
       const errorData = await response.json().catch(()=>({}));
       throw new Error(errorData.message || 'Không thể ẩn đánh giá');
+    }
+    return response.json();
+  },
+
+  resolveReviewComplaint: async (reviewId, resolution) => {
+    const response = await fetch(`${API_BASE_URL}/reviews/admin/${reviewId}/resolve`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ resolution })
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(()=>({}));
+      throw new Error(errorData.message || 'Không thể xử lý khiếu nại');
     }
     return response.json();
   },

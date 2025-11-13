@@ -192,8 +192,12 @@ public class ReviewService {
         }
         
         Review review = reviewOpt.get();
-        // Có thể thêm field resolution vào Review entity nếu cần
-        // Tạm thời chỉ cập nhật updatedAt
+        if (resolution != null) {
+            String trimmed = resolution.trim();
+            review.setResolutionNotes(trimmed.isEmpty() ? null : trimmed);
+        } else {
+            review.setResolutionNotes(null);
+        }
         review.setUpdatedAt(java.time.LocalDateTime.now());
         reviewRepository.save(review);
     }

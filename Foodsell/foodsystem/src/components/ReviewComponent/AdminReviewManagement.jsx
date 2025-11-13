@@ -47,13 +47,14 @@ const AdminReviewManagement = () => {
   };
 
   const handleResolveComplaint = async (reviewId) => {
-    if (!resolution.trim()) {
+    const trimmed = resolution.trim();
+    if (!trimmed) {
       alert('Vui lòng nhập nội dung xử lý khiếu nại!');
       return;
     }
 
     try {
-      const response = await reviewAPI.resolveReviewComplaint(reviewId, resolution);
+      const response = await reviewAPI.resolveReviewComplaint(reviewId, trimmed);
       if (response.success) {
         setShowResolutionForm(false);
         setResolution('');
@@ -135,10 +136,10 @@ const AdminReviewManagement = () => {
                   <td>{new Date(review.createdAt).toLocaleDateString('vi-VN')}</td>
                   <td className="actions-cell">
                     <div className="action-buttons">
-                      <button 
-                        className="view-btn"
-                        onClick={() => setSelectedReview(review)}
-                      >
+                  <button 
+                    className="view-btn"
+                    onClick={() => setSelectedReview(review)}
+                  >
                         Xem
                       </button>
                       {review.isVisible && (
@@ -153,6 +154,7 @@ const AdminReviewManagement = () => {
                         className="resolve-btn"
                         onClick={() => {
                           setSelectedReview(review);
+                          setResolution(review.resolutionNotes || '');
                           setShowResolutionForm(true);
                         }}
                       >
@@ -205,6 +207,10 @@ const AdminReviewManagement = () => {
                 <div className="detail-row">
                   <label>Trạng thái:</label>
                   {getStatusBadge(selectedReview.isVisible)}
+                </div>
+                <div className="detail-row">
+                  <label>Kết quả xử lý:</label>
+                  <span>{selectedReview.resolutionNotes ? selectedReview.resolutionNotes : 'Chưa có ghi chú xử lý'}</span>
                 </div>
                 <div className="detail-row">
                   <label>Ngày tạo:</label>
