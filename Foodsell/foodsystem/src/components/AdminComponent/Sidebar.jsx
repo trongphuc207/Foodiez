@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaTachometerAlt, FaUsers, FaBoxOpen, FaShoppingCart, FaTicketAlt, FaChartBar, FaStar } from 'react-icons/fa';
+import { FaTachometerAlt, FaUsers, FaBoxOpen, FaShoppingCart, FaTicketAlt, FaChartBar, FaStar, FaBell } from 'react-icons/fa';
 
 export default function Sidebar({ activeTab, setActiveTab }) {
   return (
@@ -70,6 +70,15 @@ export default function Sidebar({ activeTab, setActiveTab }) {
             className={`nav-link d-flex align-items-center text-white w-100 border-0 bg-transparent ${activeTab === 'reports' ? 'fw-bold bg-dark rounded-2 px-2' : ''}`}
           >
             <FaChartBar className="me-2" /> Reports
+          </button>
+        </li>
+
+        <li className="nav-item mb-2">
+          <button
+            onClick={() => setActiveTab('notifications')}
+            className={`nav-link d-flex align-items-center text-white w-100 border-0 bg-transparent ${activeTab === 'notifications' ? 'fw-bold bg-dark rounded-2 px-2' : ''}`}
+          >
+            <FaBell className="me-2" /> Notifications
           </button>
         </li>
       </ul>

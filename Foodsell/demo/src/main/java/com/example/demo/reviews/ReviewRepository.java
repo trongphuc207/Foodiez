@@ -30,6 +30,9 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
     @Query("SELECT r FROM Review r WHERE r.customerId = :customerId AND r.orderId = :orderId")
     Optional<Review> findByCustomerIdAndOrderId(@Param("customerId") Integer customerId, @Param("orderId") Integer orderId);
     
+    // Kiểm tra đã tồn tại review cho cùng (customer, product, order)
+    boolean existsByCustomerIdAndProductIdAndOrderId(Integer customerId, Integer productId, Integer orderId);
+    
     // Lấy tất cả review của một customer
     @Query("SELECT r FROM Review r WHERE r.customerId = :customerId ORDER BY r.createdAt DESC")
     List<Review> findByCustomerId(@Param("customerId") Integer customerId);

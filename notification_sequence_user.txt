@@ -1,0 +1,253 @@
+' ============================================
+' SEQUENCE DIAGRAMS - NOTIFICATION SYSTEM (USER)
+' ============================================
+' Các use case dành cho User:
+' - Get My Notifications
+' - Get Unread Notifications
+' - Get Unread Count
+' - Mark Notification as Read
+' - Mark All Notifications as Read
+' ============================================
+
+' ============================================
+' Get My Notifications - Sequence Diagram
+' ============================================
+
+@startuml GetMyNotifications
+
+title Get My Notifications - Sequence Diagram (User)
+
+actor User
+participant "NotificationController" as Controller
+participant "NotificationService" as Service
+participant "NotificationRepository" as NotifRepo
+database "Database" as DB
+
+User -> Controller: GET /api/notifications/my-notifications
+activate Controller
+
+Controller -> Controller: getCurrentUser()\n(validate JWT token)
+Controller -> Controller: Extract userId from token
+
+alt Not authenticated
+  Controller --> User: 400 Bad Request\n"Vui lòng đăng nhập để xem thông báo"
+  deactivate Controller
+else Is authenticated
+  Controller -> Service: getNotificationsByUserId(userId)
+  activate Service
+  
+  Service -> NotifRepo: findByUserIdOrderByCreatedAtDesc(userId)
+  activate NotifRepo
+  NotifRepo -> DB: SELECT * FROM notifications\nWHERE user_id = userId\nORDER BY created_at DESC
+  DB --> NotifRepo: List<Notification>
+  NotifRepo --> Service: notifications
+  deactivate NotifRepo
+  
+  Service --> Controller: List<Notification>
+  deactivate Service
+  
+  Controller --> User: 200 OK\n{success: true, data: List<Notification>}
+  deactivate Controller
+end
+
+@enduml
+
+' ============================================
+' Get Unread Notifications - Sequence Diagram
+' ============================================
+
+@startuml GetUnreadNotifications
+
+title Get Unread Notifications - Sequence Diagram (User)
+
+actor User
+participant "NotificationController" as Controller
+participant "NotificationService" as Service
+participant "NotificationRepository" as NotifRepo
+database "Database" as DB
+
+User -> Controller: GET /api/notifications/unread
+activate Controller
+
+Controller -> Controller: getCurrentUser()\n(validate JWT token)
+Controller -> Controller: Extract userId from token
+
+alt Not authenticated
+  Controller --> User: 400 Bad Request\n"Vui lòng đăng nhập để xem thông báo chưa đọc"
+  deactivate Controller
+else Is authenticated
+  Controller -> Service: getUnreadNotificationsByUserId(userId)
+  activate Service
+  
+  Service -> NotifRepo: findByUserIdAndIsReadFalseOrderByCreatedAtDesc(userId)
+  activate NotifRepo
+  NotifRepo -> DB: SELECT * FROM notifications\nWHERE user_id = userId\nAND is_read = false\nORDER BY created_at DESC
+  DB --> NotifRepo: List<Notification>
+  NotifRepo --> Service: unreadNotifications
+  deactivate NotifRepo
+  
+  Service --> Controller: List<Notification>
+  deactivate Service
+  
+  Controller --> User: 200 OK\n{success: true, data: List<Notification>}
+  deactivate Controller
+end
+
+@enduml
+
+' ============================================
+' Get Unread Count - Sequence Diagram
+' ============================================
+
+@startuml GetUnreadCount
+
+title Get Unread Count - Sequence Diagram (User)
+
+actor User
+participant "NotificationController" as Controller
+participant "NotificationService" as Service
+participant "NotificationRepository" as NotifRepo
+database "Database" as DB
+
+User -> Controller: GET /api/notifications/unread-count
+activate Controller
+
+Controller -> Controller: getCurrentUser()\n(validate JWT token)
+Controller -> Controller: Extract userId from token
+
+alt Not authenticated
+  Controller --> User: 400 Bad Request\n"Vui lòng đăng nhập"
+  deactivate Controller
+else Is authenticated
+  Controller -> Service: getUnreadCountByUserId(userId)
+  activate Service
+  
+  Service -> NotifRepo: countByUserIdAndIsReadFalse(userId)
+  activate NotifRepo
+  NotifRepo -> DB: SELECT COUNT(*) FROM notifications\nWHERE user_id = userId\nAND is_read = false
+  DB --> NotifRepo: long
+  NotifRepo --> Service: count
+  deactivate NotifRepo
+  
+  Service --> Controller: long
+  deactivate Service
+  
+  Controller --> User: 200 OK\n{success: true, data: count}
+  deactivate Controller
+end
+
+@enduml
+
+' ============================================
+' Mark Notification as Read - Sequence Diagram
+' ============================================
+
+@startuml MarkNotificationAsRead
+
+title Mark Notification as Read - Sequence Diagram (User)
+
+actor User
+participant "NotificationController" as Controller
+participant "NotificationService" as Service
+participant "NotificationRepository" as NotifRepo
+database "Database" as DB
+
+User -> Controller: PUT /api/notifications/{notificationId}/read
+activate Controller
+
+Controller -> Controller: getCurrentUser()\n(validate JWT token)
+Controller -> Controller: Extract userId from token
+
+alt Not authenticated
+  Controller --> User: 400 Bad Request\n"Vui lòng đăng nhập"
+  deactivate Controller
+else Is authenticated
+  Controller -> Service: markNotificationAsRead(notificationId)
+  activate Service
+  
+  Service -> NotifRepo: findById(notificationId)
+  activate NotifRepo
+  NotifRepo -> DB: SELECT * FROM notifications WHERE id = notificationId
+  DB --> NotifRepo: Optional<Notification>
+  NotifRepo --> Service: notificationOpt
+  deactivate NotifRepo
+  
+  alt Notification not found
+    Service --> Controller: Throw RuntimeException("Notification not found")
+    Controller --> User: 400 Bad Request
+    deactivate Service
+    deactivate Controller
+  else Notification found
+    Service -> Service: Set notification.isRead = true
+    
+    Service -> NotifRepo: save(notification)
+    activate NotifRepo
+    NotifRepo -> DB: UPDATE notifications SET is_read = true WHERE id = notificationId
+    DB --> NotifRepo: Updated Notification
+    NotifRepo --> Service: Notification
+    deactivate NotifRepo
+    
+    Service --> Controller: Notification
+    deactivate Service
+    
+    Controller --> User: 200 OK\n{success: true, data: Notification}
+    deactivate Controller
+  end
+end
+
+@enduml
+
+' ============================================
+' Mark All Notifications as Read - Sequence Diagram
+' ============================================
+
+@startuml MarkAllNotificationsAsRead
+
+title Mark All Notifications as Read - Sequence Diagram (User)
+
+actor User
+participant "NotificationController" as Controller
+participant "NotificationService" as Service
+participant "NotificationRepository" as NotifRepo
+database "Database" as DB
+
+User -> Controller: PUT /api/notifications/mark-all-read
+activate Controller
+
+Controller -> Controller: getCurrentUser()\n(validate JWT token)
+Controller -> Controller: Extract userId from token
+
+alt Not authenticated
+  Controller --> User: 400 Bad Request\n"Vui lòng đăng nhập"
+  deactivate Controller
+else Is authenticated
+  Controller -> Service: markAllNotificationsAsRead(userId)
+  activate Service
+  
+  Service -> Service: getUnreadNotificationsByUserId(userId)
+  Service -> NotifRepo: findByUserIdAndIsReadFalseOrderByCreatedAtDesc(userId)
+  activate NotifRepo
+  NotifRepo -> DB: SELECT * FROM notifications\nWHERE user_id = userId\nAND is_read = false
+  DB --> NotifRepo: List<Notification>
+  NotifRepo --> Service: unreadNotifications
+  deactivate NotifRepo
+  
+  loop For each unread notification
+    Service -> Service: Set notification.isRead = true
+    Service -> NotifRepo: save(notification)
+    activate NotifRepo
+    NotifRepo -> DB: UPDATE notifications SET is_read = true WHERE id = ?
+    DB --> NotifRepo: Updated
+    NotifRepo --> Service: void
+    deactivate NotifRepo
+  end
+  
+  Service --> Controller: void
+  deactivate Service
+  
+  Controller --> User: 200 OK\n{success: true, message: "Đánh dấu tất cả thông báo đã đọc thành công!"}
+  deactivate Controller
+end
+
+@enduml
+

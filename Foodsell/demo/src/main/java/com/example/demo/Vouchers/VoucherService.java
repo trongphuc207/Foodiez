@@ -1,5 +1,8 @@
 package com.example.demo.Vouchers;
 
+import com.example.demo.notifications.NotificationService;
+import com.example.demo.Users.UserRepository;
+import com.example.demo.Users.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -12,10 +15,14 @@ public class VoucherService {
     
     private final VoucherRepository voucherRepository;
     private final UserVoucherRepository userVoucherRepository;
+    private final NotificationService notificationService;
+    private final UserRepository userRepository;
 
-    public VoucherService(VoucherRepository voucherRepository, UserVoucherRepository userVoucherRepository) {
+    public VoucherService(VoucherRepository voucherRepository, UserVoucherRepository userVoucherRepository, NotificationService notificationService, UserRepository userRepository) {
         this.voucherRepository = voucherRepository;
         this.userVoucherRepository = userVoucherRepository;
+        this.notificationService = notificationService;
+        this.userRepository = userRepository;
     }
 
     // Create new voucher (Admin only)
@@ -23,7 +30,42 @@ public class VoucherService {
         if (voucherRepository.existsByCode(voucher.getCode())) {
             throw new RuntimeException("Voucher code already exists");
         }
-        return voucherRepository.save(voucher);
+        Voucher savedVoucher = voucherRepository.save(voucher);
+        
+        // ID 70: Gửi notification cho tất cả customers về voucher/promotion mới
+        try {
+            List<User> customers = userRepository.findByRole("customer");
+            if (customers == null || customers.isEmpty()) {
+                customers = userRepository.findByRole("buyer"); // Fallback to buyer role
+            }
+            
+            String promotionTitle = "Voucher mới: " + savedVoucher.getCode();
+            if (savedVoucher.getDiscountType().equals("percentage")) {
+                promotionTitle += " - Giảm " + savedVoucher.getDiscountValue() + "%";
+            } else {
+                promotionTitle += " - Giảm " + savedVoucher.getDiscountValue() + " VNĐ";
+            }
+            
+            // Gửi notification cho từng customer (có thể tối ưu bằng batch sau)
+            for (User customer : customers) {
+                try {
+                    notificationService.createNotification(
+                        customer.getId(),
+                        "PROMOTION",
+                        "Khuyến mãi mới!",
+                        promotionTitle
+                    );
+                } catch (Exception e) {
+                    // Log nhưng không fail toàn bộ process
+                    System.err.println("Failed to send promotion notification to customer " + customer.getId() + ": " + e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            // Log error but don't fail voucher creation
+            System.err.println("Failed to send promotion notifications: " + e.getMessage());
+        }
+        
+        return savedVoucher;
     }
 
     // Get all active vouchers

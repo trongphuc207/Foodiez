@@ -1,0 +1,191 @@
+' ============================================
+' SEQUENCE DIAGRAMS - NOTIFICATION SYSTEM (ADMIN)
+' ============================================
+' Các use case dành cho Admin:
+' - Create Notification
+' - Delete Notification
+' - Get Notification Log
+' ============================================
+
+' ============================================
+' Create Notification - Sequence Diagram
+' ============================================
+
+@startuml CreateNotification
+
+title Create Notification - Sequence Diagram (Admin)
+
+actor Admin
+participant "NotificationController" as Controller
+participant "NotificationService" as Service
+participant "NotificationRepository" as NotifRepo
+database "Database" as DB
+
+Admin -> Controller: POST /api/notifications\n{userId, type, title, message}
+activate Controller
+
+Controller -> Controller: getCurrentUser()\n(validate JWT token & ADMIN role)
+Controller -> Controller: Check if user is ADMIN
+
+alt Not admin
+  Controller --> Admin: 403 Forbidden
+  deactivate Controller
+else Is admin
+  Controller -> Controller: Extract userId, type, title, message from request
+  
+  Controller -> Service: createNotification(userId, type, title, message)
+  activate Service
+  
+  Service -> Service: Create new Notification object
+  Service -> Service: Set userId, type, title, message
+  Service -> Service: Set isRead = false
+  Service -> Service: Set createdAt = now()
+  
+  Service -> NotifRepo: save(notification)
+  activate NotifRepo
+  NotifRepo -> DB: INSERT INTO notifications\n(user_id, type, title, message, is_read, created_at)
+  DB --> NotifRepo: Saved Notification
+  NotifRepo --> Service: Notification
+  deactivate NotifRepo
+  
+  Service --> Controller: Notification
+  deactivate Service
+  
+  Controller --> Admin: 200 OK\n{success: true, data: Notification}
+  deactivate Controller
+end
+
+@enduml
+
+' ============================================
+' Delete Notification - Sequence Diagram
+' ============================================
+
+@startuml DeleteNotification
+
+title Delete Notification - Sequence Diagram (Admin)
+
+actor Admin
+participant "NotificationController" as Controller
+participant "NotificationService" as Service
+participant "NotificationRepository" as NotifRepo
+database "Database" as DB
+
+Admin -> Controller: DELETE /api/notifications/{notificationId}
+activate Controller
+
+Controller -> Controller: getCurrentUser()\n(validate JWT token & ADMIN role)
+Controller -> Controller: Check if user is ADMIN
+
+alt Not admin
+  Controller --> Admin: 403 Forbidden
+  deactivate Controller
+else Is admin
+  Controller -> Service: deleteNotification(notificationId)
+  activate Service
+  
+  Service -> NotifRepo: existsById(notificationId)
+  activate NotifRepo
+  NotifRepo -> DB: SELECT COUNT(*) FROM notifications WHERE id = notificationId
+  DB --> NotifRepo: boolean
+  NotifRepo --> Service: exists
+  deactivate NotifRepo
+  
+  alt Notification not found
+    Service --> Controller: Throw RuntimeException("Notification not found")
+    Controller --> Admin: 400 Bad Request
+    deactivate Service
+    deactivate Controller
+  else Notification exists
+    Service -> NotifRepo: deleteById(notificationId)
+    activate NotifRepo
+    NotifRepo -> DB: DELETE FROM notifications WHERE id = notificationId
+    DB --> NotifRepo: Deleted
+    NotifRepo --> Service: void
+    deactivate NotifRepo
+    
+    Service --> Controller: void
+    deactivate Service
+    
+    Controller --> Admin: 200 OK\n{success: true, message: "Xóa thông báo thành công!"}
+    deactivate Controller
+  end
+end
+
+@enduml
+
+' ============================================
+' Get Notification Log - Sequence Diagram
+' ============================================
+
+@startuml GetNotificationLog
+
+title Get Notification Log - Sequence Diagram (Admin)
+
+actor Admin
+participant "NotificationController" as Controller
+participant "NotificationService" as Service
+participant "NotificationRepository" as NotifRepo
+database "Database" as DB
+
+Admin -> Controller: GET /api/notifications/admin/log\n?type=ORDER&start=...&end=...
+activate Controller
+
+Controller -> Controller: getCurrentUser()\n(validate JWT token & ADMIN role)
+Controller -> Controller: Check if user is ADMIN
+
+alt Not admin
+  Controller --> Admin: 403 Forbidden
+  deactivate Controller
+else Is admin
+  Controller -> Controller: Extract type, start, end from query params
+  Controller -> Controller: Parse start and end dates
+  
+  Controller -> Service: getLogs(type, start, end)
+  activate Service
+  
+  alt Type and date range provided
+    Service -> NotifRepo: findByCreatedAtBetween(start, end)
+    activate NotifRepo
+    NotifRepo -> DB: SELECT * FROM notifications\nWHERE created_at BETWEEN start AND end\nORDER BY created_at DESC
+    DB --> NotifRepo: List<Notification>
+    NotifRepo --> Service: notifications
+    deactivate NotifRepo
+    
+    Service -> Service: Filter by type
+    Service --> Controller: List<Notification> (filtered)
+  else Date range provided only
+    Service -> NotifRepo: findByCreatedAtBetween(start, end)
+    activate NotifRepo
+    NotifRepo -> DB: SELECT * FROM notifications\nWHERE created_at BETWEEN start AND end\nORDER BY created_at DESC
+    DB --> NotifRepo: List<Notification>
+    NotifRepo --> Service: notifications
+    deactivate NotifRepo
+    Service --> Controller: List<Notification>
+  else Type provided only
+    Service -> NotifRepo: findByTypeOrderByCreatedAtDesc(type)
+    activate NotifRepo
+    NotifRepo -> DB: SELECT * FROM notifications\nWHERE type = type\nORDER BY created_at DESC
+    DB --> NotifRepo: List<Notification>
+    NotifRepo --> Service: notifications
+    deactivate NotifRepo
+    Service --> Controller: List<Notification>
+  else No filter
+    Service -> NotifRepo: findAll()
+    activate NotifRepo
+    NotifRepo -> DB: SELECT * FROM notifications\nORDER BY created_at DESC
+    DB --> NotifRepo: List<Notification>
+    NotifRepo --> Service: notifications
+    deactivate NotifRepo
+    Service -> Service: Sort by createdAt DESC
+    Service --> Controller: List<Notification>
+  end
+  
+  deactivate Service
+  
+  Controller --> Admin: 200 OK\n{success: true, data: List<Notification>}
+  deactivate Controller
+end
+
+@enduml
+

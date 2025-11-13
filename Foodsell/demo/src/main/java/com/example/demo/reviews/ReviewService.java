@@ -15,6 +15,8 @@ public class ReviewService {
     
     @Autowired
     private ReviewReplyRepository reviewReplyRepository;
+    @Autowired
+    private com.example.demo.Orders.OrderItemRepository orderItemRepository;
     
     // ===== CUSTOMER USE CASES =====
     
@@ -28,6 +30,14 @@ public class ReviewService {
         
         // Nếu là review shop (productId = -1), sử dụng productId = 1 (Pho Bo) để tránh foreign key constraint
         Integer finalProductId = (productId == -1) ? 1 : productId;
+        // Bắt buộc: orderId phải hợp lệ và thuộc về customer, có chứa đúng product
+        if (orderId == null || orderId <= 0) {
+            throw new RuntimeException("Thiếu mã đơn hàng (orderId)");
+        }
+        boolean canReview = orderItemRepository.existsForCustomerAndProduct(orderId, finalProductId, customerId);
+        if (!canReview) {
+            throw new RuntimeException("Bạn chỉ có thể đánh giá sản phẩm đã mua trong đơn hàng này");
+        }
         
         // orderId là optional - có thể null
         Integer finalOrderId = orderId;
@@ -44,7 +54,11 @@ public class ReviewService {
                 throw new RuntimeException("Bạn đã đánh giá sản phẩm này rồi. Vui lòng sử dụng chức năng chỉnh sửa đánh giá.");
             }
         }
-        
+        // Chặn trùng theo (customer, product, order)
+        if (reviewRepository.existsByCustomerIdAndProductIdAndOrderId(customerId, finalProductId, finalOrderId)) {
+            throw new RuntimeException("Bạn đã đánh giá sản phẩm này cho đơn hàng này rồi");
+        }
+
         Review review = new Review(customerId, finalProductId, shopId, finalOrderId, rating, content);
         // Đảm bảo isVisible luôn được set là true
         review.setIsVisible(true);
@@ -237,3 +251,4 @@ public class ReviewService {
         return reviewReplyRepository.findByReviewId(reviewId);
     }
 }
+

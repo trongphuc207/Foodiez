@@ -4,6 +4,9 @@ import com.example.demo.dto.OrderDTO;
 import com.example.demo.dto.OrderItemDTO;
 import com.example.demo.products.ProductService;
 import com.example.demo.products.ProductBasicDTO;
+import com.example.demo.notifications.NotificationService;
+import com.example.demo.shops.ShopRepository;
+import com.example.demo.shops.Shop;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -24,14 +27,18 @@ public class OrderService {
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
         // Cập nhật các trường cho phép
+        boolean deliveryInfoChanged = false;
         if (request.containsKey("recipientName")) {
             order.setRecipientName((String) request.get("recipientName"));
+            deliveryInfoChanged = true;
         }
         if (request.containsKey("recipientPhone")) {
             order.setRecipientPhone((String) request.get("recipientPhone"));
+            deliveryInfoChanged = true;
         }
         if (request.containsKey("addressText")) {
             order.setAddressText((String) request.get("addressText"));
+            deliveryInfoChanged = true;
         }
         // Allow updating assignment status (seller/admin can edit)
         if (request.containsKey("assignmentStatus")) {
@@ -54,6 +61,22 @@ public class OrderService {
         order.setUpdatedAt(LocalDateTime.now());
         Order savedOrder = orderRepository.save(order);
         savedOrder.setOrderItems(orderItemRepository.findByOrderId(savedOrder.getId()));
+        
+        // ID 73: Gửi notification cho shipper khi có cập nhật delivery info
+        if (deliveryInfoChanged && savedOrder.getAssignedShipperId() != null) {
+            try {
+                String updateMessage = "Địa chỉ giao hàng hoặc thông tin người nhận đã được cập nhật";
+                notificationService.createNotification(
+                    savedOrder.getAssignedShipperId(),
+                    "DELIVERY",
+                    "Cập nhật giao hàng",
+                    "Đơn #" + savedOrder.getId() + ": " + updateMessage
+                );
+            } catch (Exception e) {
+                System.err.println("Failed to send delivery update notification: " + e.getMessage());
+            }
+        }
+        
         return convertToOrderDTO(savedOrder);
     }
     private final OrderRepository orderRepository;
@@ -61,13 +84,17 @@ public class OrderService {
     private final OrderHistoryRepository orderHistoryRepository;
     private final ProductService productService;
     private final OrderAssignmentService orderAssignmentService;
+    private final NotificationService notificationService;
+    private final ShopRepository shopRepository;
 
-    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository, OrderHistoryRepository orderHistoryRepository, ProductService productService, OrderAssignmentService orderAssignmentService) {
+    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository, OrderHistoryRepository orderHistoryRepository, ProductService productService, OrderAssignmentService orderAssignmentService, NotificationService notificationService, ShopRepository shopRepository) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.orderHistoryRepository = orderHistoryRepository;
         this.productService = productService;
         this.orderAssignmentService = orderAssignmentService;
+        this.notificationService = notificationService;
+        this.shopRepository = shopRepository;
     }
 
     public List<OrderDTO> getAllOrders() {
@@ -100,22 +127,56 @@ public class OrderService {
             throw new IllegalStateException("Invalid status transition from " + order.getStatus() + " to " + newStatus);
         }
 
+        String oldStatus = order.getStatus();
         order.setStatus(newStatus);
         order.setUpdatedAt(LocalDateTime.now());
 
         // Save order history
         OrderHistory history = new OrderHistory(
             orderId,
-            order.getStatus(),  // statusFrom
+            oldStatus,         // statusFrom
             newStatus,         // statusTo
             "status_updated",  // action
-            "Order status updated from " + order.getStatus() + " to " + newStatus,
+            "Order status updated from " + oldStatus + " to " + newStatus,
             "system"          // createdBy
         );
         orderHistoryRepository.save(history);
 
         Order savedOrder = orderRepository.save(order);
         savedOrder.setOrderItems(orderItemRepository.findByOrderId(savedOrder.getId()));
+        
+        // ID 71: Gửi notification cho customer khi cập nhật trạng thái đơn hàng
+        try {
+            String statusMessage = getStatusMessage(newStatus);
+            notificationService.createNotification(
+                savedOrder.getBuyerId(),
+                "ORDER",
+                "Cập nhật trạng thái đơn hàng",
+                "Đơn hàng #" + savedOrder.getId() + " đã chuyển sang trạng thái: " + statusMessage
+            );
+        } catch (Exception e) {
+            // Log error but don't fail status update
+            System.err.println("Failed to send order status notification: " + e.getMessage());
+        }
+        
+        // ID 68: Gửi notification cho merchant khi đơn bị hủy
+        if ("cancelled".equalsIgnoreCase(newStatus) || "CANCELLED".equalsIgnoreCase(newStatus)) {
+            try {
+                Optional<Shop> shopOpt = shopRepository.findById(savedOrder.getShopId());
+                if (shopOpt.isPresent()) {
+                    Integer merchantId = shopOpt.get().getSellerId();
+                    notificationService.createNotification(
+                        merchantId,
+                        "ORDER",
+                        "Đơn hàng bị hủy",
+                        "Đơn hàng #" + savedOrder.getId() + " đã bị hủy"
+                    );
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to send cancellation notification to merchant: " + e.getMessage());
+            }
+        }
+        
         return convertToOrderDTO(savedOrder);
     }
 
@@ -123,6 +184,23 @@ public class OrderService {
         // Add your status transition validation logic here
         // Example: pending -> confirmed -> preparing -> ready -> delivering -> completed
         return true; // Temporary implementation, add your logic
+    }
+    
+    // Helper method để chuyển đổi status code sang message dễ hiểu
+    private String getStatusMessage(String status) {
+        if (status == null) return "Không xác định";
+        switch (status.toLowerCase()) {
+            case "pending": return "Đang chờ xử lý";
+            case "pending_payment": return "Chờ thanh toán";
+            case "confirmed": return "Đã xác nhận";
+            case "preparing": return "Đang chuẩn bị";
+            case "ready": return "Sẵn sàng";
+            case "delivering": return "Đang giao hàng";
+            case "completed": return "Hoàn thành";
+            case "cancelled": return "Đã hủy";
+            case "expired": return "Hết hạn";
+            default: return status;
+        }
     }
     
     public List<OrderDTO> getOrdersByBuyerId(Integer buyerId) {
@@ -301,6 +379,23 @@ public class OrderService {
             // Auto-assigning order to seller and shipper
             orderAssignmentService.autoAssignNewOrder(savedOrder.getId());
             
+            // ID 68: Gửi notification cho merchant khi có đơn hàng mới
+            try {
+                Optional<Shop> shopOpt = shopRepository.findById(savedOrder.getShopId());
+                if (shopOpt.isPresent()) {
+                    Integer merchantId = shopOpt.get().getSellerId();
+                    notificationService.createNotification(
+                        merchantId,
+                        "ORDER",
+                        "Đơn hàng mới",
+                        "Bạn có đơn hàng mới #" + savedOrder.getId()
+                    );
+                }
+            } catch (Exception e) {
+                // Log error but don't fail order creation
+                System.err.println("Failed to send order notification to merchant: " + e.getMessage());
+            }
+            
             // Return success response
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
@@ -432,6 +527,20 @@ public class OrderService {
                 order.setNotes(updatedNotes);
                 
                 orderRepository.save(order);
+                
+                // ID 71: Gửi notification cho customer khi payment status thay đổi
+                try {
+                    String statusMessage = getStatusMessage(order.getStatus());
+                    notificationService.createNotification(
+                        order.getBuyerId(),
+                        "ORDER",
+                        "Cập nhật trạng thái đơn hàng",
+                        "Đơn hàng #" + order.getId() + " đã chuyển sang trạng thái: " + statusMessage
+                    );
+                } catch (Exception e) {
+                    System.err.println("Failed to send payment status notification: " + e.getMessage());
+                }
+                
                 return true;
             } else {
                 // Order not found for PayOS order code

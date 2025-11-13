@@ -1,0 +1,207 @@
+@startuml Review System - Class Diagram
+
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam roundcorner 20
+skinparam shadowing false
+
+title Review System - Class Diagram
+
+' ============================================
+' ENTITIES
+' ============================================
+
+class Review {
+  - Integer id
+  - Integer customerId
+  - Integer productId
+  - Integer shopId
+  - Integer orderId
+  - Integer rating
+  - String content
+  - String imageUrl
+  - Boolean isVisible
+  - LocalDateTime createdAt
+  - LocalDateTime updatedAt
+  --
+  + Review(customerId, productId, shopId, orderId, rating, content)
+  + onCreate()
+  + onUpdate()
+}
+
+class ReviewReply {
+  - Integer id
+  - Integer reviewId
+  - Integer merchantId
+  - String content
+  - LocalDateTime createdAt
+  - LocalDateTime updatedAt
+  --
+  + ReviewReply(reviewId, merchantId, content)
+  + onCreate()
+  + onUpdate()
+}
+
+' ============================================
+' REPOSITORIES
+' ============================================
+
+interface ReviewRepository {
+  + findByProductIdAndVisible(productId) : List<Review>
+  + findByShopIdAndVisible(shopId) : List<Review>
+  + findByCustomerIdAndProductId(customerId, productId) : Optional<Review>
+  + findByCustomerIdAndShopIdAndProductId(customerId, shopId, productId) : Optional<Review>
+  + findByCustomerIdAndOrderId(customerId, orderId) : Optional<Review>
+  + existsByCustomerIdAndProductIdAndOrderId(customerId, productId, orderId) : boolean
+  + findByCustomerId(customerId) : List<Review>
+  + findAllOrderByCreatedAtDesc() : List<Review>
+  + getAverageRatingByProductId(productId) : Integer
+  + getAverageRatingByShopId(shopId) : Integer
+  + countByProductIdAndVisible(productId) : Long
+  + countByShopIdAndVisible(shopId) : Long
+  + findById(reviewId) : Optional<Review>
+  + save(review) : Review
+  + delete(review) : void
+}
+
+interface ReviewReplyRepository {
+  + findByReviewId(reviewId) : List<ReviewReply>
+  + findByReviewIdAndMerchantId(reviewId, merchantId) : Optional<ReviewReply>
+  + findByMerchantId(merchantId) : List<ReviewReply>
+  + save(reply) : ReviewReply
+  + deleteAll(replies) : void
+}
+
+interface OrderItemRepository {
+  + existsForCustomerAndProduct(orderId, productId, customerId) : boolean
+}
+
+' ============================================
+' SERVICES
+' ============================================
+
+class ReviewService {
+  - ReviewRepository reviewRepository
+  - ReviewReplyRepository reviewReplyRepository
+  - OrderItemRepository orderItemRepository
+  --
+  ' Customer Use Cases
+  + writeReview(customerId, productId, shopId, orderId, rating, content) : Review
+  + writeReview(customerId, productId, shopId, orderId, rating, content, imageUrl) : Review
+  + editReview(reviewId, customerId, rating, content) : Review
+  + deleteReview(reviewId, customerId) : void
+  --
+  ' Merchant Use Cases
+  + getShopReviews(shopId) : List<Review>
+  + replyToReview(reviewId, merchantId, content) : ReviewReply
+  --
+  ' Admin Use Cases
+  + getAllReviews() : List<Review>
+  + hideReview(reviewId) : void
+  + resolveReviewComplaint(reviewId, resolution) : void
+  --
+  ' Helper Methods
+  + getReviewById(reviewId) : Optional<Review>
+  + getProductReviews(productId) : List<Review>
+  + getCustomerReviews(customerId) : List<Review>
+  + getProductAverageRating(productId) : Integer
+  + getShopAverageRating(shopId) : Integer
+  + getProductReviewCount(productId) : Long
+  + getShopReviewCount(shopId) : Long
+  + getReviewReplies(reviewId) : List<ReviewReply>
+}
+
+' ============================================
+' CONTROLLER
+' ============================================
+
+class ReviewController {
+  - ReviewService reviewService
+  - RoleChecker roleChecker
+  - String uploadBaseDir
+  --
+  ' Customer Endpoints
+  + POST /api/reviews : writeReview()
+  + POST /api/reviews/with-image : writeReviewWithImage()
+  + POST /api/reviews/image : uploadReviewImage()
+  + PUT /api/reviews/{reviewId} : editReview()
+  + DELETE /api/reviews/{reviewId} : deleteReview()
+  + GET /api/reviews/customer/my-reviews : getCustomerReviews()
+  --
+  ' Merchant Endpoints
+  + GET /api/reviews/shop/{shopId} : getShopReviews()
+  + POST /api/reviews/{reviewId}/reply : replyToReview()
+  --
+  ' Admin Endpoints
+  + GET /api/reviews/admin/all : getAllReviews()
+  + PUT /api/reviews/admin/{reviewId}/hide : hideReview()
+  + PUT /api/reviews/admin/{reviewId}/resolve : resolveReviewComplaint()
+  --
+  ' Public Endpoints
+  + GET /api/reviews/product/{productId} : getProductReviews()
+  + GET /api/reviews/product/{productId}/stats : getProductReviewStats()
+  + GET /api/reviews/shop/{shopId}/stats : getShopReviewStats()
+  + GET /api/reviews/{reviewId}/replies : getReviewReplies()
+}
+
+class RoleChecker {
+  + getCurrentUser() : User
+}
+
+' ============================================
+' RELATIONSHIPS
+' ============================================
+
+ReviewRepository ..|> JpaRepository
+ReviewReplyRepository ..|> JpaRepository
+OrderItemRepository ..|> JpaRepository
+
+ReviewService --> ReviewRepository : uses
+ReviewService --> ReviewReplyRepository : uses
+ReviewService --> OrderItemRepository : uses
+
+ReviewController --> ReviewService : uses
+ReviewController --> RoleChecker : uses
+
+ReviewRepository ..> Review : manages
+ReviewReplyRepository ..> ReviewReply : manages
+
+Review "1" *-- "0..*" ReviewReply : has replies
+
+note right of Review
+  **Review Entity**
+  - customerId: ID của khách hàng
+  - productId: ID của sản phẩm (-1 nếu là review shop)
+  - shopId: ID của shop
+  - orderId: ID của đơn hàng (nullable)
+  - rating: Đánh giá 1-5 sao
+  - content: Nội dung review
+  - imageUrl: URL hình ảnh (optional)
+  - isVisible: Hiển thị/ẩn review
+end note
+
+note right of ReviewReply
+  **ReviewReply Entity**
+  - reviewId: ID của review được reply
+  - merchantId: ID của merchant
+  - content: Nội dung reply
+end note
+
+note bottom of ReviewService
+  **Business Logic Layer**
+  - Validation: Rating (1-5), Ownership, Duplicate checks
+  - Business Rules: One review per customer per product
+  - Statistics: Average rating, Review count
+  - Transaction Management: @Transactional
+end note
+
+note bottom of ReviewController
+  **REST API Endpoints**
+  - Customer: Write, Edit, Delete reviews
+  - Merchant: View shop reviews, Reply to reviews
+  - Admin: View all, Hide, Resolve complaints
+  - Public: View product/shop reviews, Statistics
+end note
+
+@enduml
+

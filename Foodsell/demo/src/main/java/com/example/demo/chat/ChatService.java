@@ -8,6 +8,7 @@ import com.example.demo.shops.ShopRepository;
 import com.example.demo.shops.Shop;
 import com.example.demo.chat.dto.ChatMessageResponse;
 import com.example.demo.chat.dto.ConversationSummaryDTO;
+import com.example.demo.notifications.NotificationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,19 +22,22 @@ public class ChatService {
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
     private final ShopRepository shopRepository;
+    private final NotificationService notificationService;
 
     public ChatService(ConversationRepository conversationRepository,
                        MessageRepository messageRepository,
                        MessageReportRepository reportRepository,
                        UserRepository userRepository,
                        OrderRepository orderRepository,
-                       ShopRepository shopRepository) {
+                       ShopRepository shopRepository,
+                       NotificationService notificationService) {
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
         this.reportRepository = reportRepository;
         this.userRepository = userRepository;
         this.orderRepository = orderRepository;
         this.shopRepository = shopRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -65,6 +69,31 @@ public class ChatService {
         Message saved = messageRepository.save(m);
         c.setUpdatedAt(saved.getCreatedAt());
         conversationRepository.save(c);
+        
+        // ID 69: Gửi notification cho merchant khi customer gửi tin nhắn
+        try {
+            User user1 = c.getUser1();
+            User user2 = c.getUser2();
+            User receiver = (user1 != null && user1.getId().equals(senderId)) ? user2 : user1;
+            
+            // Chỉ gửi notification nếu sender là customer và receiver là merchant/seller
+            if (receiver != null && 
+                (sender.getRole().equals("customer") || sender.getRole().equals("buyer")) &&
+                (receiver.getRole().equals("seller") || receiver.getRole().equals("merchant"))) {
+                String messagePreview = content != null && content.length() > 50 
+                    ? content.substring(0, 50) + "..." 
+                    : (content != null ? content : "Bạn có tin nhắn mới");
+                notificationService.createNotification(
+                    receiver.getId(),
+                    "MESSAGE",
+                    "Tin nhắn từ khách hàng",
+                    "Khách #" + senderId + ": " + messagePreview
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send customer message notification: " + e.getMessage());
+        }
+        
         return saved;
     }
 
@@ -80,6 +109,28 @@ public class ChatService {
         Message saved = messageRepository.save(m);
         c.setUpdatedAt(saved.getCreatedAt());
         conversationRepository.save(c);
+        
+        // ID 69: Gửi notification cho merchant khi customer gửi hình ảnh
+        try {
+            User user1 = c.getUser1();
+            User user2 = c.getUser2();
+            User receiver = (user1 != null && user1.getId().equals(senderId)) ? user2 : user1;
+            
+            // Chỉ gửi notification nếu sender là customer và receiver là merchant/seller
+            if (receiver != null && 
+                (sender.getRole().equals("customer") || sender.getRole().equals("buyer")) &&
+                (receiver.getRole().equals("seller") || receiver.getRole().equals("merchant"))) {
+                notificationService.createNotification(
+                    receiver.getId(),
+                    "MESSAGE",
+                    "Tin nhắn từ khách hàng",
+                    "Khách #" + senderId + ": Đã gửi hình ảnh"
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send customer image message notification: " + e.getMessage());
+        }
+        
         return saved;
     }
 

@@ -24,6 +24,7 @@ import ChatPage from '../components/Chat/ChatPage';
 import ShipperDashboardPage from '../components/ShipperDashboard/ShipperDashboard';
 import ShipperOrdersPage from '../Page/ShipperOrdersPage/ShipperOrdersPage';
 import OrderPage from '../Page/OrderPage/OrderPage';
+import NotificationPage from '../Page/NotificationPage/NotificationPage';
 
 export const routes = [
     {
@@ -49,6 +50,11 @@ export const routes = [
     {
         path: '/orders',
         component: OrderPage,
+        isShowHeader: true
+    },
+    {
+        path: '/notifications',
+        component: NotificationPage,
         isShowHeader: true
     },
     {

@@ -1,0 +1,159 @@
+' ============================================
+' SEQUENCE DIAGRAMS - MERCHANT USE CASES
+' ============================================
+' Các use case dành cho Merchant:
+' - UC50: View Customer Reviews
+' - UC51: Reply to Review
+' ============================================
+
+' ============================================
+' UC50: View Customer Reviews - Sequence Diagram
+' ============================================
+
+@startuml UC50_ViewCustomerReviews
+
+title UC50: View Customer Reviews - Sequence Diagram (Merchant)
+
+actor Merchant
+participant "ReviewController" as Controller
+participant "ReviewService" as Service
+participant "ReviewRepository" as ReviewRepo
+database "Database" as DB
+
+Merchant -> Controller: GET /api/reviews/shop/{shopId}
+activate Controller
+
+Controller -> Service: getShopReviews(shopId)
+activate Service
+
+Service -> ReviewRepo: findByShopIdAndVisible(shopId)
+activate ReviewRepo
+ReviewRepo -> DB: SELECT * FROM reviews\nWHERE shop_id = shopId\nAND (is_visible = 1 OR is_visible IS NULL)\nORDER BY created_at DESC
+DB --> ReviewRepo: List<Review>
+ReviewRepo --> Service: reviews
+deactivate ReviewRepo
+
+Service --> Controller: List<Review>
+deactivate Service
+
+Controller --> Merchant: 200 OK\n{success: true, data: List<Review>}
+deactivate Controller
+
+@enduml
+
+' ============================================
+' UC51: Reply to Review - Sequence Diagram
+' ============================================
+
+@startuml UC51_ReplyToReview
+
+title UC51: Reply to Review - Sequence Diagram (Merchant)
+
+actor Merchant
+participant "ReviewController" as Controller
+participant "ReviewService" as Service
+participant "ReviewRepository" as ReviewRepo
+participant "ReviewReplyRepository" as ReplyRepo
+database "Database" as DB
+
+Merchant -> Controller: POST /api/reviews/{reviewId}/reply\n{content}
+activate Controller
+
+Controller -> Controller: getCurrentUser()\n(validate JWT token)
+Controller -> Controller: Extract merchantId from token
+
+Controller -> Service: replyToReview(reviewId, merchantId, content)
+activate Service
+
+Service -> ReviewRepo: findById(reviewId)
+activate ReviewRepo
+ReviewRepo -> DB: SELECT * FROM reviews WHERE id = reviewId
+DB --> ReviewRepo: Optional<Review>
+ReviewRepo --> Service: reviewOpt
+deactivate ReviewRepo
+
+alt Review not found
+  Service --> Controller: Throw RuntimeException("Không tìm thấy review!")
+  Controller --> Merchant: 400 Bad Request
+  deactivate Service
+  deactivate Controller
+else Review found
+  Service -> ReplyRepo: findByReviewIdAndMerchantId(reviewId, merchantId)
+  activate ReplyRepo
+  ReplyRepo -> DB: SELECT * FROM review_replies\nWHERE review_id = reviewId AND merchant_id = merchantId
+  DB --> ReplyRepo: Optional<ReviewReply>
+  ReplyRepo --> Service: existingReply
+  deactivate ReplyRepo
+  
+  alt Reply already exists
+    Service --> Controller: Throw RuntimeException("Bạn đã trả lời review này rồi!")
+    Controller --> Merchant: 400 Bad Request
+    deactivate Service
+    deactivate Controller
+  else No existing reply
+    Service -> Service: Create new ReviewReply object
+    Service -> Service: Set reviewId, merchantId, content
+    Service -> Service: Set createdAt, updatedAt
+    
+    Service -> ReplyRepo: save(reply)
+    activate ReplyRepo
+    ReplyRepo -> DB: INSERT INTO review_replies
+    DB --> ReplyRepo: Saved ReviewReply
+    ReplyRepo --> Service: ReviewReply
+    deactivate ReplyRepo
+    
+    Service --> Controller: ReviewReply
+    deactivate Service
+    
+    Controller --> Merchant: 200 OK\n{success: true, data: ReviewReply}
+    deactivate Controller
+  end
+end
+
+@enduml
+
+' ============================================
+' Get Shop Review Statistics - Sequence Diagram
+' ============================================
+
+@startuml GetShopReviewStats
+
+title Get Shop Review Statistics - Sequence Diagram (Merchant/Public)
+
+actor "User" as User
+participant "ReviewController" as Controller
+participant "ReviewService" as Service
+participant "ReviewRepository" as ReviewRepo
+database "Database" as DB
+
+User -> Controller: GET /api/reviews/shop/{shopId}/stats
+activate Controller
+
+Controller -> Service: getShopAverageRating(shopId)
+activate Service
+Service -> ReviewRepo: getAverageRatingByShopId(shopId)
+activate ReviewRepo
+ReviewRepo -> DB: SELECT AVG(rating) FROM reviews\nWHERE shop_id = shopId\nAND (is_visible = 1 OR is_visible IS NULL)
+DB --> ReviewRepo: Integer
+ReviewRepo --> Service: averageRating
+deactivate ReviewRepo
+Service --> Controller: averageRating
+deactivate Service
+
+Controller -> Service: getShopReviewCount(shopId)
+activate Service
+Service -> ReviewRepo: countByShopIdAndVisible(shopId)
+activate ReviewRepo
+ReviewRepo -> DB: SELECT COUNT(*) FROM reviews\nWHERE shop_id = shopId\nAND (is_visible = 1 OR is_visible IS NULL)
+DB --> ReviewRepo: Long
+ReviewRepo --> Service: reviewCount
+deactivate ReviewRepo
+Service --> Controller: reviewCount
+deactivate Service
+
+Controller -> Controller: Create stats object\n{averageRating, reviewCount}
+Controller --> User: 200 OK\n{success: true, data: {averageRating, reviewCount}}
+deactivate Controller
+
+@enduml
+

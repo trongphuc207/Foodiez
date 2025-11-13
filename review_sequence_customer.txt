@@ -1,0 +1,293 @@
+' ============================================
+' SEQUENCE DIAGRAMS - CUSTOMER USE CASES
+' ============================================
+' Các use case dành cho Customer:
+' - UC46: Write Review
+' - UC48: Edit Review
+' - UC49: Delete Review
+' - Get Customer Reviews
+' ============================================
+
+' ============================================
+' UC46: Write Review - Sequence Diagram
+' ============================================
+
+@startuml UC46_WriteReview
+
+title UC46: Write Review - Sequence Diagram (Customer)
+
+actor Customer
+participant "ReviewController" as Controller
+participant "ReviewService" as Service
+participant "OrderItemRepository" as OrderRepo
+participant "ReviewRepository" as ReviewRepo
+database "Database" as DB
+
+Customer -> Controller: POST /api/reviews\n{productId, shopId, orderId, rating, content}
+activate Controller
+
+Controller -> Controller: getCurrentUser()\n(validate JWT token)
+Controller -> Controller: Extract customerId from token
+
+Controller -> Service: writeReview(customerId, productId, shopId, orderId, rating, content)
+activate Service
+
+Service -> Service: Validate rating (1-5)
+alt Rating invalid
+  Service --> Controller: Throw RuntimeException("Rating phải từ 1 đến 5 sao!")
+  Controller --> Customer: 400 Bad Request
+  deactivate Service
+  deactivate Controller
+else Rating valid
+  Service -> Service: Handle shop review (productId = -1 -> 1)
+  
+  Service -> OrderRepo: existsForCustomerAndProduct(orderId, productId, customerId)
+  activate OrderRepo
+  OrderRepo -> DB: Query order_items and orders
+  DB --> OrderRepo: Return boolean
+  OrderRepo --> Service: canReview (true/false)
+  deactivate OrderRepo
+  
+  alt Cannot review
+    Service --> Controller: Throw RuntimeException("Bạn chỉ có thể đánh giá sản phẩm đã mua")
+    Controller --> Customer: 400 Bad Request
+    deactivate Service
+    deactivate Controller
+  else Can review
+    Service -> ReviewRepo: findByCustomerIdAndShopIdAndProductId(customerId, shopId, productId)
+    activate ReviewRepo
+    ReviewRepo -> DB: Query reviews
+    DB --> ReviewRepo: Optional<Review>
+    ReviewRepo --> Service: existingReview
+    deactivate ReviewRepo
+    
+    alt Review already exists
+      Service --> Controller: Throw RuntimeException("Bạn đã đánh giá sản phẩm này rồi")
+      Controller --> Customer: 400 Bad Request
+      deactivate Service
+      deactivate Controller
+    else No existing review
+      Service -> ReviewRepo: existsByCustomerIdAndProductIdAndOrderId(customerId, productId, orderId)
+      activate ReviewRepo
+      ReviewRepo -> DB: Check duplicate
+      DB --> ReviewRepo: boolean
+      ReviewRepo --> Service: exists
+      deactivate ReviewRepo
+      
+      alt Duplicate review
+        Service --> Controller: Throw RuntimeException("Bạn đã đánh giá sản phẩm này cho đơn hàng này rồi")
+        Controller --> Customer: 400 Bad Request
+        deactivate Service
+        deactivate Controller
+      else No duplicate
+        Service -> Service: Create new Review object
+        Service -> Service: Set isVisible = true
+        Service -> Service: Set createdAt, updatedAt
+        
+        Service -> ReviewRepo: save(review)
+        activate ReviewRepo
+        ReviewRepo -> DB: INSERT INTO reviews
+        DB --> ReviewRepo: Saved Review
+        ReviewRepo --> Service: Review
+        deactivate ReviewRepo
+        
+        Service --> Controller: Review
+        deactivate Service
+        
+        Controller --> Customer: 200 OK\n{success: true, data: Review}
+        deactivate Controller
+      end
+    end
+  end
+end
+
+@enduml
+
+' ============================================
+' UC48: Edit Review - Sequence Diagram
+' ============================================
+
+@startuml UC48_EditReview
+
+title UC48: Edit Review - Sequence Diagram (Customer)
+
+actor Customer
+participant "ReviewController" as Controller
+participant "ReviewService" as Service
+participant "ReviewRepository" as ReviewRepo
+database "Database" as DB
+
+Customer -> Controller: PUT /api/reviews/{reviewId}\n{rating, content}
+activate Controller
+
+Controller -> Controller: getCurrentUser()\n(validate JWT token)
+Controller -> Controller: Extract customerId from token
+
+Controller -> Service: editReview(reviewId, customerId, rating, content)
+activate Service
+
+Service -> ReviewRepo: findById(reviewId)
+activate ReviewRepo
+ReviewRepo -> DB: SELECT * FROM reviews WHERE id = reviewId
+DB --> ReviewRepo: Optional<Review>
+ReviewRepo --> Service: reviewOpt
+deactivate ReviewRepo
+
+alt Review not found
+  Service --> Controller: Throw RuntimeException("Không tìm thấy review!")
+  Controller --> Customer: 400 Bad Request
+  deactivate Service
+  deactivate Controller
+else Review found
+  Service -> Service: Check ownership\n(review.customerId == customerId)
+  
+  alt Not owner
+    Service --> Controller: Throw RuntimeException("Bạn không có quyền chỉnh sửa review này!")
+    Controller --> Customer: 400 Bad Request
+    deactivate Service
+    deactivate Controller
+  else Is owner
+    Service -> Service: Validate rating (1-5)
+    
+    alt Rating invalid
+      Service --> Controller: Throw RuntimeException("Rating phải từ 1 đến 5 sao!")
+      Controller --> Customer: 400 Bad Request
+      deactivate Service
+      deactivate Controller
+    else Rating valid
+      Service -> Service: Update review.rating
+      Service -> Service: Update review.content
+      Service -> Service: Update review.updatedAt = now()
+      
+      Service -> ReviewRepo: save(review)
+      activate ReviewRepo
+      ReviewRepo -> DB: UPDATE reviews SET rating=?, content=?, updated_at=?
+      DB --> ReviewRepo: Updated Review
+      ReviewRepo --> Service: Review
+      deactivate ReviewRepo
+      
+      Service --> Controller: Review
+      deactivate Service
+      
+      Controller --> Customer: 200 OK\n{success: true, data: Review}
+      deactivate Controller
+    end
+  end
+end
+
+@enduml
+
+' ============================================
+' UC49: Delete Review - Sequence Diagram
+' ============================================
+
+@startuml UC49_DeleteReview
+
+title UC49: Delete Review - Sequence Diagram (Customer)
+
+actor Customer
+participant "ReviewController" as Controller
+participant "ReviewService" as Service
+participant "ReviewRepository" as ReviewRepo
+participant "ReviewReplyRepository" as ReplyRepo
+database "Database" as DB
+
+Customer -> Controller: DELETE /api/reviews/{reviewId}
+activate Controller
+
+Controller -> Controller: getCurrentUser()\n(validate JWT token)
+Controller -> Controller: Extract customerId from token
+
+Controller -> Service: deleteReview(reviewId, customerId)
+activate Service
+
+Service -> ReviewRepo: findById(reviewId)
+activate ReviewRepo
+ReviewRepo -> DB: SELECT * FROM reviews WHERE id = reviewId
+DB --> ReviewRepo: Optional<Review>
+ReviewRepo --> Service: reviewOpt
+deactivate ReviewRepo
+
+alt Review not found
+  Service --> Controller: Throw RuntimeException("Không tìm thấy review!")
+  Controller --> Customer: 400 Bad Request
+  deactivate Service
+  deactivate Controller
+else Review found
+  Service -> Service: Check ownership\n(review.customerId == customerId)
+  
+  alt Not owner
+    Service --> Controller: Throw RuntimeException("Bạn không có quyền xóa review này!")
+    Controller --> Customer: 400 Bad Request
+    deactivate Service
+    deactivate Controller
+  else Is owner
+    Service -> ReplyRepo: findByReviewId(reviewId)
+    activate ReplyRepo
+    ReplyRepo -> DB: SELECT * FROM review_replies WHERE review_id = reviewId
+    DB --> ReplyRepo: List<ReviewReply>
+    ReplyRepo --> Service: replies
+    deactivate ReplyRepo
+    
+    Service -> ReplyRepo: deleteAll(replies)
+    activate ReplyRepo
+    ReplyRepo -> DB: DELETE FROM review_replies WHERE review_id = reviewId
+    DB --> ReplyRepo: Deleted
+    ReplyRepo --> Service: void
+    deactivate ReplyRepo
+    
+    Service -> ReviewRepo: delete(review)
+    activate ReviewRepo
+    ReviewRepo -> DB: DELETE FROM reviews WHERE id = reviewId
+    DB --> ReviewRepo: Deleted
+    ReviewRepo --> Service: void
+    deactivate ReviewRepo
+    
+    Service --> Controller: void
+    deactivate Service
+    
+    Controller --> Customer: 200 OK\n{success: true, message: "Xóa đánh giá thành công!"}
+    deactivate Controller
+  end
+end
+
+@enduml
+
+' ============================================
+' Get Customer Reviews - Sequence Diagram
+' ============================================
+
+@startuml GetCustomerReviews
+
+title Get Customer Reviews - Sequence Diagram (Customer)
+
+actor Customer
+participant "ReviewController" as Controller
+participant "ReviewService" as Service
+participant "ReviewRepository" as ReviewRepo
+database "Database" as DB
+
+Customer -> Controller: GET /api/reviews/customer/my-reviews
+activate Controller
+
+Controller -> Controller: getCurrentUser()\n(validate JWT token)
+Controller -> Controller: Extract customerId from token
+
+Controller -> Service: getCustomerReviews(customerId)
+activate Service
+
+Service -> ReviewRepo: findByCustomerId(customerId)
+activate ReviewRepo
+ReviewRepo -> DB: SELECT * FROM reviews\nWHERE customer_id = customerId\nORDER BY created_at DESC
+DB --> ReviewRepo: List<Review>
+ReviewRepo --> Service: reviews
+deactivate ReviewRepo
+
+Service --> Controller: List<Review>
+deactivate Service
+
+Controller --> Customer: 200 OK\n{success: true, data: List<Review>}
+deactivate Controller
+
+@enduml
+

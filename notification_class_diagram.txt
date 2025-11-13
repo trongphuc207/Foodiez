@@ -1,0 +1,136 @@
+@startuml Notification System - Class Diagram
+
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam roundcorner 20
+skinparam shadowing false
+
+title Notification System - Class Diagram
+
+' ============================================
+' ENTITIES
+' ============================================
+
+class Notification {
+  - Integer id
+  - Integer userId
+  - String type
+  - String title
+  - String message
+  - Boolean isRead
+  - LocalDateTime createdAt
+  --
+  + Notification(userId, type, title, message)
+  + onCreate()
+}
+
+' ============================================
+' REPOSITORIES
+' ============================================
+
+interface NotificationRepository {
+  + findByUserIdOrderByCreatedAtDesc(userId) : List<Notification>
+  + findByUserIdAndIsReadFalseOrderByCreatedAtDesc(userId) : List<Notification>
+  + countByUserIdAndIsReadFalse(userId) : long
+  + findByTypeOrderByCreatedAtDesc(type) : List<Notification>
+  + findByCreatedAtBetween(startDate, endDate) : List<Notification>
+  + findById(id) : Optional<Notification>
+  + save(notification) : Notification
+  + deleteById(id) : void
+  + existsById(id) : boolean
+}
+
+' ============================================
+' SERVICES
+' ============================================
+
+class NotificationService {
+  - NotificationRepository notificationRepository
+  --
+  + createNotification(userId, type, title, message) : Notification
+  + updateNotification(id, type, title, message, isRead) : Notification
+  + getNotificationsByUserId(userId) : List<Notification>
+  + getUnreadNotificationsByUserId(userId) : List<Notification>
+  + getUnreadCountByUserId(userId) : long
+  + markNotificationAsRead(notificationId) : Notification
+  + markAllNotificationsAsRead(userId) : void
+  + deleteNotification(notificationId) : void
+  + getNotificationById(notificationId) : Optional<Notification>
+  + getNotificationsByType(type) : List<Notification>
+  + getLogs(type, start, end) : List<Notification>
+}
+
+' ============================================
+' CONTROLLER
+' ============================================
+
+class NotificationController {
+  - NotificationService notificationService
+  - RoleChecker roleChecker
+  --
+  ' User Endpoints
+  + GET /api/notifications/my-notifications : getMyNotifications()
+  + GET /api/notifications/unread : getMyUnreadNotifications()
+  + GET /api/notifications/unread-count : getUnreadCount()
+  + PUT /api/notifications/{notificationId}/read : markAsRead()
+  + PUT /api/notifications/mark-all-read : markAllAsRead()
+  --
+  ' Admin Endpoints
+  + POST /api/notifications : createNotification()
+  + DELETE /api/notifications/{notificationId} : deleteNotification()
+  + GET /api/notifications/admin/log : getNotificationLog()
+  --
+  ' System Endpoints
+  + POST /api/notifications/system/order : createOrderNotification()
+  + POST /api/notifications/system/promotion : createPromotionNotification()
+  + POST /api/notifications/system/customer-message : createCustomerMessageNotification()
+  + POST /api/notifications/system/order-status : createOrderStatusNotification()
+  + POST /api/notifications/system/delivery-assignment : createDeliveryAssignment()
+  + POST /api/notifications/system/delivery-update : createDeliveryUpdate()
+}
+
+class RoleChecker {
+  + getCurrentUser() : User
+}
+
+' ============================================
+' RELATIONSHIPS
+' ============================================
+
+NotificationRepository ..|> JpaRepository
+
+NotificationService --> NotificationRepository : uses
+
+NotificationController --> NotificationService : uses
+NotificationController --> RoleChecker : uses
+
+NotificationRepository ..> Notification : manages
+
+note right of Notification
+  **Notification Entity**
+  - userId: ID của user nhận notification
+  - type: Loại notification (ORDER, PROMOTION, MESSAGE, DELIVERY, SYSTEM)
+  - title: Tiêu đề notification
+  - message: Nội dung notification
+  - isRead: Trạng thái đã đọc/chưa đọc
+  - createdAt: Thời gian tạo
+end note
+
+note bottom of NotificationService
+  **Business Logic Layer**
+  - Create notifications for users
+  - Mark notifications as read
+  - Count unread notifications
+  - Filter by type and date range
+  - Admin log management
+end note
+
+note bottom of NotificationController
+  **REST API Endpoints**
+  - User: View, Mark as read, Count unread
+  - Admin: Create, Delete, View logs
+  - System: Create order, promotion, message notifications
+end note
+
+@enduml
+

@@ -2,6 +2,7 @@ package com.example.demo.Orders;
 
 import com.example.demo.Users.User;
 import com.example.demo.Users.UserRepository;
+import com.example.demo.notifications.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,14 +20,17 @@ public class OrderAssignmentService {
     private final OrderRepository orderRepository;
     private final OrderHistoryRepository orderHistoryRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Autowired
     public OrderAssignmentService(OrderRepository orderRepository, 
                                 OrderHistoryRepository orderHistoryRepository,
-                                UserRepository userRepository) {
+                                UserRepository userRepository,
+                                NotificationService notificationService) {
         this.orderRepository = orderRepository;
         this.orderHistoryRepository = orderHistoryRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -99,6 +103,18 @@ public class OrderAssignmentService {
             // Tạo lịch sử
             createOrderHistory(orderId, null, "assigned", "order_assigned_to_shipper", 
                 "Đơn hàng được phân phối cho shipper ID: " + shipperId, "system");
+
+            // ID 72: Gửi notification cho shipper khi được phân công đơn giao hàng
+            try {
+                notificationService.createNotification(
+                    shipperId,
+                    "DELIVERY",
+                    "Đơn giao hàng mới",
+                    "Bạn được phân công đơn #" + orderId
+                );
+            } catch (Exception e) {
+                System.err.println("Failed to send delivery assignment notification: " + e.getMessage());
+            }
 
             System.out.println("✅ Order " + orderId + " assigned to shipper " + shipperId);
             return true;

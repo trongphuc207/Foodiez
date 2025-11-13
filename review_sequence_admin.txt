@@ -1,0 +1,174 @@
+' ============================================
+' SEQUENCE DIAGRAMS - ADMIN USE CASES
+' ============================================
+' Các use case dành cho Admin:
+' - UC52: View All Reviews
+' - UC53: Hide Review
+' - UC54: Resolve Review Complaint
+' ============================================
+
+' ============================================
+' UC52: View All Reviews - Sequence Diagram
+' ============================================
+
+@startuml UC52_ViewAllReviews
+
+title UC52: View All Reviews - Sequence Diagram (Admin)
+
+actor Admin
+participant "ReviewController" as Controller
+participant "ReviewService" as Service
+participant "ReviewRepository" as ReviewRepo
+database "Database" as DB
+
+Admin -> Controller: GET /api/reviews/admin/all
+activate Controller
+
+Controller -> Controller: getCurrentUser()\n(validate JWT token & ADMIN role)
+Controller -> Controller: Check if user is ADMIN
+
+alt Not admin
+  Controller --> Admin: 403 Forbidden
+  deactivate Controller
+else Is admin
+  Controller -> Service: getAllReviews()
+  activate Service
+  
+  Service -> ReviewRepo: findAllOrderByCreatedAtDesc()
+  activate ReviewRepo
+  ReviewRepo -> DB: SELECT * FROM reviews\nORDER BY created_at DESC
+  DB --> ReviewRepo: List<Review>
+  ReviewRepo --> Service: reviews
+  deactivate ReviewRepo
+  
+  Service --> Controller: List<Review>
+  deactivate Service
+  
+  Controller --> Admin: 200 OK\n{success: true, data: List<Review>}
+  deactivate Controller
+end
+
+@enduml
+
+' ============================================
+' UC53: Hide Review - Sequence Diagram
+' ============================================
+
+@startuml UC53_HideReview
+
+title UC53: Hide Review - Sequence Diagram (Admin)
+
+actor Admin
+participant "ReviewController" as Controller
+participant "ReviewService" as Service
+participant "ReviewRepository" as ReviewRepo
+database "Database" as DB
+
+Admin -> Controller: PUT /api/reviews/admin/{reviewId}/hide
+activate Controller
+
+Controller -> Controller: getCurrentUser()\n(validate JWT token & ADMIN role)
+Controller -> Controller: Check if user is ADMIN
+
+alt Not admin
+  Controller --> Admin: 403 Forbidden
+  deactivate Controller
+else Is admin
+  Controller -> Service: hideReview(reviewId)
+  activate Service
+  
+  Service -> ReviewRepo: findById(reviewId)
+  activate ReviewRepo
+  ReviewRepo -> DB: SELECT * FROM reviews WHERE id = reviewId
+  DB --> ReviewRepo: Optional<Review>
+  ReviewRepo --> Service: reviewOpt
+  deactivate ReviewRepo
+  
+  alt Review not found
+    Service --> Controller: Throw RuntimeException("Không tìm thấy review!")
+    Controller --> Admin: 400 Bad Request
+    deactivate Service
+    deactivate Controller
+  else Review found
+    Service -> Service: Set review.isVisible = false
+    Service -> Service: Set review.updatedAt = now()
+    
+    Service -> ReviewRepo: save(review)
+    activate ReviewRepo
+    ReviewRepo -> DB: UPDATE reviews SET is_visible = 0, updated_at = ?
+    DB --> ReviewRepo: Updated Review
+    ReviewRepo --> Service: Review
+    deactivate ReviewRepo
+    
+    Service --> Controller: void
+    deactivate Service
+    
+    Controller --> Admin: 200 OK\n{success: true, message: "Ẩn đánh giá thành công!"}
+    deactivate Controller
+  end
+end
+
+@enduml
+
+' ============================================
+' UC54: Resolve Review Complaint - Sequence Diagram
+' ============================================
+
+@startuml UC54_ResolveReviewComplaint
+
+title UC54: Resolve Review Complaint - Sequence Diagram (Admin)
+
+actor Admin
+participant "ReviewController" as Controller
+participant "ReviewService" as Service
+participant "ReviewRepository" as ReviewRepo
+database "Database" as DB
+
+Admin -> Controller: PUT /api/reviews/admin/{reviewId}/resolve\n{resolution}
+activate Controller
+
+Controller -> Controller: getCurrentUser()\n(validate JWT token & ADMIN role)
+Controller -> Controller: Check if user is ADMIN
+
+alt Not admin
+  Controller --> Admin: 403 Forbidden
+  deactivate Controller
+else Is admin
+  Controller -> Controller: Extract resolution from request body
+  
+  Controller -> Service: resolveReviewComplaint(reviewId, resolution)
+  activate Service
+  
+  Service -> ReviewRepo: findById(reviewId)
+  activate ReviewRepo
+  ReviewRepo -> DB: SELECT * FROM reviews WHERE id = reviewId
+  DB --> ReviewRepo: Optional<Review>
+  ReviewRepo --> Service: reviewOpt
+  deactivate ReviewRepo
+  
+  alt Review not found
+    Service --> Controller: Throw RuntimeException("Không tìm thấy review!")
+    Controller --> Admin: 400 Bad Request
+    deactivate Service
+    deactivate Controller
+  else Review found
+    Service -> Service: Update review.updatedAt = now()
+    Service -> Service: Process resolution\n(Note: Can add resolution field to Review entity)
+    
+    Service -> ReviewRepo: save(review)
+    activate ReviewRepo
+    ReviewRepo -> DB: UPDATE reviews SET updated_at = ?
+    DB --> ReviewRepo: Updated Review
+    ReviewRepo --> Service: Review
+    deactivate ReviewRepo
+    
+    Service --> Controller: void
+    deactivate Service
+    
+    Controller --> Admin: 200 OK\n{success: true, message: "Xử lý khiếu nại thành công!"}
+    deactivate Controller
+  end
+end
+
+@enduml
+

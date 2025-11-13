@@ -1,0 +1,206 @@
+' ============================================
+' SEQUENCE DIAGRAMS - PUBLIC ENDPOINTS
+' ============================================
+' Các endpoint công khai (không cần authentication):
+' - Get Product Reviews
+' - Get Product Review Statistics
+' - Get Shop Reviews
+' - Get Shop Review Statistics
+' - Get Review Replies
+' ============================================
+
+' ============================================
+' Get Product Reviews - Sequence Diagram
+' ============================================
+
+@startuml GetProductReviews
+
+title Get Product Reviews - Sequence Diagram (Public)
+
+actor "Public User" as User
+participant "ReviewController" as Controller
+participant "ReviewService" as Service
+participant "ReviewRepository" as ReviewRepo
+database "Database" as DB
+
+User -> Controller: GET /api/reviews/product/{productId}
+activate Controller
+
+Controller -> Service: getProductReviews(productId)
+activate Service
+
+Service -> ReviewRepo: findByProductIdAndVisible(productId)
+activate ReviewRepo
+ReviewRepo -> DB: SELECT * FROM reviews\nWHERE product_id = productId\nAND (is_visible = 1 OR is_visible IS NULL)\nORDER BY created_at DESC
+DB --> ReviewRepo: List<Review>
+ReviewRepo --> Service: reviews
+deactivate ReviewRepo
+
+Service --> Controller: List<Review>
+deactivate Service
+
+Controller --> User: 200 OK\n{success: true, data: List<Review>}
+deactivate Controller
+
+@enduml
+
+' ============================================
+' Get Product Review Statistics - Sequence Diagram
+' ============================================
+
+@startuml GetProductReviewStats
+
+title Get Product Review Statistics - Sequence Diagram (Public)
+
+actor "Public User" as User
+participant "ReviewController" as Controller
+participant "ReviewService" as Service
+participant "ReviewRepository" as ReviewRepo
+database "Database" as DB
+
+User -> Controller: GET /api/reviews/product/{productId}/stats
+activate Controller
+
+Controller -> Service: getProductAverageRating(productId)
+activate Service
+Service -> ReviewRepo: getAverageRatingByProductId(productId)
+activate ReviewRepo
+ReviewRepo -> DB: SELECT AVG(rating) FROM reviews\nWHERE product_id = productId\nAND (is_visible = 1 OR is_visible IS NULL)
+DB --> ReviewRepo: Integer
+ReviewRepo --> Service: averageRating
+deactivate ReviewRepo
+Service --> Controller: averageRating
+deactivate Service
+
+Controller -> Service: getProductReviewCount(productId)
+activate Service
+Service -> ReviewRepo: countByProductIdAndVisible(productId)
+activate ReviewRepo
+ReviewRepo -> DB: SELECT COUNT(*) FROM reviews\nWHERE product_id = productId\nAND (is_visible = 1 OR is_visible IS NULL)
+DB --> ReviewRepo: Long
+ReviewRepo --> Service: reviewCount
+deactivate ReviewRepo
+Service --> Controller: reviewCount
+deactivate Service
+
+Controller -> Controller: Create stats object\n{averageRating, reviewCount}
+Controller --> User: 200 OK\n{success: true, data: {averageRating, reviewCount}}
+deactivate Controller
+
+@enduml
+
+' ============================================
+' Get Shop Reviews - Sequence Diagram
+' ============================================
+
+@startuml GetShopReviews
+
+title Get Shop Reviews - Sequence Diagram (Public)
+
+actor "Public User" as User
+participant "ReviewController" as Controller
+participant "ReviewService" as Service
+participant "ReviewRepository" as ReviewRepo
+database "Database" as DB
+
+User -> Controller: GET /api/reviews/shop/{shopId}
+activate Controller
+
+Controller -> Service: getShopReviews(shopId)
+activate Service
+
+Service -> ReviewRepo: findByShopIdAndVisible(shopId)
+activate ReviewRepo
+ReviewRepo -> DB: SELECT * FROM reviews\nWHERE shop_id = shopId\nAND (is_visible = 1 OR is_visible IS NULL)\nORDER BY created_at DESC
+DB --> ReviewRepo: List<Review>
+ReviewRepo --> Service: reviews
+deactivate ReviewRepo
+
+Service --> Controller: List<Review>
+deactivate Service
+
+Controller --> User: 200 OK\n{success: true, data: List<Review>}
+deactivate Controller
+
+@enduml
+
+' ============================================
+' Get Shop Review Statistics - Sequence Diagram
+' ============================================
+
+@startuml GetShopReviewStats
+
+title Get Shop Review Statistics - Sequence Diagram (Public)
+
+actor "Public User" as User
+participant "ReviewController" as Controller
+participant "ReviewService" as Service
+participant "ReviewRepository" as ReviewRepo
+database "Database" as DB
+
+User -> Controller: GET /api/reviews/shop/{shopId}/stats
+activate Controller
+
+Controller -> Service: getShopAverageRating(shopId)
+activate Service
+Service -> ReviewRepo: getAverageRatingByShopId(shopId)
+activate ReviewRepo
+ReviewRepo -> DB: SELECT AVG(rating) FROM reviews\nWHERE shop_id = shopId\nAND (is_visible = 1 OR is_visible IS NULL)
+DB --> ReviewRepo: Integer
+ReviewRepo --> Service: averageRating
+deactivate ReviewRepo
+Service --> Controller: averageRating
+deactivate Service
+
+Controller -> Service: getShopReviewCount(shopId)
+activate Service
+Service -> ReviewRepo: countByShopIdAndVisible(shopId)
+activate ReviewRepo
+ReviewRepo -> DB: SELECT COUNT(*) FROM reviews\nWHERE shop_id = shopId\nAND (is_visible = 1 OR is_visible IS NULL)
+DB --> ReviewRepo: Long
+ReviewRepo --> Service: reviewCount
+deactivate ReviewRepo
+Service --> Controller: reviewCount
+deactivate Service
+
+Controller -> Controller: Create stats object\n{averageRating, reviewCount}
+Controller --> User: 200 OK\n{success: true, data: {averageRating, reviewCount}}
+deactivate Controller
+
+@enduml
+
+' ============================================
+' Get Review Replies - Sequence Diagram
+' ============================================
+
+@startuml GetReviewReplies
+
+title Get Review Replies - Sequence Diagram (Public)
+
+actor "Public User" as User
+participant "ReviewController" as Controller
+participant "ReviewService" as Service
+participant "ReviewReplyRepository" as ReplyRepo
+database "Database" as DB
+
+User -> Controller: GET /api/reviews/{reviewId}/replies
+activate Controller
+
+Controller -> Service: getReviewReplies(reviewId)
+activate Service
+
+Service -> ReplyRepo: findByReviewId(reviewId)
+activate ReplyRepo
+ReplyRepo -> DB: SELECT * FROM review_replies\nWHERE review_id = reviewId\nORDER BY created_at ASC
+DB --> ReplyRepo: List<ReviewReply>
+ReplyRepo --> Service: replies
+deactivate ReplyRepo
+
+Service --> Controller: List<ReviewReply>
+deactivate Service
+
+Controller --> User: 200 OK\n{success: true, data: List<ReviewReply>}
+deactivate Controller
+
+@enduml
+
