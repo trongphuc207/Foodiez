@@ -23,6 +23,7 @@ public class OrderDTO {
     private String recipientName;
     private String recipientPhone;
     private String addressText;
+        private Double deliveryFee;
     private BigDecimal latitude;
     private BigDecimal longitude;
     private LocalDateTime createdAt;

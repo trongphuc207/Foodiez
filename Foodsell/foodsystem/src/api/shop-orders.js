@@ -14,12 +14,8 @@ const getAuthHeaders = () => {
 export const shopOrdersAPI = {
   // Get orders for seller. If shopId provided, return orders for that shop.
   getSellerOrders: async (shopId, status) => {
-    const qs = [];
-    if (shopId) qs.push(`shopId=${encodeURIComponent(shopId)}`);
-    if (status && status !== 'all') qs.push(`status=${encodeURIComponent(status)}`);
-    const query = qs.length ? `?${qs.join('&')}` : '';
-
-    const res = await fetch(`${API_BASE_URL}/seller/orders${query}`, {
+  // Use the shop ID endpoint from OrderController
+  const res = await fetch(`${API_BASE_URL}/orders/shop/${shopId}`, {
       headers: getAuthHeaders(),
     });
     if (!res.ok) {
@@ -30,7 +26,7 @@ export const shopOrdersAPI = {
   },
 
   getOrderDetails: async (orderId) => {
-    const res = await fetch(`${API_BASE_URL}/seller/orders/${orderId}`, {
+  const res = await fetch(`${API_BASE_URL}/orders/${orderId}/history`, {
       headers: getAuthHeaders(),
     });
     if (!res.ok) throw new Error('Failed to fetch order details');
@@ -55,7 +51,7 @@ export const shopOrdersAPI = {
     // Debug log to verify payload
     console.debug('updateOrderDetails - payload:', payload);
 
-    const res = await fetch(`${API_BASE_URL}/seller/orders/${orderId}`, {
+  const res = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(payload),
@@ -68,7 +64,7 @@ export const shopOrdersAPI = {
   },
 
   updateOrderStatus: async (orderId, status) => {
-    const res = await fetch(`${API_BASE_URL}/seller/orders/${orderId}/status`, {
+  const res = await fetch(`${API_BASE_URL}/orders/${orderId}/status`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify({ status }),
@@ -82,7 +78,7 @@ export const shopOrdersAPI = {
 
   // Chấp nhận đơn hàng (calls OrderAssignmentController)
   acceptOrder: async (orderId) => {
-    const res = await fetch(`${API_BASE_URL}/orders/assignment/${orderId}/accept`, {
+  const res = await fetch(`${API_BASE_URL}/orders/${orderId}/accept`, {
       method: 'POST',
       headers: getAuthHeaders()
     });

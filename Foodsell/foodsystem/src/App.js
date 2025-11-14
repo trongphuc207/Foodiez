@@ -2,6 +2,7 @@ import React from 'react';
 import './App.css';
 import Header from './components/HeaderComponent/Header';
 import Footer from './components/FooterComponent/Footer';
+import GeminiChatbot from './components/GeminiChatbot/GeminiChatbot';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { routes } from './routes';
@@ -32,9 +33,9 @@ function App() {
               ))}
             </Routes>
           </Router>
+          <GeminiChatbot />
         </CartProvider>
       </div>
-      
     </QueryClientProvider>
   );
 }

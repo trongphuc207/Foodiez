@@ -25,6 +25,7 @@ import ShipperDashboardPage from '../components/ShipperDashboard/ShipperDashboar
 import ShipperOrdersPage from '../Page/ShipperOrdersPage/ShipperOrdersPage';
 import OrderPage from '../Page/OrderPage/OrderPage';
 import NotificationPage from '../Page/NotificationPage/NotificationPage';
+import OrderDetailPage from '../Page/OrderPage/OrderDetailPage';
 
 export const routes = [
     {
@@ -55,6 +56,8 @@ export const routes = [
     {
         path: '/notifications',
         component: NotificationPage,
+        path: '/orders/:orderId',
+        component: OrderDetailPage,
         isShowHeader: true
     },
     {
@@ -118,6 +121,11 @@ export const routes = [
     },
     {
         path: '/information',
+        component: InformationPage,
+        isShowHeader: true
+    },
+    {
+        path: '/about',
         component: InformationPage,
         isShowHeader: true
     },

@@ -431,6 +431,7 @@ public class OrderService {
         dto.setRecipientName(order.getRecipientName());
         dto.setRecipientPhone(order.getRecipientPhone());
         dto.setAddressText(order.getAddressText());
+        dto.setDeliveryFee(order.getDeliveryFee());
         dto.setLatitude(order.getLatitude());
         dto.setLongitude(order.getLongitude());
         dto.setCreatedAt(order.getCreatedAt());
