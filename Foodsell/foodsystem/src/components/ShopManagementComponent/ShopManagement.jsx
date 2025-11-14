@@ -16,7 +16,11 @@ const ShopManagement = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('products');
+  
+  // Get tab from URL query params
+  const urlParams = new URLSearchParams(window.location.search);
+  const tabFromUrl = urlParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'products');
   const [showShopForm, setShowShopForm] = useState(false);
   const [orderStatus, setOrderStatus] = useState('all'); // Filter orders by status
   const [showRatings, setShowRatings] = useState(false);
@@ -532,12 +536,6 @@ const createProductMutation = useMutation({
         >
           Quản lý món ăn
         </button>
-        <button 
-          className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
-          onClick={() => setActiveTab('orders')}
-        >
-          📦 Quản lý đơn hàng
-        </button>
         <button
           className={`tab-btn ${activeTab === 'shop' ? 'active' : ''}`}
           onClick={() => setActiveTab('shop')}
@@ -549,6 +547,12 @@ const createProductMutation = useMutation({
           onClick={() => setActiveTab('ratings')}
         >
           Đánh giá khách hàng
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
+          onClick={() => setActiveTab('orders')}
+        >
+          📦 Quản lý đơn hàng
         </button>
       </div>
       {activeTab === 'products' && (
