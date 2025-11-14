@@ -302,7 +302,14 @@ public class ChatService {
     }
 
     @Transactional
-    public void deleteConversation(Long conversationId) { conversationRepository.deleteById(conversationId); }
+    public void deleteConversation(Long conversationId) {
+        // First, delete all message reports associated with messages in this conversation
+        reportRepository.deleteByConversationId(conversationId);
+        // Then, delete all messages in this conversation
+        messageRepository.deleteByConversationId(conversationId);
+        // Finally, delete the conversation itself
+        conversationRepository.deleteById(conversationId);
+    }
 
     @Transactional
     public int markConversationRead(Long conversationId, Integer userId) {

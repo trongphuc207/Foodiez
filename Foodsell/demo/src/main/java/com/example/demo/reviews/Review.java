@@ -43,6 +43,9 @@ public class Review {
     @Column(name = "resolution_notes", columnDefinition = "NVARCHAR(MAX)")
     private String resolutionNotes;
 
+    @Column(name = "status", length = 20)
+    private String status = "PENDING"; // PENDING, RESOLVED, REJECTED
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -60,6 +63,7 @@ public class Review {
         this.content = content;
         this.isVisible = true;
         this.resolutionNotes = null;
+        this.status = "PENDING";
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
@@ -68,6 +72,9 @@ public class Review {
     protected void onCreate() {
         if (this.isVisible == null) {
             this.isVisible = true;
+        }
+        if (this.status == null) {
+            this.status = "PENDING";
         }
         if (this.createdAt == null) {
             this.createdAt = LocalDateTime.now();

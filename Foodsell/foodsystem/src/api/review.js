@@ -92,12 +92,27 @@ export const reviewAPI = {
     return response.json();
   },
 
-  // ===== ADMIN API (giữ chỗ – có thể mở rộng) =====
-  getAllReviews: async () => {
-    const response = await fetch(`${API_BASE_URL}/reviews/admin/all`, { method: 'GET', headers: getHeaders() });
+  // ===== ADMIN API =====
+  getAllReviews: async (status, keyword) => {
+    let url = `${API_BASE_URL}/reviews/admin/all`;
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (keyword) params.append('keyword', keyword);
+    if (params.toString()) url += '?' + params.toString();
+    
+    const response = await fetch(url, { method: 'GET', headers: getHeaders() });
     if (!response.ok) {
       const errorData = await response.json().catch(()=>({}));
       throw new Error(errorData.message || 'Không thể lấy danh sách đánh giá');
+    }
+    return response.json();
+  },
+
+  getReviewStatistics: async () => {
+    const response = await fetch(`${API_BASE_URL}/reviews/admin/statistics`, { method: 'GET', headers: getHeaders() });
+    if (!response.ok) {
+      const errorData = await response.json().catch(()=>({}));
+      throw new Error(errorData.message || 'Không thể lấy thống kê đánh giá');
     }
     return response.json();
   },
@@ -111,11 +126,11 @@ export const reviewAPI = {
     return response.json();
   },
 
-  resolveReviewComplaint: async (reviewId, resolution) => {
+  resolveReviewComplaint: async (reviewId, resolution, status, shouldHide) => {
     const response = await fetch(`${API_BASE_URL}/reviews/admin/${reviewId}/resolve`, {
       method: 'PUT',
       headers: getHeaders(),
-      body: JSON.stringify({ resolution })
+      body: JSON.stringify({ resolution, status, shouldHide })
     });
     if (!response.ok) {
       const errorData = await response.json().catch(()=>({}));

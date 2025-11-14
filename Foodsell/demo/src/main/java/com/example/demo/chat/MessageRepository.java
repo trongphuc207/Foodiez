@@ -39,4 +39,9 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     @Modifying
     @Query("update Message m set m.read = true where m.conversation.id = :cid and m.sender.id <> :uid and m.read = false")
     int markAsReadInConversation(@Param("cid") Long conversationId, @Param("uid") Integer userId);
+
+    // Delete all messages in a conversation
+    @Modifying
+    @Query("delete from Message m where m.conversation.id = :cid")
+    void deleteByConversationId(@Param("cid") Long conversationId);
 }
