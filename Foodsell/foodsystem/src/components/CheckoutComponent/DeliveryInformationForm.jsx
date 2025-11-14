@@ -338,10 +338,6 @@ const districts = {
   // Warning when district and address-derived district mismatch
   const [mismatchWarning, setMismatchWarning] = useState('');
 
-  // Fallback quận của cửa hàng nếu chưa suy luận được (tránh khoảng cách = 0 do fromDistrict = null)
-  // Đặt trước khi dùng trong useEffect để tránh ReferenceError trong TDZ.
-  const RESTAURANT_DISTRICT = restaurantDistrict || 'Hải Châu';
-
   // Ensure validations and shipping details are computed when component mounts
   // or when initialData provides prefilled address/district values.
   useEffect(() => {
@@ -349,9 +345,6 @@ const districts = {
       // If district is selected, compute shipping details
       if (formData.district) {
         const details = calculateShippingFee(RESTAURANT_DISTRICT, formData.district);
-        if (!details.breakdown.isResolved) {
-          console.log('[Shipping] distance unresolved (from/to not matched). from=', RESTAURANT_DISTRICT, 'to=', formData.district, 'breakdown=', details.breakdown);
-        }
         setShippingDetails(details);
       }
 
@@ -376,9 +369,10 @@ const districts = {
     } catch (err) {
       console.warn('Error during initial mapping/shipping computation:', err);
     }
-  }, [formData.address, formData.district, RESTAURANT_DISTRICT]);
+  }, [formData.address, formData.district, restaurantDistrict]);
 
-  // RESTAURANT_DISTRICT đã được định nghĩa phía trên với fallback
+  // Nhà hàng/quán (nếu được truyền vào từ Checkout) — fallback Hải Châu
+  const RESTAURANT_DISTRICT = restaurantDistrict ;
 
   const handleCityChange = (e) => {
     const selectedCity = e.target.value;

@@ -2,12 +2,14 @@ import React, { useState } from 'react'
 import './ShipperOrdersPage.css'
 import SidebarComponent from '../../components/SidebarComponent/SidebarComponent'
 import { FiMenu } from 'react-icons/fi'
+import { useAuth } from '../../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { shipperAPI } from '../../api/shipper'
 
 export default function ShipperOrdersPage() {
   const [activeTab, setActiveTab] = useState('all')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { user } = useAuth()
 
   // Fetch shipper orders from backend (uses auth token from localStorage)
   const { data: ordersResp, isLoading, error, refetch } = useQuery({
@@ -73,10 +75,10 @@ export default function ShipperOrdersPage() {
           <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
             <FiMenu />
           </button>
-          <div className="header-title">
-            <h1>Đơn hàng</h1>
-            <p>Đang tải đơn hàng...</p>
-          </div>
+          <span className="page-title">Đơn hàng</span>
+        </div>
+        <div className="header-right">
+          <span className="user-name-display">{user?.fullName || user?.full_name || user?.name || '...'}</span>
         </div>
       </div>
     </div>
@@ -89,10 +91,10 @@ export default function ShipperOrdersPage() {
           <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
             <FiMenu />
           </button>
-          <div className="header-title">
-            <h1>Đơn hàng</h1>
-            <p>Lỗi khi tải đơn hàng: {error.message}</p>
-          </div>
+          <span className="page-title">Đơn hàng</span>
+        </div>
+        <div className="header-right">
+          <span className="user-name-display">{user?.fullName || user?.full_name || user?.name || 'Lỗi tải'}</span>
         </div>
       </div>
     </div>
@@ -106,10 +108,10 @@ export default function ShipperOrdersPage() {
           <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
             <FiMenu />
           </button>
-          <div className="header-title">
-            <h1>Đơn hàng</h1>
-            <p>Quản lý đơn hàng giao của bạn</p>
-          </div>
+          <span className="page-title">Đơn hàng</span>
+        </div>
+        <div className="header-right">
+          <span className="user-name-display">{user?.fullName || user?.full_name || user?.name || 'Chưa đăng nhập'}</span>
         </div>
       </div>
 

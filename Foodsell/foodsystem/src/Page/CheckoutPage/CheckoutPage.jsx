@@ -388,8 +388,18 @@ const CheckoutPage = () => {
           notes: deliveryInfo.notes
         };
 
-        // Tạo đơn hàng riêng cho từng shop
-        for (const [shopId, shopItems] of Object.entries(itemsByShop)) {
+        // Tổng tiền hàng của các item đang checkout
+        const totalItemsAmount = Math.round(activeTotalAmount || 0);
+        const shippingTotal = Math.round(selectedShippingFee || 0);
+        const vouchersTotal = Math.round(voucherDiscount || 0);
+
+        // Tạo đơn hàng riêng cho từng shop, phân bổ ship + voucher theo tỷ lệ
+        const shopEntries = Object.entries(itemsByShop);
+        let shipAllocated = 0;
+        let voucherAllocated = 0;
+
+        for (let idx = 0; idx < shopEntries.length; idx++) {
+          const [shopId, shopItems] = shopEntries[idx];
           const mappedShopItems = shopItems.map(item => ({
             productId: item.id,
             name: item.name || item.productName || 'Sản phẩm',
@@ -398,17 +408,38 @@ const CheckoutPage = () => {
           }));
 
           const shopTotal = shopItems.reduce((t, it) => t + (Number(it.price || 0) * Number(it.quantity || 0)), 0);
-          // Tính voucher discount cho shop này (có thể chia theo tỷ lệ)
-          const shopVoucherDiscount = Math.round((shopTotal / getTotalAmount()) * voucherDiscount);
+          // Chia voucher theo tỷ lệ tổng tiền hàng
+          let shopVoucherDiscount = 0;
+          if (vouchersTotal > 0 && totalItemsAmount > 0) {
+            if (idx < shopEntries.length - 1) {
+              shopVoucherDiscount = Math.round((shopTotal / totalItemsAmount) * vouchersTotal);
+              voucherAllocated += shopVoucherDiscount;
+            } else {
+              // dồn phần còn lại cho shop cuối để tránh lệch do làm tròn
+              shopVoucherDiscount = Math.max(0, vouchersTotal - voucherAllocated);
+            }
+          }
+
+          // Chia phí ship theo tỷ lệ tổng tiền hàng
+          let shopShippingFee = 0;
+          if (shippingTotal > 0 && totalItemsAmount > 0) {
+            if (idx < shopEntries.length - 1) {
+              shopShippingFee = Math.round((shopTotal / totalItemsAmount) * shippingTotal);
+              shipAllocated += shopShippingFee;
+            } else {
+              shopShippingFee = Math.max(0, shippingTotal - shipAllocated);
+            }
+          }
 
           const orderData = {
             deliveryInfo: mappedDeliveryInfo,
             paymentInfo,
             cartItems: mappedShopItems,
             shopId: shopId,
-            totalAmount: Math.round(shopTotal - shopVoucherDiscount),
-            originalAmount: Math.round(shopTotal),
+            totalAmount: Math.round((shopTotal + shopShippingFee) - shopVoucherDiscount),
+            originalAmount: Math.round(shopTotal + shopShippingFee),
             voucherDiscount: shopVoucherDiscount,
+            shippingFee: shopShippingFee,
             appliedVoucher: appliedVoucher,
             status: 'pending'
           };

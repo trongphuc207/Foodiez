@@ -15,6 +15,8 @@ const Header = ({ toggleSidebar }) => {
   const [showContactDropdown, setShowContactDropdown] = useState(false);
   const [showNavbar] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
+  // Mobile search overlay
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
 
   // NEW: state mở modal và mode (login/signup)
   const [showAuth, setShowAuth] = useState(false);
@@ -119,7 +121,7 @@ const Header = ({ toggleSidebar }) => {
         </div>
 
         <div className="header-center">
-          <div className="search-container">
+          <div className="search-container" aria-label="Thanh tìm kiếm">
             <input
               type="text"
               className="search-input"
@@ -142,6 +144,15 @@ const Header = ({ toggleSidebar }) => {
         </div>
 
         <div className="header-actions">
+          {/* Mobile search toggle icon */}
+          <button
+            type="button"
+            className="search-toggle"
+            aria-label="Mở tìm kiếm"
+            onClick={() => setShowMobileSearch(true)}
+          >
+            🔍
+          </button>
           {isAuthenticated && <NotificationBell />}
 
           <button className="action-btn chat-btn" onClick={() => navigate('/chat')}>Chat</button>
@@ -177,10 +188,12 @@ const Header = ({ toggleSidebar }) => {
             className="cart-btn"
             onClick={() => setShowCart(true)}
           >
-            <span className="cart-icon">🛒</span> Giỏ hàng ({getTotalItems()})
+            <span className="cart-icon">🛒</span>
+            <span className="cart-text">Giỏ hàng</span>
+            <span className="cart-count">{getTotalItems()}</span>
           </button>
 
-          {user ? (
+          {/* {user ? (
             <button 
               className="order-btn"
               onClick={() => navigate('/orders')}
@@ -189,7 +202,7 @@ const Header = ({ toggleSidebar }) => {
             </button>
           ) : (
             <button className="order-btn" onClick={() => navigate('/products')}>Đặt hàng ngay</button>
-          )}
+          )} */}
 
           <div className="user-dropdown">
             <button
@@ -290,9 +303,40 @@ const Header = ({ toggleSidebar }) => {
         isOpen={showSidebar} 
         onClose={() => setShowSidebar(false)} 
       />
+
+      {/* === Mobile Search Overlay === */}
+      {showMobileSearch && (
+        <div className="mobile-search-overlay" role="dialog" aria-label="Tìm kiếm" onKeyDown={(e) => e.key === 'Escape' && setShowMobileSearch(false)}>
+          <input
+            autoFocus
+            type="text"
+            className="mobile-search-input"
+            placeholder="Tìm kiếm sản phẩm..."
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSearch(searchKeyword);
+                setShowMobileSearch(false);
+              }
+            }}
+          />
+          <button
+            className="mobile-search-submit"
+            onClick={() => {
+              handleSearch(searchKeyword);
+              setShowMobileSearch(false);
+            }}
+          >Tìm</button>
+          <button
+            className="mobile-search-close"
+            aria-label="Đóng tìm kiếm"
+            onClick={() => setShowMobileSearch(false)}
+          >✖</button>
+        </div>
+      )}
     </header>
   );
 };
 
 export default Header;
-

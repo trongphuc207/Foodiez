@@ -258,20 +258,29 @@ public class OrderService {
                 return resp;
             }
 
-            // If order looks paid/confirmed, forward to chat with merchant instead of auto cancelling
+            // If order is paid/confirmed we DO NOT auto-cancel or auto-create chat message anymore.
+            // Instead we return an instructional response for the client to show to user.
             String status = order.getStatus() == null ? "" : order.getStatus();
             if ("confirmed".equalsIgnoreCase(status) || "paid".equalsIgnoreCase(status) || status.toLowerCase().contains("paid")) {
-                // create/get conversation between buyer and merchant for this order
-                Conversation conv = chatService.getOrCreateConversationWithMerchantByOrder(userId, orderId);
-                String content = String.format("Khách hàng yêu cầu huỷ đơn #%d (đã thanh toán). Lý do: %s", orderId, reason == null ? "Không có" : reason);
-                Message sent = chatService.sendMessage(conv.getId(), userId, content);
-                resp.put("success", true);
-                resp.put("forwardedToChat", true);
-                resp.put("conversationId", conv.getId());
-                resp.put("messageId", sent.getId());
-                resp.put("info", "Cancel request forwarded to shop chat for manual handling/refund");
-                // create an order history entry to record that buyer requested cancellation and we forwarded to chat
-                createOrderHistory(orderId, order.getStatus(), order.getStatus(), "cancel_requested", "Buyer requested cancel (payment present) - forwarded to chat", String.valueOf(userId));
+                String shopName = "shop";
+                try {
+                    var shopOpt = shopService.getShopById(order.getShopId());
+                    if (shopOpt != null && shopOpt.isPresent()) {
+                        Shop shopEntity = shopOpt.get();
+                        if (shopEntity.getName() != null && !shopEntity.getName().isBlank()) {
+                            shopName = shopEntity.getName();
+                        }
+                    }
+                } catch (Exception ignored) {}
+                String displayMessage = String.format(
+                        "Đơn hàng #%d đã được thanh toán / xác nhận. Vui lòng tự nhắn tin với chủ shop (%s) trước khi đơn hàng được chấp nhận hoàn tất.",
+                        orderId, shopName);
+                resp.put("success", false); // cancel not executed
+                resp.put("code", "manual_chat_required");
+                resp.put("forwardedToChat", false);
+                resp.put("message", displayMessage);
+                // Optional history entry to log the attempt without performing cancellation
+                createOrderHistory(orderId, order.getStatus(), order.getStatus(), "cancel_requested", "Buyer requested cancel after payment/confirmation - instructed manual chat", String.valueOf(userId));
                 return resp;
             }
 

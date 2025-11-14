@@ -86,35 +86,6 @@ const ChatWindow = ({ conversation }) => {
     };
     client.activate();
     clientRef.current = client;
-    // If page has an auto-message query param (am), send it once after connect
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const am = params.get('am');
-      if (am) {
-        // Wait until stomp client connected then publish once
-        const trySend = () => {
-          if (!clientRef.current) return;
-          if (clientRef.current.connected) {
-            // ensure we only auto-send once per conversation id
-            const key = `autoSent:${conversation.id}`;
-            if (sessionStorage.getItem(key)) return;
-            const payload = { conversationId: conversation.id, senderId: (window.__CURRENT_USER__ && window.__CURRENT_USER__.id) || null, content: decodeURIComponent(am) };
-            try {
-              clientRef.current.publish({ destination: '/app/chat.sendMessage', body: JSON.stringify(payload) });
-              sessionStorage.setItem(key, '1');
-            } catch (e) {
-              console.warn('Auto-send failed', e.message);
-            }
-          } else {
-            // try again shortly
-            setTimeout(trySend, 300);
-          }
-        };
-        trySend();
-      }
-    } catch (e) {
-      // ignore
-    }
     return () => {
       try { subRef.current && subRef.current.unsubscribe(); } catch {}
       try { client.deactivate(); } catch {}
