@@ -11,10 +11,8 @@ const SellerSidebar = ({ activeTab, setActiveTab }) => {
     { id: 'home', icon: '🏠', label: 'Trang chủ', action: 'navigate', path: '/' },
     { id: 'dashboard', icon: '📊', label: 'Dashboard', action: 'tab' },
     { id: 'products', icon: '☕', label: 'Sản phẩm', action: 'tab' },
-    { id: 'orders', icon: '📦', label: 'Đơn hàng', action: 'tab' },
     { id: 'revenue', icon: '💰', label: 'Doanh thu', action: 'tab' },
-    { id: 'customers', icon: '👥', label: 'Khách hàng', action: 'tab' },
-    { id: 'settings', icon: '⚙️', label: 'Cài đặt', action: 'tab' }
+    { id: 'customers', icon: '👥', label: 'Khách hàng', action: 'tab' }
   ];
 
   const handleMenuClick = (item) => {

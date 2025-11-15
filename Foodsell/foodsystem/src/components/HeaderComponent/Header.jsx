@@ -116,16 +116,19 @@ const Header = ({ toggleSidebar }) => {
             }
           }}
         >
-          <span className="logo-icon">🍽️</span>
+          <div className="logo-icon-wrapper">
+            <span className="logo-icon">🍔</span>
+          </div>
           <h1 className="logo-text">FoodieExpress</h1>
         </div>
 
         <div className="header-center">
-          <div className="search-container" aria-label="Thanh tìm kiếm">
+          <div className="search-container">
+            <span className="search-icon">🔍</span>
             <input
               type="text"
               className="search-input"
-              placeholder="Tìm kiế"
+              placeholder="Tìm kiếm..."
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
               onKeyDown={(e) => {
@@ -134,12 +137,6 @@ const Header = ({ toggleSidebar }) => {
                 }
               }}
             />
-            <button
-              className="search-button"
-              onClick={() => handleSearch(searchKeyword)}
-            >
-              Tìm kiếm
-            </button>
           </div>
         </div>
 
@@ -155,7 +152,10 @@ const Header = ({ toggleSidebar }) => {
           </button>
           {isAuthenticated && <NotificationBell />}
 
-          <button className="action-btn chat-btn" onClick={() => navigate('/chat')}>Chat</button>
+          <button className="action-btn chat-btn" onClick={() => navigate('/chat')}>
+            <span className="action-icon">💬</span>
+            <span className="action-text">Chat</span>
+          </button>
 
           <div className="contact-wrapper">
             <button
@@ -166,12 +166,12 @@ const Header = ({ toggleSidebar }) => {
                 setShowUserDropdown(false)
               }}
             >
-              <span className="contact-icon">📞</span> Liên hệ
+              <span className="action-icon">📞</span>
+              <span className="action-text">Liên hệ</span>
             </button>
 
             {showContactDropdown && (
               <div className="contact-dropdown">
-                {/* phone link*/}
                 <a className="contact-item" href="tel:0978126731">📞 0978126731</a>
               </div>
             )}
@@ -181,16 +181,8 @@ const Header = ({ toggleSidebar }) => {
             className="action-btn voucher-btn"
             onClick={() => navigate('/vouchers')}
           >
-            <span className="voucher-icon">🎁</span> Voucher
-          </button>
-
-          <button 
-            className="cart-btn"
-            onClick={() => setShowCart(true)}
-          >
-            <span className="cart-icon">🛒</span>
-            <span className="cart-text">Giỏ hàng</span>
-            <span className="cart-count">{getTotalItems()}</span>
+            <span className="action-icon">🎁</span>
+            <span className="action-text">Voucher</span>
           </button>
 
           {/* {user ? (
@@ -198,11 +190,23 @@ const Header = ({ toggleSidebar }) => {
               className="order-btn"
               onClick={() => navigate('/orders')}
             >
-              Đơn hàng của tôi
+              Đơn hàng
             </button>
           ) : (
-            <button className="order-btn" onClick={() => navigate('/products')}>Đặt hàng ngay</button>
-          )} */}
+            <button className="order-btn" onClick={() => navigate('/products')}>
+              Đặt hàng ngay
+            </button>
+          )}
+
+          <button 
+            className="cart-btn"
+            onClick={() => setShowCart(true)}
+          >
+            <span className="cart-icon">🛒</span>
+            {getTotalItems() > 0 && (
+              <span className="cart-badge">{getTotalItems()}</span>
+            )}
+          </button>
 
           <div className="user-dropdown">
             <button

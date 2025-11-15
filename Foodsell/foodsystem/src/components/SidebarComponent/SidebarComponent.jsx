@@ -39,7 +39,6 @@ const SidebarComponent = ({ isOpen, onClose }) => {
     { icon: <i className="bi bi-house-door"></i>, label: 'Trang chủ', path: '/seller' },
     { icon: <i className="bi bi-cup-hot"></i>, label: 'Sản phẩm', path: '/seller/products' },
     { icon: <i className="bi bi-graph-up"></i>, label: 'Dashboard', path: '/seller/dashboard' },
-    { icon: <i className="bi bi-box"></i>, label: 'Đơn hàng', path: '/seller/orders' },
     { icon: <i className="bi bi-currency-dollar"></i>, label: 'Doanh thu', path: '/seller/revenue' },
     { icon: <i className="bi bi-people"></i>, label: 'Khách hàng', path: '/seller/customers' },
     { icon: <i className="bi bi-gear"></i>, label: 'Cài đặt', path: '/seller/settings' }
