@@ -2,7 +2,7 @@
 // Keyed by user id when available, otherwise a guest key.
 import { getAuthToken } from '../api/auth';
 
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = process.env.REACT_APP_ORDER_URL ? `${process.env.REACT_APP_ORDER_URL}/api` : 'http://localhost:8080/api';
 
 const getKey = (user) => {
   if (user && (user.id || user._id)) return `favorites_${user.id || user._id}`;

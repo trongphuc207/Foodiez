@@ -1,7 +1,7 @@
 // src/api/admin.js
 import { getAuthToken } from './auth';
 
-const API_BASE_URL = 'http://localhost:8080/admin';
+const API_BASE_URL = process.env.REACT_APP_ORDER_URL ? `${process.env.REACT_APP_ORDER_URL}/admin` : 'http://localhost:8080/admin';
 
 const getHeaders = () => ({
   'Content-Type': 'application/json',
@@ -41,7 +41,8 @@ export const adminAPI = {
 
   // Order Assignment APIs
   assignOrderToSeller: async (orderId, sellerId) => {
-    const res = await fetch(`http://localhost:8080/api/orders/assignment/${orderId}/assign-seller/${sellerId}`, {
+    const baseUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
+    const res = await fetch(`${baseUrl}/api/orders/assignment/${orderId}/assign-seller/${sellerId}`, {
       method: 'POST',
       headers: getHeaders()
     });
@@ -50,7 +51,8 @@ export const adminAPI = {
   },
 
   assignOrderToShipper: async (orderId, shipperId) => {
-    const res = await fetch(`http://localhost:8080/api/orders/assignment/${orderId}/assign-shipper/${shipperId}`, {
+    const baseUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
+    const res = await fetch(`${baseUrl}/api/orders/assignment/${orderId}/assign-shipper/${shipperId}`, {
       method: 'POST',
       headers: getHeaders()
     });
@@ -59,7 +61,8 @@ export const adminAPI = {
   },
 
   getOrderHistory: async (orderId) => {
-    const res = await fetch(`http://localhost:8080/api/orders/${orderId}/history`, { 
+    const baseUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
+    const res = await fetch(`${baseUrl}/api/orders/${orderId}/history`, { 
       headers: getHeaders() 
     });
     if (!res.ok) throw new Error('Không thể tải lịch sử đơn hàng');

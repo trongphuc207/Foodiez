@@ -123,7 +123,8 @@ const ReviewList = ({ productId, shopId, userRole, currentUserId }) => {
 
   const resolveUrl = (u) => {
     if (!u) return u;
-    return /^https?:\/\//i.test(u) ? u : `http://localhost:8080${u.startsWith('/') ? '' : '/'}${u}`;
+    const backendUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
+    return /^https?:\/\//i.test(u) ? u : `${backendUrl}${u.startsWith('/') ? '' : '/'}${u}`;
   };
 
   return (

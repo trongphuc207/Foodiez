@@ -16,7 +16,8 @@ const updateOrderStatus = async (orderCode, status) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 giây timeout
 
-    const response = await fetch(`http://localhost:8080/api/orders/customer/orders/${orderCode}/status`, {
+    const backendUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
+    const response = await fetch(`${backendUrl}/api/orders/customer/orders/${orderCode}/status`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

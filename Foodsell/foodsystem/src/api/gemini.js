@@ -1,6 +1,6 @@
 import { getAuthToken } from './auth';
 
-const API_BASE_URL = 'http://localhost:8080/api/gemini';
+const API_BASE_URL = process.env.REACT_APP_ORDER_URL ? `${process.env.REACT_APP_ORDER_URL}/api/gemini` : 'http://localhost:8080/api/gemini';
 
 const parseResponse = async (res) => {
   const text = await res.text();

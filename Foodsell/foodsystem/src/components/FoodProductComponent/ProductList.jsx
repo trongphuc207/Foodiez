@@ -35,7 +35,8 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
       // Fetch từ API (cho HomePage)
       setLoading(true)
       console.log("🔄 Fetching products from API...")
-      axios.get("http://localhost:8080/api/products")
+      const backendUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
+      axios.get(`${backendUrl}/api/products`)
         .then((res) => {
           console.log("✅ Products fetched:", res.data)
           setProducts(res.data)

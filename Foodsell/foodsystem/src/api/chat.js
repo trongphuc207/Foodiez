@@ -1,6 +1,6 @@
 import { getAuthToken } from './auth';
 
-const API_BASE_URL = 'http://localhost:8080/api/chat';
+const API_BASE_URL = process.env.REACT_APP_ORDER_URL ? `${process.env.REACT_APP_ORDER_URL}/api/chat` : 'http://localhost:8080/api/chat';
 
 const parseResponse = async (res) => {
   const text = await res.text();

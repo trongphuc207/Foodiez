@@ -60,7 +60,8 @@ const AvatarUpload = ({ currentAvatar, onAvatarChange, onClose }) => {
         return;
       }
 
-      const response = await fetch('http://localhost:8080/api/auth/upload-avatar', {
+      const backendUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
+      const response = await fetch(`${backendUrl}/api/auth/upload-avatar`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -115,7 +116,8 @@ const AvatarUpload = ({ currentAvatar, onAvatarChange, onClose }) => {
     setUploading(true);
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch('http://localhost:8080/api/auth/remove-avatar', {
+      const backendUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
+      const response = await fetch(`${backendUrl}/api/auth/remove-avatar`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -153,7 +155,7 @@ const AvatarUpload = ({ currentAvatar, onAvatarChange, onClose }) => {
             <h4>Ảnh hiện tại:</h4>
             <div className="current-avatar">
               <img 
-                src={currentAvatar ? (currentAvatar.startsWith('http') ? currentAvatar : `http://localhost:8080/${currentAvatar}`) : '/placeholder-user.jpg'} 
+                src={currentAvatar ? (currentAvatar.startsWith('http') ? currentAvatar : `${process.env.REACT_APP_ORDER_URL || 'http://localhost:8080'}/${currentAvatar}`) : '/placeholder-user.jpg'} 
                 alt="Current Avatar"
                 className="current-avatar-img"
               />

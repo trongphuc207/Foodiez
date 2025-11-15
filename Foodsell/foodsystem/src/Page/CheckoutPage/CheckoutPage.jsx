@@ -313,7 +313,8 @@ const CheckoutPage = () => {
               throw new Error('Bạn cần đăng nhập để đặt hàng. Vui lòng đăng nhập và thử lại.');
             }
 
-            const orderResponse = await fetch('http://localhost:8080/api/orders', {
+            const backendUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
+            const orderResponse = await fetch(`${backendUrl}/api/orders`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -461,7 +462,8 @@ const CheckoutPage = () => {
 
           // Tạo đơn hàng cho shop hiện tại
           try {
-            const orderResponse = await fetch('http://localhost:8080/api/orders', {
+            const backendUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
+            const orderResponse = await fetch(`${backendUrl}/api/orders`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

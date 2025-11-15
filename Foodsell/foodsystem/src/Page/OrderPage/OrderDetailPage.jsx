@@ -21,7 +21,8 @@ function OrderDetailPage() {
 
         // Gọi API lấy chi tiết đơn hàng
         // Use customer endpoint to ensure authenticated customer can fetch their order
-        const response = await fetch(`http://localhost:8080/api/customer/orders/${orderId}`, {
+        const backendUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
+        const response = await fetch(`${backendUrl}/api/customer/orders/${orderId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -102,7 +103,8 @@ function OrderDetailPage() {
     if (window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
       try {
         const token = localStorage.getItem('authToken');
-        const response = await fetch(`http://localhost:8080/api/customer/orders/${orderId}/cancel`, {
+        const backendUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
+        const response = await fetch(`${backendUrl}/api/customer/orders/${orderId}/cancel`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

@@ -13,7 +13,8 @@ const GoogleAuth = ({ onSuccess, onError }) => {
       console.log('👤 Decoded user info:', decoded);
       
       // Send the credential to your backend
-      const response = await fetch('http://localhost:8080/api/auth/google', {
+      const backendUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
+      const response = await fetch(`${backendUrl}/api/auth/google`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

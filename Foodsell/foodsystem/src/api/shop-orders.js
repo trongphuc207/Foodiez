@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = process.env.REACT_APP_ORDER_URL ? `${process.env.REACT_APP_ORDER_URL}/api` : 'http://localhost:8080/api';
 
 // Helper to read auth token from local storage (same pattern as other api files)
 const getAuthToken = () => localStorage.getItem('authToken');

@@ -476,13 +476,15 @@ const CustomerProfile = () => {
     
     // If it's a path like "uploads/profile-images/filename.jpg", create full URL with cache busting
     if (profileImage.startsWith('uploads/')) {
-      const url = `http://localhost:8080/${profileImage}?t=${Date.now()}`;
+      const backendUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
+      const url = `${backendUrl}/${profileImage}?t=${Date.now()}`;
       console.log('✅ Uploads path detected, creating full URL with cache busting:', url);
       return url;
     }
     
     // If it's just a filename, construct the full URL with cache busting
-    const url = `http://localhost:8080/uploads/profile-images/${profileImage}?t=${Date.now()}`;
+    const backendUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
+    const url = `${backendUrl}/uploads/profile-images/${profileImage}?t=${Date.now()}`;
     console.log('✅ Filename detected, creating full URL with cache busting:', url);
     return url;
   };

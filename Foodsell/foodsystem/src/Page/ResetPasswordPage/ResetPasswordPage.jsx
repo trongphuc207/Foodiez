@@ -26,7 +26,8 @@ const ResetPasswordPage = () => {
 
   const validateToken = async (token) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/auth/validate-reset-token?token=${token}`);
+      const backendUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
+      const response = await fetch(`${backendUrl}/api/auth/validate-reset-token?token=${token}`);
       const data = await response.json();
       setTokenValid(data.valid);
     } catch (error) {
@@ -79,7 +80,8 @@ const ResetPasswordPage = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8080/api/auth/reset-password', {
+      const backendUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
+      const response = await fetch(`${backendUrl}/api/auth/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

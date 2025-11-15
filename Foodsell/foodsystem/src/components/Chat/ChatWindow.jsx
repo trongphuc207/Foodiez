@@ -64,8 +64,9 @@ const ChatWindow = ({ conversation }) => {
 
   useEffect(() => {
     if (!conversation) return;
+    const backendUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
     const client = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8080/ws-chat'),
+      webSocketFactory: () => new SockJS(`${backendUrl}/ws-chat`),
       reconnectDelay: 3000,
     });
     client.onConnect = () => {
@@ -146,7 +147,8 @@ const ChatWindow = ({ conversation }) => {
             }
             const resolveImageUrl = (u) => {
               if (!u) return u;
-              return /^https?:\/\//i.test(u) ? u : `http://localhost:8080${u.startsWith('/') ? '' : '/'}${u}`;
+              const backendUrl = process.env.REACT_APP_ORDER_URL || 'http://localhost:8080';
+              return /^https?:\/\//i.test(u) ? u : `${backendUrl}${u.startsWith('/') ? '' : '/'}${u}`;
             };
             const hasImage = !!m.imageUrl;
             const onlyImage = hasImage && (!m.content || !m.content.trim());
