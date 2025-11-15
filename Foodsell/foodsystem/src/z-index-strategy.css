@@ -1,0 +1,31 @@
+/*
+ * Z-INDEX HIERARCHY DOCUMENTATION
+ * ================================
+ * Để tránh chồng chéo giữa các elements, sử dụng các mức z-index sau:
+ * 
+ * Level 1 (1-99): Product cards, favorite buttons, basic elements
+ *   - Product favorite buttons: 10
+ * 
+ * Level 2 (100-899): Dropdowns, tooltips, local overlays
+ *   - Dropdown menus: 100-200
+ *   - Tooltips: 200-300
+ * 
+ * Level 3 (900-979): Modals, dialogs, overlays
+ *   - Product detail modal: 900
+ *   - Form modals: 910
+ *   - Review modals: 920
+ * 
+ * Level 4 (980-999): Navigation, notifications
+ *   - Sidebar: 980
+ *   - Header: 985
+ *   - Notification bell & dropdown: 990
+ * 
+ * Level 5 (1000-1999): Floating widgets (chat, etc)
+ *   - Chatbot window: 1000
+ *   - Chatbot button: 1001
+ * 
+ * Level 6 (2000+): Cart sidebar and critical overlays
+ *   - Cart sidebar: 2000
+ * 
+ * LƯU Ý: Không sử dụng !important với z-index trừ khi thực sự cần thiết
+ */

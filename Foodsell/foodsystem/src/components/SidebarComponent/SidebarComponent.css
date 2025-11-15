@@ -19,7 +19,7 @@
   height: 100vh;
   background: #f8f9fa;
   border-right: 1px solid #e5e7eb;
-  z-index: 999;
+  z-index: 980;
   display: flex;
   flex-direction: column;
   animation: slideInLeft 0.3s ease-out;

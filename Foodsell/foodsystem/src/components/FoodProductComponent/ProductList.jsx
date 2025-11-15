@@ -252,11 +252,28 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
                   <span className="placeholder-text">Không có ảnh</span>
                 </div>
               </div>
+              
+              {/* Rating trên hình ảnh */}
+              {(product.averageRating || product.rating || product.avgRating) && (
+                <div className="product-rating-overlay">
+                  <span className="rating-star">⭐</span>
+                  <span className="rating-value">
+                    {Number(product.averageRating || product.rating || product.avgRating).toFixed(1)}
+                  </span>
+                </div>
+              )}
+              
               {!product.available && (
                 <div className="unavailable-overlay">
                   <span>Không có sẵn</span>
                 </div>
               )}
+              {product.available && product.status === 'out_of_stock' && (
+                <div className="unavailable-overlay">
+                  <span>Hết hàng</span>
+                </div>
+              )}
+              
               {/* Favorite button (top-right) */}
               <div
                 className={`favorite-btn ${favoritesSet.has(product.id) ? 'active' : ''}`}
@@ -265,43 +282,42 @@ const ProductList = ({ category, products: externalProducts, layout = 'grid' }) 
               >
                 <i className="bi bi-heart-fill"></i>
               </div>
-              {product.available && product.status === 'out_of_stock' && (
-                <div className="unavailable-overlay">
-                  <span>Hết hàng</span>
-                </div>
-              )}
             </div>
 
             {/* Thông tin sản phẩm */}
             <div className="product-info">
               <div className="product-content">
                 <h3 className="product-name">{product.name}</h3>
-                {renderStars(product.averageRating || product.rating || product.avgRating)}
-                <p className="shop-name">🏪 {getShopName(product.shopId)}</p>
-                <p className="product-description">{product.description}</p>
+                <p className="shop-name">
+                  <span className="location-icon">📍</span>
+                  {getShopName(product.shopId)}
+                </p>
+                <p className="product-description">{product.description || 'Chưa có mô tả'}</p>
                 <div className="product-stats">
-                  <span className="category">{getCategoryName(product.categoryId)}</span>
-                  <span className={`status ${product.status}`}>
-                    {product.status === 'active' ? '✅ Còn hàng' : 
-                     product.status === 'inactive' ? '⏸️ Tạm ngừng' : 
-                     product.status === 'out_of_stock' ? '🚫 Hết nguyên liệu' : product.status}
-                  </span>
+                  <span className="category-tag">{getCategoryName(product.categoryId)}</span>
+                  {product.status === 'active' && (
+                    <span className="availability-status">
+                      <span className="status-dot"></span>
+                      <span>Còn hàng</span>
+                    </span>
+                  )}
                 </div>
               </div>
 
               {/* Giá và nút thêm vào giỏ hàng */}
               <div className="product-actions">
                 <div className="product-price">
-                  <span className="current-price">{product.price.toLocaleString()}đ</span>
+                  <span className="current-price">{product.price.toLocaleString('vi-VN')} ₫</span>
                 </div>
                 
-                {/* Nút Add to Cart với icon đẹp hơn */}
+                {/* Nút Add to Cart */}
                 {product.available && product.status !== 'out_of_stock' && (
                   <button 
                     className="add-to-cart-btn"
                     onClick={(e) => handleAddToCart(product, e)}
                   >
-                    🛒 Thêm vào giỏ hàng
+                    <span className="cart-icon">🛒</span>
+                    <span>THÊM VÀO GIỎ HÀNG</span>
                   </button>
                 )}
               </div>
