@@ -185,7 +185,7 @@ const Header = ({ toggleSidebar }) => {
             <span className="action-text">Voucher</span>
           </button>
 
-          {/* {user ? (
+          {user ? (
             <button 
               className="order-btn"
               onClick={() => navigate('/orders')}
