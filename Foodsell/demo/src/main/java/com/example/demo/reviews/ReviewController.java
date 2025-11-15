@@ -220,10 +220,24 @@ public class ReviewController {
     // UC52: View All Reviews - Admin xem tất cả review
     @GetMapping("/admin/all")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<Review>>> getAllReviews() {
+    public ResponseEntity<ApiResponse<List<Review>>> getAllReviews(
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "keyword", required = false) String keyword) {
         try {
-            List<Review> reviews = reviewService.getAllReviews();
+            List<Review> reviews = reviewService.getAllReviews(status, keyword);
             return ResponseEntity.ok(ApiResponse.success(reviews, "Lấy tất cả đánh giá thành công!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+    
+    // Get review statistics for admin
+    @GetMapping("/admin/statistics")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Long>>> getReviewStatistics() {
+        try {
+            Map<String, Long> stats = reviewService.getReviewStatistics();
+            return ResponseEntity.ok(ApiResponse.success(stats, "Lấy thống kê đánh giá thành công!"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
@@ -245,12 +259,27 @@ public class ReviewController {
     @PutMapping("/admin/{reviewId}/resolve")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<String>> resolveReviewComplaint(@PathVariable Integer reviewId,
-                                                                     @RequestBody Map<String, String> request) {
+                                                                     @RequestBody Map<String, Object> request) {
         try {
-            String resolution = request.get("resolution");
-            reviewService.resolveReviewComplaint(reviewId, resolution);
+            String resolution = request.get("resolution") != null ? request.get("resolution").toString() : null;
+            String status = request.get("status") != null ? request.get("status").toString() : null;
+            Boolean shouldHide = request.get("shouldHide") != null ? 
+                (request.get("shouldHide") instanceof Boolean ? (Boolean) request.get("shouldHide") : 
+                 Boolean.parseBoolean(request.get("shouldHide").toString())) : null;
+            
+            reviewService.resolveReviewComplaint(reviewId, resolution, status, shouldHide);
+            
+            // Gửi notification sau khi resolve thành công (không ảnh hưởng đến transaction chính)
+            try {
+                reviewService.sendNotificationAfterResolve(reviewId);
+            } catch (Exception notificationError) {
+                // Log lỗi nhưng không throw để không ảnh hưởng đến response
+                System.err.println("Failed to send notification: " + notificationError.getMessage());
+            }
+            
             return ResponseEntity.ok(ApiResponse.success("Xử lý khiếu nại thành công!", "Xử lý khiếu nại thành công!"));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }

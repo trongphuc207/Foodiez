@@ -59,7 +59,6 @@ const ChatSidebar = ({ activeId, onSelect }) => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const cid = Number(params.get('cid'));
-    // Only seed placeholder if list is currently empty to avoid duplicates
     if (cid && conversations.length === 0) {
       setConversations(prev => (prev.some(c => Number(c.id) === cid)
         ? prev
@@ -79,7 +78,6 @@ const ChatSidebar = ({ activeId, onSelect }) => {
       } else {
         const existingIsPlaceholder = (existing.title || '').startsWith('#');
         const currentIsPlaceholder = (c.title || '').startsWith('#');
-        // Prefer non-placeholder, else keep the latest updatedAt
         if (existingIsPlaceholder && !currentIsPlaceholder) {
           map.set(id, c);
         } else if (existingIsPlaceholder === currentIsPlaceholder) {
@@ -105,16 +103,31 @@ const ChatSidebar = ({ activeId, onSelect }) => {
     }
   };
 
+  const getInitials = (txt) => {
+    if (!txt) return '#';
+    const parts = txt.trim().split(/\s+/).slice(0, 2);
+    return parts.map(p => p[0]).join('').toUpperCase();
+  };
+
+  const fmtUpdate = (iso) => {
+    const d = new Date(iso || Date.now());
+    const hms = d.toLocaleTimeString('vi-VN', { hour12: false });
+    const dmy = d.toLocaleDateString('vi-VN');
+    return `${hms} ${dmy}`;
+  };
+
+  const onKeyDown = (e) => { if (e.key === 'Enter') search(); };
+
   return (
     <div className="chat-sidebar">
-      <div className="chat-sidebar-header">{'Cuộc trò chuyện'}</div>
+      <div className="chat-sidebar-header"><div className="dot" />Cuộc trò chuyện</div>
       <div className="chat-search">
-        <input value={q} onChange={(e)=>setQ(e.target.value)} placeholder={'Tìm theo tên hoặc từ khóa'} />
-        <button onClick={search}>{'Tìm'}</button>
+        <input value={q} onChange={(e)=>setQ(e.target.value)} onKeyDown={onKeyDown} placeholder={'Tìm theo tên hoặc từ khóa'} />
+        <button onClick={search}>Tìm</button>
       </div>
       <div className="chat-conv-list">
         {conversations.length === 0 && (
-          <div className="chat-empty" style={{padding:'24px 8px'}}>{'Chưa có cuộc trò chuyện'}</div>
+          <div className="chat-empty" style={{padding:'24px 8px'}}>Chưa có cuộc trò chuyện</div>
         )}
         {conversations.map(c => (
           <div
@@ -122,8 +135,11 @@ const ChatSidebar = ({ activeId, onSelect }) => {
             className={`chat-conv-item ${activeId===c.id ? 'active':''}`}
             onClick={() => onSelect(c)}
           >
-            <div className="title">{c.title || `#${c.id}`}</div>
-            <div className="sub">{'Cập nhật: '}{new Date(c.updatedAt).toLocaleString('vi-VN')}</div>
+            <div className="avatar">{getInitials(c.title || `#${c.id}`)}</div>
+            <div className="meta">
+              <div className="title">{c.title || `#${c.id}`}</div>
+              <div className="sub"><span className="tag">Cập nhật</span><span>{fmtUpdate(c.updatedAt)}</span></div>
+            </div>
           </div>
         ))}
       </div>

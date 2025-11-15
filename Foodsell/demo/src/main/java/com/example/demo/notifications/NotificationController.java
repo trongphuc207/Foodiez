@@ -125,6 +125,26 @@ public class NotificationController {
         }
     }
     
+    // Chỉnh sửa notification (Admin only)
+    @PutMapping("/{notificationId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'admin')")
+    public ResponseEntity<ApiResponse<Notification>> editNotification(
+            @PathVariable Integer notificationId,
+            @RequestBody Map<String, Object> request) {
+        try {
+            String type = (String) request.get("type");
+            String title = (String) request.get("title");
+            String message = (String) request.get("message");
+            Boolean isRead = request.get("isRead") != null ? (Boolean) request.get("isRead") : null;
+            
+            Notification notification = notificationService.updateNotification(
+                    notificationId, type, title, message, isRead);
+            return ResponseEntity.ok(ApiResponse.success(notification, "Chỉnh sửa thông báo thành công!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+    
     // Xóa notification (Admin only)
     @DeleteMapping("/{notificationId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'admin')")

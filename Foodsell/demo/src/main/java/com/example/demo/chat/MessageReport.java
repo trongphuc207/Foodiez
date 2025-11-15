@@ -37,4 +37,3 @@ public class MessageReport {
     public void setReason(String reason) { this.reason = reason; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
-

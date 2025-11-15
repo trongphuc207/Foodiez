@@ -80,6 +80,7 @@ public class SecurityConfig {
                 
                 // Admin endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/admin/**").hasRole("ADMIN")
                 // Chat endpoints
                 .requestMatchers("/api/chat/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/chat/**").authenticated()
