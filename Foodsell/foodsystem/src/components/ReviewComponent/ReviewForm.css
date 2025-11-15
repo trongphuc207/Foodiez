@@ -9,6 +9,9 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  pointer-events: auto;
+  /* Ngăn overlay bị ảnh hưởng bởi hover state của các phần tử bên dưới */
+  isolation: isolate;
 }
 
 .review-form {
@@ -20,6 +23,17 @@
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif, 'Noto Sans', 'Noto Sans Vietnamese';
+  font-feature-settings: 'liga', 'kern';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Ngăn form bị ảnh hưởng bởi hover state của các phần tử bên dưới */
+  position: relative;
+  z-index: 1001;
+  pointer-events: auto;
+  /* Tránh layout shift */
+  will-change: auto;
+  transform: translateZ(0);
 }
 
 .review-form h3 {
@@ -38,6 +52,7 @@
   margin-bottom: 8px;
   font-weight: 600;
   color: #333;
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif, 'Noto Sans', 'Noto Sans Vietnamese';
 }
 
 .review-form input,
@@ -47,8 +62,13 @@
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 1rem;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
   box-sizing: border-box;
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif, 'Noto Sans', 'Noto Sans Vietnamese';
+  /* Tránh layout shift khi focus/hover */
+  outline-offset: 0;
+  transform: translateZ(0);
+  will-change: border-color, box-shadow;
 }
 
 .review-form input:focus,
@@ -56,11 +76,22 @@
   outline: none;
   border-color: #007bff;
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  /* Tránh layout shift khi focus */
+  transform: translateZ(0);
+}
+
+.review-form input:hover,
+.review-form textarea:hover {
+  /* Tránh layout shift khi hover */
+  transform: translateZ(0);
 }
 
 .review-form textarea {
   resize: vertical;
   min-height: 100px;
+  /* Tránh textarea bị nhảy khi resize */
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .form-actions {
@@ -79,6 +110,7 @@
   font-size: 1rem;
   font-weight: 500;
   transition: all 0.2s;
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif, 'Noto Sans', 'Noto Sans Vietnamese';
 }
 
 .cancel-btn {

@@ -2,6 +2,7 @@ package com.example.demo.Orders;
 
 import com.example.demo.Users.User;
 import com.example.demo.Users.UserRepository;
+import com.example.demo.notifications.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,14 +20,17 @@ public class OrderAssignmentService {
     private final OrderRepository orderRepository;
     private final OrderHistoryRepository orderHistoryRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Autowired
     public OrderAssignmentService(OrderRepository orderRepository, 
                                 OrderHistoryRepository orderHistoryRepository,
-                                UserRepository userRepository) {
+                                UserRepository userRepository,
+                                NotificationService notificationService) {
         this.orderRepository = orderRepository;
         this.orderHistoryRepository = orderHistoryRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -100,6 +104,20 @@ public class OrderAssignmentService {
             createOrderHistory(orderId, null, "assigned", "order_assigned_to_shipper", 
                 "Đơn hàng được phân phối cho shipper ID: " + shipperId, "system");
 
+            // ID 72: Gửi notification cho shipper khi được phân công đơn giao hàng
+            // Sử dụng transaction riêng để không ảnh hưởng transaction chính
+            try {
+                notificationService.createNotificationInNewTransaction(
+                    shipperId,
+                    "DELIVERY",
+                    "Đơn giao hàng mới",
+                    "Bạn được phân công đơn #" + orderId
+                );
+            } catch (Exception e) {
+                System.err.println("Failed to send delivery assignment notification: " + e.getMessage());
+                // Không throw exception để không ảnh hưởng transaction chính
+            }
+
             System.out.println("✅ Order " + orderId + " assigned to shipper " + shipperId);
             return true;
 
@@ -121,11 +139,6 @@ public class OrderAssignmentService {
             Order order = orderRepository.findById(orderId).orElse(null);
             if (order == null) {
                 logger.error("Failed to accept order: Order not found with ID: {}", orderId);
-                return false;
-            }
-            // Prevent accepting an order that was already cancelled
-            if (order.getIsCancelled() != null && order.getIsCancelled()) {
-                logger.warn("Cannot accept order {} because it was cancelled at {} (reason={})", orderId, order.getCancelledAt(), order.getCancelReason());
                 return false;
             }
             logger.info("Order found - Current status: {}, Assignment status: {}", order.getStatus(), order.getAssignmentStatus());

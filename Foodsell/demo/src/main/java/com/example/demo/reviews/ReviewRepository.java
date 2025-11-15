@@ -11,11 +11,11 @@ import java.util.Optional;
 public interface ReviewRepository extends JpaRepository<Review, Integer> {
     
     // Lấy tất cả review của một sản phẩm (visible only)
-    @Query(value = "SELECT id, customer_id, product_id, shop_id, order_id, rating, content, image_url, is_visible, created_at, updated_at FROM reviews WHERE product_id = :productId AND (is_visible = 1 OR is_visible IS NULL) ORDER BY created_at DESC", nativeQuery = true)
+    @Query(value = "SELECT id, customer_id, product_id, shop_id, order_id, rating, content, image_url, is_visible, created_at, updated_at, resolution_notes, status FROM reviews WHERE product_id = :productId AND (is_visible = 1 OR is_visible IS NULL) ORDER BY created_at DESC", nativeQuery = true)
     List<Review> findByProductIdAndVisible(@Param("productId") Integer productId);
     
     // Lấy tất cả review của một shop (có shop_id trong bảng reviews)
-    @Query(value = "SELECT id, customer_id, product_id, shop_id, order_id, rating, content, image_url, is_visible, created_at, updated_at FROM reviews WHERE shop_id = :shopId AND (is_visible = 1 OR is_visible IS NULL) ORDER BY created_at DESC", nativeQuery = true)
+    @Query(value = "SELECT id, customer_id, product_id, shop_id, order_id, rating, content, image_url, is_visible, created_at, updated_at, resolution_notes, status FROM reviews WHERE shop_id = :shopId AND (is_visible = 1 OR is_visible IS NULL) ORDER BY created_at DESC", nativeQuery = true)
     List<Review> findByShopIdAndVisible(@Param("shopId") Integer shopId);
     
     // Lấy review của customer cho một sản phẩm cụ thể
@@ -30,6 +30,9 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
     @Query("SELECT r FROM Review r WHERE r.customerId = :customerId AND r.orderId = :orderId")
     Optional<Review> findByCustomerIdAndOrderId(@Param("customerId") Integer customerId, @Param("orderId") Integer orderId);
     
+    // Kiểm tra đã tồn tại review cho cùng (customer, product, order)
+    boolean existsByCustomerIdAndProductIdAndOrderId(Integer customerId, Integer productId, Integer orderId);
+    
     // Lấy tất cả review của một customer
     @Query("SELECT r FROM Review r WHERE r.customerId = :customerId ORDER BY r.createdAt DESC")
     List<Review> findByCustomerId(@Param("customerId") Integer customerId);
@@ -37,6 +40,21 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
     // Lấy tất cả review (admin only - bao gồm cả invisible)
     @Query("SELECT r FROM Review r ORDER BY r.createdAt DESC")
     List<Review> findAllOrderByCreatedAtDesc();
+    
+    // Lấy tất cả review theo status (admin only)
+    @Query("SELECT r FROM Review r WHERE r.status = :status ORDER BY r.createdAt DESC")
+    List<Review> findByStatusOrderByCreatedAtDesc(@Param("status") String status);
+    
+    // Tìm kiếm review theo keyword và status (admin only)
+    @Query("SELECT r FROM Review r WHERE " +
+           "(:status IS NULL OR r.status = :status) AND " +
+           "(:keyword IS NULL OR LOWER(r.content) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "ORDER BY r.createdAt DESC")
+    List<Review> searchReviews(@Param("status") String status, @Param("keyword") String keyword);
+    
+    // Đếm số review theo status
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.status = :status")
+    Long countByStatus(@Param("status") String status);
     
     // Tính rating trung bình của một sản phẩm (chỉ tính reviews visible)
     @Query(value = "SELECT CAST(ROUND(AVG(CAST(rating AS FLOAT)), 0) AS INT) FROM reviews WHERE product_id = :productId AND (is_visible = 1 OR is_visible IS NULL)", nativeQuery = true)

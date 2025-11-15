@@ -2,6 +2,8 @@ package com.example.demo.notifications;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,6 +17,13 @@ public class NotificationService {
     
     // Tạo notification mới
     public Notification createNotification(Integer userId, String type, String title, String message) {
+        Notification notification = new Notification(userId, type, title, message);
+        return notificationRepository.save(notification);
+    }
+    
+    // Tạo notification trong transaction riêng để không ảnh hưởng transaction chính
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Notification createNotificationInNewTransaction(Integer userId, String type, String title, String message) {
         Notification notification = new Notification(userId, type, title, message);
         return notificationRepository.save(notification);
     }

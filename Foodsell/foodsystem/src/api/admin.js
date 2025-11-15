@@ -27,9 +27,47 @@ export const adminAPI = {
 
   // User Management
   getUsers: async () => {
-    const res = await fetch(`${API_BASE_URL}/users`, { headers: getHeaders() });
-    if (!res.ok) throw new Error('Không thể tải danh sách người dùng');
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE_URL}/users`, { headers: getHeaders() });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        let errorMessage = 'Không thể tải danh sách người dùng';
+        
+        if (res.status === 401 || res.status === 403) {
+          errorMessage = 'Bạn không có quyền truy cập. Vui lòng đăng nhập lại với tài khoản Admin.';
+        } else if (res.status === 404) {
+          errorMessage = 'Endpoint không tồn tại. Vui lòng kiểm tra lại cấu hình.';
+        } else {
+          try {
+            const errorJson = JSON.parse(errorText);
+            errorMessage = errorJson.message || errorMessage;
+          } catch (e) {
+            errorMessage = errorText || errorMessage;
+          }
+        }
+        
+        throw new Error(`${errorMessage} (Status: ${res.status})`);
+      }
+      
+      const data = await res.json();
+      
+      // Kiểm tra nếu response là array
+      if (!Array.isArray(data)) {
+        console.warn('getUsers response is not an array:', data);
+        // Nếu response có data property, thử lấy data
+        if (data.data && Array.isArray(data.data)) {
+          return data.data;
+        }
+        // Nếu không phải array, trả về empty array
+        return [];
+      }
+      
+      return data;
+    } catch (err) {
+      console.error('getUsers error:', err);
+      throw err;
+    }
   },
 
   // Order Management

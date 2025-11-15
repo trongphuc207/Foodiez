@@ -9,6 +9,8 @@ import Vouchers from './Vouchers';
 import Reports from './Reports';
 import VoucherManager from './VoucherManager';
 import AdminReviewManagement from '../ReviewComponent/AdminReviewManagement';
+import NotificationManagement from './NotificationManagement';
+import ChatManagement from './ChatManagement';
 import './admin.css';
 
 const AdminApp = () => {
@@ -32,6 +34,10 @@ const AdminApp = () => {
         return <Reports />;
       case 'reviews':
         return <AdminReviewManagement />;
+      case 'notifications':
+        return <NotificationManagement />;
+      case 'chat':
+        return <ChatManagement />;
       default:
         return <Dashboard />;
     }

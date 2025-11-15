@@ -42,6 +42,13 @@ export const chatAPI = {
     headers: { 'Authorization': `Bearer ${getAuthToken()}` }
   }),
 
+  // Persist a text message
+  sendMessage: async (conversationId, content) => request(`${API_BASE_URL}/conversations/${conversationId}/message`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${getAuthToken()}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content })
+  }),
+
   markConversationRead: async (conversationId) => request(`${API_BASE_URL}/conversations/${conversationId}/read`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${getAuthToken()}` }

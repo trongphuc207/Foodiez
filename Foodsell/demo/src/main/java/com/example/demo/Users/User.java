@@ -53,6 +53,9 @@ public class User {
     @Column(name = "otp_expiry")
     private LocalDateTime otpExpiry;
 
+    @Column(name = "is_banned")
+    private Boolean isBanned = false;
+
     // ===== Getters & Setters =====
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }     
@@ -88,4 +91,6 @@ public class User {
     public void setOtpCode(String otpCode) { this.otpCode = otpCode; }
     public LocalDateTime getOtpExpiry() { return otpExpiry; }
     public void setOtpExpiry(LocalDateTime otpExpiry) { this.otpExpiry = otpExpiry; }
+    public Boolean getIsBanned() { return isBanned; }
+    public void setIsBanned(Boolean isBanned) { this.isBanned = isBanned; }
 }

@@ -11,7 +11,17 @@ const NotificationBell = () => {
   useEffect(() => {
     loadUnreadCount();
     loadNotifications();
-  }, []);
+    
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      loadUnreadCount();
+      if (showDropdown) {
+        loadNotifications();
+      }
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [showDropdown]);
 
   const loadUnreadCount = async () => {
     try {
@@ -101,7 +111,10 @@ const NotificationBell = () => {
           </div>
 
           <div className="notification-footer">
-            <button className="view-all-btn" onClick={() => { window.location.href = '/notifications'; }}>Xem tất cả</button>
+            <button className="view-all-btn" onClick={() => { 
+              setShowDropdown(false);
+              window.location.href = '/notifications'; 
+            }}>Xem tất cả</button>
           </div>
         </div>
       )}
@@ -112,4 +125,3 @@ const NotificationBell = () => {
 };
 
 export default NotificationBell;
-

@@ -1,18 +1,13 @@
-.star-rating {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
+.star-rating { display:flex; align-items:center; gap:5px; line-height:1 }
 
-.star {
-  font-size: 1.5rem;
-  color: #ddd;
-  transition: color 0.2s;
-  user-select: none;
-}
+.star { font-size:1.5rem; color:#ddd; transition: color .2s; user-select: none; line-height:1; display:inline-flex; align-items:center; }
 
-.star.filled {
-  color: #ffc107;
+.star.filled { color: #ffc107; }
+.star.half {
+  color: transparent;
+  background: linear-gradient(90deg, #ffc107 50%, #e5e7eb 50%);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
 .star.clickable {
@@ -24,9 +19,7 @@
   transform: scale(1.1);
 }
 
-.star.small {
-  font-size: 1rem;
-}
+.star.small { font-size: 1.1rem; }
 
 .star.medium {
   font-size: 1.5rem;

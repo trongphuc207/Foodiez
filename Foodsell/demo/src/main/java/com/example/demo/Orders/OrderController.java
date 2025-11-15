@@ -70,73 +70,11 @@ public class OrderController {
             ));
         }
     }
-
-    // POST: Cancel order (buyer) - allowed within 3 minutes and if seller hasn't accepted
-    @PostMapping("/{id}/cancel")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Map<String, Object>> cancelOrder(@PathVariable Integer id, @RequestBody(required = false) Map<String, Object> body) {
-        try {
-            var currentUser = roleChecker.getCurrentUser();
-            if (currentUser == null) {
-                return ResponseEntity.status(401).body(Map.of(
-                    "success", false,
-                    "message", "User not authenticated"
-                ));
-            }
-
-            String reason = null;
-            if (body != null && body.containsKey("reason")) {
-                reason = (String) body.get("reason");
-            }
-
-            boolean success = orderService.cancelWithinWindow(id, currentUser.getId(), reason == null ? "Cancelled by buyer" : reason);
-            if (success) {
-                return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Order cancelled successfully"
-                ));
-            } else {
-                return ResponseEntity.status(409).body(Map.of(
-                    "success", false,
-                    "code", "cancel_not_allowed",
-                    "message", "Cannot cancel: seller may have accepted or cancel window expired"
-                ));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of(
-                "success", false,
-                "message", "Internal server error: " + e.getMessage()
-            ));
-        }
-    }
     
     // GET: Test endpoint
     @GetMapping("/test")
     public String test() {
         return "Orders API is working!";
-    }
-
-    // POST: Seller force-cancel an order (no @PreAuthorize - per user request)
-    @PostMapping("/{id}/cancel-by-seller")
-    public ResponseEntity<Map<String, Object>> cancelBySeller(@PathVariable Integer id, @RequestBody(required = false) Map<String, Object> body) {
-        try {
-            var currentUser = roleChecker.getCurrentUser();
-            Integer userId = currentUser == null ? null : currentUser.getId();
-
-            String reason = null;
-            if (body != null && body.containsKey("reason")) {
-                reason = (String) body.get("reason");
-            }
-
-            boolean success = orderService.forceCancelBySeller(id, userId, reason == null ? "Cancelled by seller" : reason);
-            if (success) {
-                return ResponseEntity.ok(Map.of("success", true, "message", "Order cancelled by seller"));
-            } else {
-                return ResponseEntity.status(409).body(Map.of("success", false, "message", "Could not cancel order"));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("success", false, "message", "Internal server error: " + e.getMessage()));
-        }
     }
     
     // POST: Create new order (authenticated users)
@@ -233,46 +171,6 @@ public class OrderController {
                 "message", "Internal server error",
                 "error", e.getMessage()
             ));
-        }
-    }
-
-    // DELETE: Delete an order (seller/admin) - only allow deleting cancelled orders
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
-    public ResponseEntity<Map<String, Object>> deleteOrder(@PathVariable Integer id) {
-        try {
-            var currentUser = roleChecker.getCurrentUser();
-            if (currentUser == null) {
-                return ResponseEntity.status(401).body(Map.of("success", false, "message", "User not authenticated"));
-            }
-
-            // Load order
-            Order order = orderService.getOrderEntityById(id);
-            if (order == null) {
-                return ResponseEntity.status(404).body(Map.of("success", false, "message", "Order not found"));
-            }
-
-            // Only allow delete if order is cancelled
-            if (order.getIsCancelled() == null || !order.getIsCancelled()) {
-                return ResponseEntity.status(409).body(Map.of("success", false, "message", "Only cancelled orders can be deleted"));
-            }
-
-            // If seller, ensure they own the shop
-            if (!roleChecker.hasRole("ADMIN")) {
-                if (order.getShop() == null || !Integer.valueOf(order.getShop().getSellerId()).equals(currentUser.getId())) {
-                    return ResponseEntity.status(403).body(Map.of("success", false, "message", "You are not allowed to delete this order"));
-                }
-            }
-
-            // Perform delete via service
-            boolean ok = orderService.deleteOrderById(id);
-            if (ok) {
-                return ResponseEntity.ok(Map.of("success", true, "message", "Order deleted"));
-            } else {
-                return ResponseEntity.status(500).body(Map.of("success", false, "message", "Failed to delete order"));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("success", false, "message", "Internal server error: " + e.getMessage()));
         }
     }
 
