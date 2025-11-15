@@ -45,4 +45,5 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     
     // Lấy tất cả sản phẩm sắp xếp theo ngày tạo giảm dần
     List<Product> findAllByOrderByCreatedAtDesc();
+    
 }
