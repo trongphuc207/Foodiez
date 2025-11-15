@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: foodiez-backend
+    runtime: java
+    runtimeVersion: "21"
+    buildCommand: cd Foodsell/demo && ./mvnw clean package -DskipTests
+    startCommand: java -jar Foodsell/demo/target/demo-0.0.1-SNAPSHOT.jar
+    envVars:
+      - key: JAVA_HOME
+        value: /usr/lib/jvm/java-21-openjdk
+      - key: PORT
+        value: "8080"
+
+  - type: static
+    name: foodiez-frontend
+    staticPublishPath: Foodsell/foodsystem/build
+    buildCommand: cd Foodsell/foodsystem && npm install --legacy-peer-deps && npm run build
+    routes:
+      - path: "/*"
+        destination: /index.html
