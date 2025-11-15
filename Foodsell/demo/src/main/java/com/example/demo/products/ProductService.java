@@ -32,21 +32,30 @@ public class ProductService {
         return null;
     }
 
+    // Get all approved products for customers
     public List<Product> getAllProducts() {
+        return repo.findByApprovalStatusOrderByCreatedAtAsc("approved"); // Only show approved products
+    }
+    
+    // Get all products (same as getAllProducts for now - repo method may be expanded)
+    public List<Product> getAllProductsForManagement() {
         return repo.findAll();
     }
+    
     public List<Product> searchProducts(String keyword) {
         System.out.println("🔍 Searching for keyword: '" + keyword + "'");
         
-        // Thử cả 2 cách search
-        List<Product> results1 = repo.findByNameContainingIgnoreCase(keyword);
-        List<Product> results2 = repo.searchProducts(keyword);
+        // Search using repository method
+        List<Product> results = repo.searchProducts(keyword);
         
-        System.out.println("📦 findByNameContainingIgnoreCase found: " + results1.size() + " products");
-        System.out.println("📦 searchProducts found: " + results2.size() + " products");
+        // Filter to only show approved products to customers
+        results = results.stream()
+                .filter(p -> "approved".equalsIgnoreCase(p.getApprovalStatus()))
+                .collect(java.util.stream.Collectors.toList());
         
-        // Trả về kết quả từ method nào có kết quả
-        return results1.size() > 0 ? results1 : results2;
+        System.out.println("📦 searchProducts found: " + results.size() + " approved products");
+        
+        return results;
     }
     
     public List<Product> getProductsByShopId(int shopId) {
@@ -72,6 +81,7 @@ public class ProductService {
     public List<Product> getProductsByCategoryId(int categoryId) {
         return repo.findByCategoryId(categoryId);
     }
+    
     public Product createProduct(Product product) {
         return repo.save(product);
     }
@@ -82,7 +92,7 @@ public class ProductService {
             Optional<Product> product = repo.findById(id);
             
             if (product.isPresent()) {
-                System.out.println("✅ ProductService: Found product: " + product.get().getName());
+                System.out.println("✅ ProductService: Found product");
             } else {
                 System.out.println("⚠️ ProductService: Product not found with ID: " + id);
             }
@@ -97,6 +107,10 @@ public class ProductService {
     
     public Product updateProduct(Product product) {
         return repo.save(product);
+    }
+
+    public void deleteProductById(int id) {
+        repo.deleteById(id);
     }
     
     public String seedData() {

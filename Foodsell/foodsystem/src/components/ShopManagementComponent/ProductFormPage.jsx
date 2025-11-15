@@ -29,6 +29,22 @@ const ProductFormPage = () => {
   // Image upload states
   const [productImageUrl, setProductImageUrl] = useState(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
+
+  // Cleanup object URLs to prevent memory leaks
+  useEffect(() => {
+    if (productForm.image && productForm.image instanceof File) {
+      const url = URL.createObjectURL(productForm.image);
+      setImagePreviewUrl(url);
+      
+      return () => {
+        URL.revokeObjectURL(url);
+        setImagePreviewUrl(null);
+      };
+    } else {
+      setImagePreviewUrl(null);
+    }
+  }, [productForm.image]);
 
   // Fetch shop data
   const { data: shopData, isLoading: shopLoading } = useQuery({
@@ -253,14 +269,26 @@ const ProductFormPage = () => {
         try {
           const uploadResult = await productAPI.uploadProductImage(productId, productForm.image);
           console.log('✅ Image uploaded successfully:', uploadResult);
+          
+          // Extract image URL from response
+          const imageUrl = uploadResult?.data?.imageUrl || uploadResult?.imageUrl;
+          if (imageUrl) {
+            console.log('🖼️ Image URL set:', imageUrl);
+            setProductImageUrl(imageUrl);
+          }
+          
+          // Invalidate queries after successful upload
           queryClient.invalidateQueries(['products']);
+          return true;
         } catch (imageError) {
           console.error('❌ Image upload failed:', imageError);
           alert('⚠️ Sản phẩm đã được ' + (isEditMode ? 'cập nhật' : 'tạo') + ' nhưng không thể tải ảnh lên. Vui lòng thử lại sau.');
+          return false;
         } finally {
           setIsUploadingImage(false);
         }
       }
+      return true;
     };
 
     // Use mutations to handle create/update
@@ -271,9 +299,11 @@ const ProductFormPage = () => {
         { id: productIdNum, data: productData },
         {
           onSuccess: async (result) => {
-            await uploadImageIfNeeded(productIdNum);
-            alert('✅ Cập nhật món ăn thành công!');
-            navigate('/shop-management');
+            const uploadSuccess = await uploadImageIfNeeded(productIdNum);
+            if (uploadSuccess) {
+              alert('✅ Cập nhật món ăn thành công!');
+              navigate('/shop-management');
+            }
           }
         }
       );
@@ -282,9 +312,11 @@ const ProductFormPage = () => {
       createProductMutation.mutate(productData, {
         onSuccess: async (result) => {
           const newProductId = result?.data?.id;
-          await uploadImageIfNeeded(newProductId);
-          alert('✅ Thêm món ăn thành công!');
-          navigate('/shop-management');
+          const uploadSuccess = await uploadImageIfNeeded(newProductId);
+          if (uploadSuccess) {
+            alert('✅ Thêm món ăn thành công!');
+            navigate('/shop-management');
+          }
         }
       });
     }
@@ -446,6 +478,20 @@ const ProductFormPage = () => {
                   <div className="file-info">
                     <p>📁 File đã chọn: {productForm.image.name}</p>
                     <p>📏 Kích thước: {(productForm.image.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <div className="image-preview">
+                      <img
+                        src={imagePreviewUrl}
+                        alt="Preview"
+                        style={{
+                          maxWidth: '200px',
+                          maxHeight: '200px',
+                          objectFit: 'cover',
+                          borderRadius: '8px',
+                          marginTop: '10px',
+                          border: '2px solid #ddd'
+                        }}
+                      />
+                    </div>
                   </div>
                 )}
                 {isUploadingImage && (

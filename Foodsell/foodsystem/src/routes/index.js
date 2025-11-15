@@ -26,6 +26,7 @@ import ShipperOrdersPage from '../Page/ShipperOrdersPage/ShipperOrdersPage';
 import OrderPage from '../Page/OrderPage/OrderPage';
 import OrderDetailPage from '../Page/OrderPage/OrderDetailPage';
 
+
 export const routes = [
     {
         path: '/',
@@ -45,6 +46,11 @@ export const routes = [
     {
         path: '/profile',
         component: CustomerProfile,
+        isShowHeader: true
+    },
+    {
+        path: '/orders',
+        component: OrderPage,
         isShowHeader: true
     },
     {
@@ -114,6 +120,11 @@ export const routes = [
     {
         path: '/shop-management/products/new',
         component: ProductFormPage,
+        isShowHeader: true
+    },
+    {
+        path: '/information',
+        component: InformationPage,
         isShowHeader: true
     },
     {
