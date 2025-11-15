@@ -2,17 +2,21 @@ import React, { useState } from 'react'
 import './ShipperOrdersPage.css'
 import SidebarComponent from '../../components/SidebarComponent/SidebarComponent'
 import { FiMenu } from 'react-icons/fi'
+import { useAuth } from '../../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { shipperAPI } from '../../api/shipper'
 
 export default function ShipperOrdersPage() {
   const [activeTab, setActiveTab] = useState('all')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { user } = useAuth()
 
   // Fetch shipper orders from backend (uses auth token from localStorage)
-  const { data: ordersResp, isLoading, error } = useQuery({
+  const { data: ordersResp, isLoading, error, refetch } = useQuery({
     queryKey: ['shipperOrders', activeTab],
-    queryFn: () => shipperAPI.getOrders(activeTab === 'all' ? undefined : activeTab),
+    // Use the backend "available" endpoint when viewing the "all" tab so
+    // the shipper dashboard only shows orders that are available/accepted for pickup.
+    queryFn: () => shipperAPI.getOrders(activeTab === 'all' ? 'available' : activeTab),
     refetchOnWindowFocus: false,
   })
 
@@ -36,6 +40,22 @@ export default function ShipperOrdersPage() {
     ? orders
     : orders.filter(order => order.status === activeTab)
 
+  const [accepting, setAccepting] = React.useState(null);
+
+  const handleAcceptOrder = async (orderId) => {
+    try {
+      setAccepting(orderId);
+      await shipperAPI.acceptOrder(orderId);
+      // refresh list
+      if (refetch) await refetch();
+    } catch (err) {
+      console.error('Failed to accept order', err);
+      alert('Không thể nhận đơn: ' + (err?.message || 'Lỗi'));
+    } finally {
+      setAccepting(null);
+    }
+  }
+
   const getStatusLabel = (status) => {
     switch (status) {
       case 'delivering': return 'Đang giao'
@@ -55,10 +75,10 @@ export default function ShipperOrdersPage() {
           <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
             <FiMenu />
           </button>
-          <div className="header-title">
-            <h1>Đơn hàng</h1>
-            <p>Đang tải đơn hàng...</p>
-          </div>
+          <span className="page-title">Đơn hàng</span>
+        </div>
+        <div className="header-right">
+          <span className="user-name-display">{user?.fullName || user?.full_name || user?.name || '...'}</span>
         </div>
       </div>
     </div>
@@ -71,10 +91,10 @@ export default function ShipperOrdersPage() {
           <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
             <FiMenu />
           </button>
-          <div className="header-title">
-            <h1>Đơn hàng</h1>
-            <p>Lỗi khi tải đơn hàng: {error.message}</p>
-          </div>
+          <span className="page-title">Đơn hàng</span>
+        </div>
+        <div className="header-right">
+          <span className="user-name-display">{user?.fullName || user?.full_name || user?.name || 'Lỗi tải'}</span>
         </div>
       </div>
     </div>
@@ -88,10 +108,10 @@ export default function ShipperOrdersPage() {
           <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
             <FiMenu />
           </button>
-          <div className="header-title">
-            <h1>Đơn hàng</h1>
-            <p>Quản lý đơn hàng giao của bạn</p>
-          </div>
+          <span className="page-title">Đơn hàng</span>
+        </div>
+        <div className="header-right">
+          <span className="user-name-display">{user?.fullName || user?.full_name || user?.name || 'Chưa đăng nhập'}</span>
         </div>
       </div>
 
@@ -141,8 +161,11 @@ export default function ShipperOrdersPage() {
             </div>
 
             <div className="order-actions">
-              {order.status === 'pending' && (
-                <button className="action-btn primary">Nhận đơn</button>
+              {/* Show receive button for all orders that passed assignment_status === 'accepted' filter */}
+              {!order.isCancelled && (
+                <button className="action-btn primary" onClick={() => { if (window.confirm(`Xác nhận nhận đơn #${order.id}?`)) handleAcceptOrder(order.id); }} disabled={accepting === order.id}>
+                  {accepting === order.id ? 'Đang xử lý...' : 'Nhận đơn'}
+                </button>
               )}
               {order.status === 'delivering' && (
                 <div className="action-group">

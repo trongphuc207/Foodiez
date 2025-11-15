@@ -9,6 +9,7 @@ public class ShipperOrderDTO {
     private String customer;
     private String phone;
     private String status;
+    private String deliveryStatus;
     private String assignmentStatus;
     private Integer assignedShipperId;
     private LocalDateTime time;

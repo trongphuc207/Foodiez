@@ -134,6 +134,31 @@ public class ShipperController {
         }
     }
 
+    // Legacy endpoint for frontend compatibility (pre-deliveries implementation)
+    @PostMapping("/orders/{orderId}/delivery-status")
+    public ResponseEntity<?> updateDeliveryStatusLegacy(
+            @PathVariable Integer orderId,
+            @RequestBody Map<String, String> body,
+            Authentication authentication) {
+        try {
+            String email = null;
+            if (authentication != null && authentication.getPrincipal() instanceof User) {
+                email = ((User) authentication.getPrincipal()).getEmail();
+            } else if (authentication != null) {
+                email = authentication.getName();
+            }
+            String status = body != null ? body.get("status") : null;
+            String note = body != null ? body.get("note") : null;
+            shipperService.updateOrderStatus(orderId, status, note, email);
+            return ResponseEntity.ok(Map.of("success", true));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
+
     @GetMapping("/earnings")
     public ResponseEntity<?> getEarnings(Authentication authentication) {
         try {

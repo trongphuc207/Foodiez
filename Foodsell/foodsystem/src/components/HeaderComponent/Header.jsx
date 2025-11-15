@@ -15,6 +15,8 @@ const Header = ({ toggleSidebar }) => {
   const [showContactDropdown, setShowContactDropdown] = useState(false);
   const [showNavbar] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
+  // Mobile search overlay
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
 
   // NEW: state mở modal và mode (login/signup)
   const [showAuth, setShowAuth] = useState(false);
@@ -47,6 +49,16 @@ const Header = ({ toggleSidebar }) => {
     window.addEventListener('authSuccess', handleAuthSuccess);
     return () => window.removeEventListener('authSuccess', handleAuthSuccess);
   }, [navigate]);
+
+  // Handle open cart event from sidebar
+  useEffect(() => {
+    const handleOpenCart = () => {
+      setShowCart(true);
+    };
+
+    window.addEventListener('openCart', handleOpenCart);
+    return () => window.removeEventListener('openCart', handleOpenCart);
+  }, []);
 
   // Đóng modal khi bấm ESC và quản lý scrollbar
   useEffect(() => {
@@ -139,6 +151,15 @@ const Header = ({ toggleSidebar }) => {
         </div>
 
         <div className="header-actions">
+          {/* Mobile search toggle icon */}
+          <button
+            type="button"
+            className="search-toggle"
+            aria-label="Mở tìm kiếm"
+            onClick={() => setShowMobileSearch(true)}
+          >
+            🔍
+          </button>
           {isAuthenticated && <NotificationBell />}
 
           <button className="action-btn chat-btn" onClick={() => navigate('/chat')}>
@@ -296,9 +317,40 @@ const Header = ({ toggleSidebar }) => {
         isOpen={showSidebar} 
         onClose={() => setShowSidebar(false)} 
       />
+
+      {/* === Mobile Search Overlay === */}
+      {showMobileSearch && (
+        <div className="mobile-search-overlay" role="dialog" aria-label="Tìm kiếm" onKeyDown={(e) => e.key === 'Escape' && setShowMobileSearch(false)}>
+          <input
+            autoFocus
+            type="text"
+            className="mobile-search-input"
+            placeholder="Tìm kiếm sản phẩm..."
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSearch(searchKeyword);
+                setShowMobileSearch(false);
+              }
+            }}
+          />
+          <button
+            className="mobile-search-submit"
+            onClick={() => {
+              handleSearch(searchKeyword);
+              setShowMobileSearch(false);
+            }}
+          >Tìm</button>
+          <button
+            className="mobile-search-close"
+            aria-label="Đóng tìm kiếm"
+            onClick={() => setShowMobileSearch(false)}
+          >✖</button>
+        </div>
+      )}
     </header>
   );
 };
 
 export default Header;
-

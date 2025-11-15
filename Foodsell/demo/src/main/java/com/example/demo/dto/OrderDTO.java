@@ -32,4 +32,8 @@ public class OrderDTO {
 
     // Thêm trường assignmentStatus để FE hiển thị trạng thái xử lý
     private String assignmentStatus;
+    // Cancellation info
+    private Boolean isCancelled;
+    private LocalDateTime cancelledAt;
+    private String cancelReason;
 }

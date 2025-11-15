@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react'
 // import { useNavigate } from 'react-router-dom' // Commented out - not used yet
 import './ShipperDashboard.css'
+import { useAuth } from '../../hooks/useAuth'
 import AddressDetailModal from './AddressDetailModal'
 import SidebarComponent from '../SidebarComponent/SidebarComponent'
 import { shipperAPI } from '../../api/shipper'
 import { FiPackage, FiCheck, FiTruck, FiDollarSign,FiMenu,FiUser,FiMapPin,FiPhone} from 'react-icons/fi'
+// Fallback shipping distance/fee helpers (used when backend distance is 0 or missing)
+import { calculateShippingFee, DISTRICT_DISTANCES, inferDistrictFromAddress } from '../../config/shippingConfig'
 
 export default function ShipperDashboard() {
   const [activeTab, setActiveTab] = useState('all')
@@ -15,6 +18,7 @@ export default function ShipperDashboard() {
   const [dashboardData, setDashboardData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const { user } = useAuth()
 
   // Xử lý nhận đơn hàng
   const handleAcceptOrder = async (orderId) => {
@@ -44,7 +48,9 @@ export default function ShipperDashboard() {
 
       // Load orders based on active tab and dashboard data in parallel
       const [ordersResponse, dashboardResponse] = await Promise.all([
-        shipperAPI.getOrders(activeTab !== 'all' ? activeTab : null),
+        // Use the dedicated "available" endpoint for the default "all" tab so
+        // the dashboard shows available/accepted orders rather than all assigned orders.
+        shipperAPI.getOrders(activeTab !== 'all' ? activeTab : 'available'),
         shipperAPI.getDashboard()
       ])
 
@@ -147,6 +153,46 @@ export default function ShipperDashboard() {
     ...filteredOrders.filter(o => !(o.assignmentStatus === 'accepted' || o.assignment_status === 'accepted'))
   ]
 
+  // Use central helper to infer district from address (district name or street -> district mapping)
+  const extractDistrictFromAddress = (address) => inferDistrictFromAddress(address)
+
+  // Returns distance like Checkout: always estimate via districts using calculateShippingFee
+  const getDisplayDistance = (order) => {
+    try {
+      // Estimate from districts derived from addresses (align with Checkout logic)
+      const shopDistrict = extractDistrictFromAddress(order.pickupAddress || order.pickup_address || '')
+      const orderDistrict = extractDistrictFromAddress(order.deliveryAddress || order.delivery_address || order.addressText || '')
+      if (shopDistrict && orderDistrict) {
+        const details = calculateShippingFee(shopDistrict, orderDistrict)
+        if (details && typeof details.distance === 'number') {
+          return `${details.distance.toFixed(1)} km`
+        }
+      }
+
+      return '—'
+    } catch (err) {
+      console.error('getDisplayDistance error', err)
+      return '—'
+    }
+  }
+
+  // Compute shipping fee exactly like Checkout (ignore backend persisted/price text)
+  const getDisplayPrice = (order) => {
+    try {
+      // Estimate from districts like Checkout
+      const shopDistrict = extractDistrictFromAddress(order.pickupAddress || order.pickup_address || '')
+      const orderDistrict = extractDistrictFromAddress(order.deliveryAddress || order.delivery_address || order.addressText || '')
+      if (shopDistrict && orderDistrict) {
+        const details = calculateShippingFee(shopDistrict, orderDistrict)
+        return (details?.fee ?? 0).toLocaleString('vi-VN') + 'đ'
+      }
+      return '0đ'
+    } catch (err) {
+      console.error('getDisplayPrice error', err)
+      return '0đ'
+    }
+  }
+
   const getStatusLabel = (status) => {
     switch (status) {
       case 'waiting_pickup': return 'Chờ lấy hàng'
@@ -187,15 +233,10 @@ export default function ShipperDashboard() {
           <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
             <FiMenu />
           </button>
-          <div className="header-title">
-            <h1>Shipper Dashboard</h1>
-            <p>Xin chào, Nguyễn Văn Shipper</p>
-          </div>
+          <span className="page-title">Shipper Dashboard</span>
         </div>
         <div className="header-right">
-          <div className="profile-avatar">
-            <FiUser />
-          </div>
+          <span className="user-name-display">{user?.fullName || user?.full_name || user?.name || 'Chưa đăng nhập'}</span>
         </div>
       </div>
 
@@ -336,10 +377,10 @@ export default function ShipperDashboard() {
               <div className="summary-left">
                 <span>{order.items} món ăn</span>
                 <span className="separator">•</span>
-                <span>{order.distance}</span>
+                <span>{getDisplayDistance(order)}</span>
               </div>
               <div className="summary-right">
-                <span className="price">↗ {order.price}</span>
+                <span className="price">↗ {getDisplayPrice(order)}</span>
               </div>
             </div>
 

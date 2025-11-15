@@ -67,22 +67,69 @@ export const DISTRICT_DISTANCES = {
 
 export const calculateShippingFee = (fromDistrict, toDistrict) => {
   // Phí cơ bản
-  const BASE_FEE = 15000; 
+  const BASE_FEE = 15000;
   // Phí theo km
-  const PRICE_PER_KM = 1000; 
-  // Lấy khoảng cách
-  const distance = DISTRICT_DISTANCES[fromDistrict][toDistrict];
-  // Tính tổng phí
-  const distanceFee = Math.round(distance * PRICE_PER_KM);
+  const PRICE_PER_KM = 1000;
+
+  let distance = 0;
+  let resolvedFrom = fromDistrict || null;
+  let resolvedTo = toDistrict || null;
+  let resolved = false;
+
+  // Helper normalize to compare keys safely
+  const n = (s) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+
+  // Try exact lookup first
+  if (resolvedFrom && DISTRICT_DISTANCES[resolvedFrom]) {
+    const row = DISTRICT_DISTANCES[resolvedFrom];
+    if (resolvedTo && Object.prototype.hasOwnProperty.call(row, resolvedTo)) {
+      distance = Number(row[resolvedTo]) || 0;
+      resolved = true;
+    } else if (resolvedTo) {
+      // Try normalized key match within the row
+      const toKey = Object.keys(row).find(k => n(k) === n(resolvedTo));
+      if (toKey) {
+        distance = Number(row[toKey]) || 0;
+        resolvedTo = toKey;
+        resolved = true;
+      }
+    }
+  }
+
+  // If fromDistrict not found exactly, try normalized match at top level
+  if (!resolved && resolvedFrom) {
+    const fromKey = Object.keys(DISTRICT_DISTANCES).find(k => n(k) === n(resolvedFrom));
+    if (fromKey) {
+      resolvedFrom = fromKey;
+      const row = DISTRICT_DISTANCES[fromKey];
+      if (resolvedTo && Object.prototype.hasOwnProperty.call(row, resolvedTo)) {
+        distance = Number(row[resolvedTo]) || 0;
+        resolved = true;
+      } else if (resolvedTo) {
+        const toKey = Object.keys(row).find(k => n(k) === n(resolvedTo));
+        if (toKey) {
+          distance = Number(row[toKey]) || 0;
+          resolvedTo = toKey;
+          resolved = true;
+        }
+      }
+    }
+  }
+
+  // If still unresolved, keep distance=0 and proceed safely
+  const distanceFee = Math.round((Number(distance) || 0) * PRICE_PER_KM);
   const totalFee = BASE_FEE + distanceFee;
-  
+
   return {
     fee: totalFee,
-    distance: distance,
+    distance: Number(distance) || 0,
     breakdown: {
       baseFee: BASE_FEE,
       distanceFee: distanceFee,
-      pricePerKm: PRICE_PER_KM
+      pricePerKm: PRICE_PER_KM,
+      resolvedFrom: resolvedFrom,
+      resolvedTo: resolvedTo,
+      isResolved: resolved
     }
   };
 };
@@ -118,3 +165,93 @@ export const computeMultiShopShipping = (distancesKm = [], totalItems = 1) => {
   const total = breakdown.reduce((s, b) => s + b.totalFee, 0);
   return { total, baseFee: BASE_FEE, pricePerKm: PRICE_PER_KM, breakdown };
 };
+
+// -------------------------
+// Street -> District helpers
+// -------------------------
+// Small mapping of common streets to districts (lowercase, no diacritics)
+export const STREET_TO_DISTRICT = {
+  // Cleaned mapping based on provided authoritative list (primary district chosen when multiple listed).
+  'le duan': 'Hải Châu',
+  'tran phu': 'Hải Châu',
+  'nguyen van linh': 'Hải Châu',
+  'nguyen chi thanh': 'Hải Châu',
+  'pham van dong': 'Sơn Trà',
+  'hung vuong': 'Hải Châu',
+  'hoang dieu': 'Hải Châu',
+  'ngo quyen': 'Sơn Trà',
+  'nguyen van tho': 'Cẩm Lệ',
+  'quang trung': 'Hải Châu',
+  'phan dinh phung': 'Hải Châu',
+  'ly tu trong': 'Hải Châu',
+  'le van hien': 'Ngũ Hành Sơn',
+  'truong chinh': 'Cẩm Lệ',
+  'tran hung dao': 'Sơn Trà',
+  'trung nu vuong': 'Hải Châu',
+  'hoang van thai': 'Liên Chiểu',
+  'phan chu trinh': 'Hải Châu',
+  'nguyen tri phuong': 'Thanh Khê',
+  'nguyen cong tru': 'Sơn Trà',
+  'vo nguyen giap': 'Sơn Trà',
+  'hoang sa': 'Sơn Trà',
+  'truong sa': 'Ngũ Hành Sơn',
+  'phan chau trinh': 'Hải Châu',
+  'nguyen hoang': 'Hải Châu',
+  'nguyen huu tho': 'Cẩm Lệ',
+  'ngo gia tu': 'Hải Châu',
+  // Added to support your new shop addresses across districts
+  'ton duc thang': 'Liên Chiểu', // id=3
+  'quoc lo 14g': 'Hòa Vang'      // id=7
+}
+
+// Normalize string: remove diacritics and lowercase
+// Robust normalize: remove diacritics and lowercase
+const _normalize = (s) => {
+  if (!s) return ''
+  // Remove diacritics (tones) and normalize Vietnamese-specific characters like đ/Đ
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase()
+}
+
+// Helper: match a known street name in an address and return its mapped district and the matched key
+// Returns { district, streetKey } or null if not found
+export const matchStreetInAddress = (address) => {
+  if (!address || typeof address !== 'string') return null;
+  const norm = _normalize(address);
+  for (const streetKey of Object.keys(STREET_TO_DISTRICT)) {
+    const keyNorm = _normalize(streetKey);
+    // Escape regex special chars in key
+    const escaped = keyNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\\/g, '\\');
+    // Build a flexible regex: word boundaries and allow variable whitespace
+    const safe = escaped.replace(/\s+/g, '\\s+');
+    const pattern = '\\b' + safe + '\\b';
+    const re = new RegExp(pattern, 'i');
+    if (re.test(norm)) {
+      return { district: STREET_TO_DISTRICT[streetKey], streetKey };
+    }
+  }
+  return null;
+};
+
+// Try to infer district from an address by checking street -> district mapping first,
+// then falling back to known district names in the address.
+export const inferDistrictFromAddress = (address) => {
+  if (!address || typeof address !== 'string') return null;
+  const plain = _normalize(address);
+
+  // 1) Prefer street mapping (more specific and less likely to be a false positive)
+  const streetMatch = matchStreetInAddress(address);
+  if (streetMatch) return streetMatch.district;
+
+  // 2) Fall back to district names from DISTRICT_DISTANCES
+  const districts = Object.keys(DISTRICT_DISTANCES || {});
+  for (let d of districts) {
+    if (plain.includes(_normalize(d))) return d;
+  }
+
+  return null;
+}
