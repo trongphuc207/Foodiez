@@ -645,19 +645,17 @@ const createProductMutation = useMutation({
               productsData.data.map(product => (
                 <div 
                   key={product.id} 
-                  className="product-card"
-                  onClick={() => handleEditProduct(product)}
+                  className="product-card-new"
                 >
-                  <div className="product-image">
+                  <div className="product-image-container">
                     {(() => {
                       const imageUrl = product.imageUrl || product.image_url || product.image;
-                      console.log('🖼️ Displaying product image:', product.name, 'URL:', imageUrl);
                       return imageUrl ? (
                         <img 
                           src={imageUrl} 
                           alt={product.name}
+                          className="product-image-new"
                           onError={(e) => {
-                            console.log('❌ Image load error in shop management:', product.name, 'URL:', imageUrl);
                             e.target.style.display = 'none';
                             e.target.nextSibling.style.display = 'flex';
                           }}
@@ -665,92 +663,41 @@ const createProductMutation = useMutation({
                       ) : null;
                     })()}
                     <div 
-                      className="no-image"
+                      className="no-image-new"
                       style={{ display: (product.imageUrl || product.image_url || product.image) ? 'none' : 'flex' }}
                     >
-                      <div className="no-image-content">
-                        <div className="no-image-icon">🖼️</div>
-                        <span>Không có ảnh</span>
+                      🍔
+                    </div>
+                    
+                    {/* Stock Badge */}
+                    {product.status === 'active' && (
+                      <div className="stock-badge">
+                        CÒN HÀNG
                       </div>
-                    </div>
-                  </div>
-                  <div className="product-info">
-                    <h3>{product.name}</h3>
-                    <p>{product.description}</p>
-                    <div className="product-details">
-                      <span className="price">{product.price.toLocaleString()} VND</span>
-                      <span className="category">{product.category?.name}</span>
-                    </div>
-                    <div className="product-status">
-                      <span className={`status ${product.status === 'active' ? 'available' : 'unavailable'}`}>
-                        {product.status === 'active' ? '✅ Còn hàng' : 
-                         product.status === 'inactive' ? '⏸️ Tạm ngừng' : 
-                         product.status === 'out_of_stock' ? '🚫 Hết nguyên liệu' : '❌ Không xác định'}
-                      </span>
-                    </div>
+                    )}
                   </div>
                   
-                  {/* Approval Status - Top Left Corner */}
-                  <div className="approval-status-badge">
-                    {(() => {
-                      const approvalStatus = product.approvalStatus || product.approval_status || 'pending';
-                      const rejectionReason = product.rejectionReason || product.rejection_reason;
-                      
-                      if (approvalStatus === 'pending') {
-                        return (
-                          <span className="status-badge pending" title="Món ăn đang chờ admin duyệt">
-                            ⏳ Chưa duyệt
-                          </span>
-                        );
-                      } else if (approvalStatus === 'approved') {
-                        return (
-                          <span className="status-badge approved" title="Món ăn đã được admin duyệt">
-                            ✅ Đã duyệt
-                          </span>
-                        );
-                      } else if (approvalStatus === 'rejected') {
-                        return (
-                          <span 
-                            className="status-badge rejected" 
-                            title={rejectionReason ? `Lý do: ${rejectionReason}` : 'Món ăn bị admin từ chối'}
-                          >
-                            ❌ Từ chối
-                            {rejectionReason && (
-                              <small className="rejection-reason">
-                                {rejectionReason}
-                              </small>
-                            )}
-                          </span>
-                        );
-                      } else {
-                        return (
-                          <span className="status-badge pending" title="Món ăn đang chờ admin duyệt">
-                            ⏳ Chưa duyệt
-                          </span>
-                        );
-                      }
-                    })()}
-                  </div>
-                  
-                  <div className="product-actions">
-                    <button 
-                      className="btn btn-edit"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditProduct(product);
-                      }}
-                    >
-                      Sửa
-                    </button>
-                    <button 
-                      className="btn btn-delete"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteProduct(product.id);
-                      }}
-                    >
-                      Xóa
-                    </button>
+                  <div className="product-content-new">
+                    <h3 className="product-name-new">{product.name}</h3>
+                    <p className="product-description-new">{product.description}</p>
+                    
+                    <div className="product-price-new">
+                      <span className="price-amount">{product.price.toLocaleString()}</span>
+                      <span className="price-currency">VND</span>
+                    </div>
+                    
+                    <div className="product-actions-new">
+                      <button 
+                        className="btn-edit-new"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditProduct(product);
+                        }}
+                      >
+                        <span className="btn-icon">✏️</span>
+                        <span className="btn-text">Sửa</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
