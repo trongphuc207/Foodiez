@@ -2,6 +2,7 @@ package com.example.demo.Users;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "users")
@@ -55,6 +56,20 @@ public class User {
 
     @Column(name = "is_banned")
     private Boolean isBanned = false;
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
+    @Column(name = "gender")
+    private String gender;
+
+    @Column(name = "id_number")
+    private String idNumber;
+
+    @Column(name = "status")
+    private String status = "ACTIVE"; // ACTIVE, BANNED
+
+    @Column(name = "banned")
+    private Boolean banned = false;
 
     // ===== Getters & Setters =====
     public Integer getId() { return id; }
@@ -93,4 +108,15 @@ public class User {
     public void setOtpExpiry(LocalDateTime otpExpiry) { this.otpExpiry = otpExpiry; }
     public Boolean getIsBanned() { return isBanned; }
     public void setIsBanned(Boolean isBanned) { this.isBanned = isBanned; }
+}
+    public LocalDate getDateOfBirth() { return dateOfBirth; }
+    public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
+    public String getIdNumber() { return idNumber; }
+    public void setIdNumber(String idNumber) { this.idNumber = idNumber; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public Boolean getBanned() { return banned; }
+    public void setBanned(Boolean banned) { this.banned = banned; }
 }

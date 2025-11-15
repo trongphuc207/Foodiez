@@ -1,0 +1,281 @@
+/* ================================================
+   ADMIN WHITE THEME GLOBAL OVERRIDE
+   This file ensures ALL admin components use white theme
+   Import this AFTER all other admin CSS files
+   ================================================ */
+
+/* Reset all backgrounds to white (except sidebar/header) */
+.admin-page *:not(.admin-sidebar):not(.admin-header):not(.admin-sidebar *):not(.admin-header *):not(.badge):not(.btn):not([class*="modal"]):not([class*="modal"] *) {
+  background-color: transparent !important;
+}
+
+.admin-page,
+.admin-content {
+  background: #ffffff !important;
+  color: #212529 !important;
+}
+
+/* All cards, sections, divs with dark backgrounds -> white */
+.admin-page .card,
+.admin-page [class*="card"],
+.admin-page [class*="-card"],
+.admin-page .stat-card,
+.admin-page .stats-card,
+.admin-page .quick-action,
+.admin-page .quick-action-item,
+.admin-page .system-status,
+.admin-page .status-item,
+.admin-page .report-item,
+.admin-page .activity-item,
+.admin-page .dashboard-card,
+.admin-page .admin-card,
+.admin-page section,
+.admin-page article {
+  background: #ffffff !important;
+  color: #212529 !important;
+  border-color: #dee2e6 !important;
+}
+
+/* All headings and text */
+.admin-page h1,
+.admin-page h2,
+.admin-page h3,
+.admin-page h4,
+.admin-page h5,
+.admin-page h6 {
+  color: #212529 !important;
+}
+
+.admin-page p,
+.admin-page span:not(.badge),
+.admin-page div:not(.badge):not(.btn),
+.admin-page label,
+.admin-page .title,
+.admin-page .value,
+.admin-page strong,
+.admin-page .stat-value,
+.admin-page .stats-value {
+  color: #212529 !important;
+}
+
+.admin-page .text-muted,
+.admin-page .subtitle,
+.admin-page .description,
+.admin-page small,
+.admin-page .stat-label,
+.admin-page .stats-label {
+  color: #6c757d !important;
+}
+
+/* Tables */
+.admin-page table,
+.admin-page .table {
+  background: #ffffff !important;
+  color: #212529 !important;
+}
+
+.admin-page table thead,
+.admin-page .table thead {
+  background: #f8f9fa !important;
+}
+
+.admin-page table th,
+.admin-page .table th {
+  color: #212529 !important;
+  border-color: #dee2e6 !important;
+}
+
+.admin-page table td,
+.admin-page .table td {
+  color: #212529 !important;
+  border-color: #dee2e6 !important;
+}
+
+.admin-page table tbody tr,
+.admin-page .table tbody tr {
+  background: #ffffff !important;
+}
+
+.admin-page table tbody tr:hover,
+.admin-page .table tbody tr:hover {
+  background: #f8f9fa !important;
+}
+
+/* Forms */
+.admin-page input,
+.admin-page textarea,
+.admin-page select,
+.admin-page .form-control,
+.admin-page .form-select {
+  background: #ffffff !important;
+  color: #212529 !important;
+  border-color: #dee2e6 !important;
+}
+
+.admin-page input::placeholder,
+.admin-page textarea::placeholder {
+  color: #6c757d !important;
+}
+
+/* Modals */
+.admin-page .modal-content,
+.admin-page [class*="modal"] {
+  background: #ffffff !important;
+  color: #212529 !important;
+}
+
+.admin-page .modal-header {
+  background: #f8f9fa !important;
+  border-bottom-color: #dee2e6 !important;
+}
+
+/* Keep sidebar and header black */
+.admin-sidebar {
+  background: #1a1a1a !important;
+  color: #ffffff !important;
+}
+
+.admin-sidebar * {
+  color: #b0b0b0 !important;
+}
+
+.admin-sidebar .nav-link {
+  color: #b0b0b0 !important;
+}
+
+.admin-sidebar .nav-link:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.admin-sidebar .nav-link.active {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+.admin-header {
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%) !important;
+  color: #ffffff !important;
+}
+
+.admin-header * {
+  color: #ffffff !important;
+}
+
+.admin-logo {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border-color: #2a2a2a !important;
+}
+/* ===== Complaint Modal (Modal Overlay) ===== */
+.modal-overlay {
+  background: white !important;
+}
+
+.modal-content {
+  background: #ffffff !important;
+  color: #212529 !important;
+}
+
+.modal-header {
+  background: #f8f9fa !important;
+  border-bottom-color: #dee2e6 !important;
+}
+
+.modal-header h2 {
+  color: #212529 !important;
+}
+
+.modal-body {
+  background: #ffffff !important;
+  color: #212529 !important;
+}
+
+.modal-body h3,
+.modal-body label,
+.modal-body span,
+.modal-body p {
+  color: #212529 !important;
+}
+
+.modal-body input,
+.modal-body textarea,
+.modal-body select {
+  background: #ffffff !important;
+  color: #212529 !important;
+  border-color: #dee2e6 !important;
+}
+
+/* ===== Role Applications Custom Modal (không dùng .modal của Bootstrap) ===== */
+
+.role-applications-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.role-applications-dialog {
+  max-width: 900px;
+  width: 100%;
+  max-height: calc(100vh - 40px);
+  display: flex;
+}
+
+.role-applications-modal-panel {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.role-applications-modal-header {
+  background: #f8f9fa;
+  padding: 24px 28px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.role-applications-modal-body {
+  background: #ffffff;
+  padding: 28px;
+  overflow-y: auto;
+}
+
+.role-applications-modal-footer {
+  background: #f8f9fa;
+  padding: 20px 28px;
+  border-top: 1px solid #dee2e6;
+}
+
+.role-applications-btn-close {
+  background: transparent;
+  border: none;
+  color: #6c757d;
+  opacity: 0.8;
+  font-size: 1.4rem;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.role-applications-btn-close:hover {
+  opacity: 1;
+  color: #000000;
+  background: #e9ecef;
+  transform: rotate(90deg);
+}
+

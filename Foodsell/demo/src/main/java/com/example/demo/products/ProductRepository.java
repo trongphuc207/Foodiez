@@ -39,4 +39,11 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     // Tìm sản phẩm theo categoryId
     @Query("SELECT p FROM Product p WHERE p.categoryId = :categoryId AND p.available = true AND p.status = 'active' ORDER BY p.name ASC")
     List<Product> findByCategoryId(@Param("categoryId") int categoryId);
+    
+    // Tìm sản phẩm theo approval status
+    List<Product> findByApprovalStatusOrderByCreatedAtAsc(String approvalStatus);
+    
+    // Lấy tất cả sản phẩm sắp xếp theo ngày tạo giảm dần
+    List<Product> findAllByOrderByCreatedAtDesc();
+    
 }

@@ -1,0 +1,1270 @@
+/* ==================== Product Approval - Modern Professional Design ==================== */
+
+.admin-page .product-approval-container,
+.admin-container .product-approval-container {
+  padding: 0;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==================== Header Section ==================== */
+.admin-page .product-approval-container .approval-header,
+.admin-container .product-approval-container .approval-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.admin-page .product-approval-container .header-left,
+.admin-container .product-approval-container .header-left {
+  flex: 1;
+}
+
+.admin-page .product-approval-container .page-title,
+.admin-container .product-approval-container .page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-page .product-approval-container .title-icon,
+.admin-container .product-approval-container .title-icon {
+  font-size: 2.25rem;
+}
+
+.admin-page .product-approval-container .page-subtitle,
+.admin-container .product-approval-container .page-subtitle {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.admin-page .product-approval-container .header-right,
+.admin-container .product-approval-container .header-right {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.admin-page .product-approval-container .refresh-btn,
+.admin-container .product-approval-container .refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.admin-page .product-approval-container .refresh-btn:hover:not(:disabled),
+.admin-container .product-approval-container .refresh-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+}
+
+.admin-page .product-approval-container .refresh-btn:disabled,
+.admin-container .product-approval-container .refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ==================== Alerts ==================== */
+.admin-page .product-approval-container .alert-banner,
+.admin-container .product-approval-container .alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+  animation: slideDown 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.admin-page .product-approval-container .alert-error,
+.admin-container .product-approval-container .alert-error {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  border-left: 4px solid #dc2626;
+}
+
+.admin-page .product-approval-container .alert-success,
+.admin-container .product-approval-container .alert-success {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+  border-left: 4px solid #10b981;
+}
+
+.admin-page .product-approval-container .alert-icon,
+.admin-container .product-approval-container .alert-icon {
+  font-size: 1.5rem;
+}
+
+.admin-page .product-approval-container .alert-message,
+.admin-container .product-approval-container .alert-message {
+  flex: 1;
+}
+
+.admin-page .product-approval-container .alert-close,
+.admin-container .product-approval-container .alert-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.admin-page .product-approval-container .alert-close:hover,
+.admin-container .product-approval-container .alert-close:hover {
+  opacity: 1;
+}
+
+/* ==================== Stats Bar ==================== */
+.admin-page .product-approval-container .stats-bar,
+.admin-container .product-approval-container .stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.admin-page .product-approval-container .stat-item,
+.admin-container .product-approval-container .stat-item {
+  background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+  border: 2px solid #2a2a2a;
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.admin-page .product-approval-container .stat-item:hover,
+.admin-container .product-approval-container .stat-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+  border-color: #dc3545;
+}
+
+.admin-page .product-approval-container .stat-icon,
+.admin-container .product-approval-container .stat-icon {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.admin-page .product-approval-container .stat-content,
+.admin-container .product-approval-container .stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-page .product-approval-container .stat-value,
+.admin-container .product-approval-container .stat-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.admin-page .product-approval-container .stat-label,
+.admin-container .product-approval-container .stat-label {
+  font-size: 0.875rem;
+  color: #b0b0b0;
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+/* ==================== Filter Section ==================== */
+.admin-page .product-approval-container .filter-section,
+.admin-container .product-approval-container .filter-section {
+  background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 2px solid #2a2a2a;
+}
+
+/* Tabs */
+.admin-page .product-approval-container .tabs-container,
+.admin-container .product-approval-container .tabs-container {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-page .product-approval-container .tab-btn,
+.admin-container .product-approval-container .tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.admin-page .product-approval-container .tab-btn:hover,
+.admin-container .product-approval-container .tab-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  transform: translateY(-2px);
+}
+
+.admin-page .product-approval-container .tab-btn.active,
+.admin-container .product-approval-container .tab-btn.active {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+  border-color: #dc3545;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.admin-page .product-approval-container .tab-icon,
+.admin-container .product-approval-container .tab-icon {
+  font-size: 1.25rem;
+}
+
+.admin-page .product-approval-container .tab-label,
+.admin-container .product-approval-container .tab-label {
+  font-size: 0.95rem;
+}
+
+.admin-page .product-approval-container .tab-badge,
+.admin-container .product-approval-container .tab-badge {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-left: 0.25rem;
+}
+
+.admin-page .product-approval-container .tab-btn:not(.active) .tab-badge,
+.admin-container .product-approval-container .tab-btn:not(.active) .tab-badge {
+  background: #dc3545;
+  color: white;
+}
+
+/* Search Bar */
+.admin-page .product-approval-container .search-container,
+.admin-container .product-approval-container .search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.admin-page .product-approval-container .search-icon,
+.admin-container .product-approval-container .search-icon {
+  position: absolute;
+  left: 1.25rem;
+  font-size: 1.25rem;
+  pointer-events: none;
+  color: #9ca3af;
+}
+
+.admin-page .product-approval-container .search-input,
+.admin-container .product-approval-container .search-input {
+  width: 100%;
+  padding: 1rem 3rem 1rem 3.5rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: #f9fafb;
+}
+
+.admin-page .product-approval-container .search-input:focus,
+.admin-container .product-approval-container .search-input:focus {
+  outline: none;
+  border-color: #dc3545;
+  box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+  background: white;
+}
+
+.admin-page .product-approval-container .search-clear,
+.admin-container .product-approval-container .search-clear {
+  position: absolute;
+  right: 1rem;
+  background: #e5e7eb;
+  border: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+.admin-page .product-approval-container .search-clear:hover,
+.admin-container .product-approval-container .search-clear:hover {
+  background: #dc3545;
+  color: white;
+}
+
+/* ==================== Products Grid ==================== */
+.admin-page .product-approval-container .products-grid,
+.admin-container .product-approval-container .products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 1.5rem;
+}
+
+.admin-page .product-approval-container .product-approval-card,
+.admin-container .product-approval-container .product-approval-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 2px solid #f3f4f6;
+  transition: all 0.3s ease;
+  animation: cardFadeIn 0.4s ease;
+}
+
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.admin-page .product-approval-container .product-approval-card:hover,
+.admin-container .product-approval-container .product-approval-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  border-color: #dc3545;
+}
+
+.admin-page .product-approval-container .product-card-content,
+.admin-container .product-approval-container .product-card-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Image Section */
+.admin-page .product-approval-container .product-image-container,
+.admin-container .product-approval-container .product-image-container {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  overflow: hidden;
+}
+
+.admin-page .product-approval-container .product-image,
+.admin-container .product-approval-container .product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.admin-page .product-approval-container .product-approval-card:hover .product-image,
+.admin-container .product-approval-container .product-approval-card:hover .product-image {
+  transform: scale(1.08);
+}
+
+.admin-page .product-approval-container .product-no-image,
+.admin-container .product-approval-container .product-no-image {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+}
+
+.admin-page .product-approval-container .product-no-image span,
+.admin-container .product-approval-container .product-no-image span {
+  font-size: 4rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.5;
+}
+
+.admin-page .product-approval-container .product-no-image p,
+.admin-container .product-approval-container .product-no-image p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.admin-page .product-approval-container .status-badge,
+.admin-container .product-approval-container .status-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.admin-page .product-approval-container .status-pending,
+.admin-container .product-approval-container .status-pending {
+  background: rgba(245, 158, 11, 0.95);
+  color: white;
+}
+
+.admin-page .product-approval-container .status-approved,
+.admin-container .product-approval-container .status-approved {
+  background: rgba(16, 185, 129, 0.95);
+  color: white;
+}
+
+.admin-page .product-approval-container .status-rejected,
+.admin-container .product-approval-container .status-rejected {
+  background: rgba(220, 38, 38, 0.95);
+  color: white;
+}
+
+/* Info Section */
+.admin-page .product-approval-container .product-info-section,
+.admin-container .product-approval-container .product-info-section {
+  padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-page .product-approval-container .product-header,
+.admin-container .product-approval-container .product-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.admin-page .product-approval-container .product-name,
+.admin-container .product-approval-container .product-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+  line-height: 1.3;
+  flex: 1;
+}
+
+.admin-page .product-approval-container .product-id,
+.admin-container .product-approval-container .product-id {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  font-weight: 600;
+  background: #f3f4f6;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.admin-page .product-approval-container .product-meta,
+.admin-container .product-approval-container .product-meta {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.admin-page .product-approval-container .meta-item,
+.admin-container .product-approval-container .meta-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+.admin-page .product-approval-container .meta-icon,
+.admin-container .product-approval-container .meta-icon {
+  font-size: 1.25rem;
+  margin-top: 0.1rem;
+}
+
+.admin-page .product-approval-container .meta-content,
+.admin-container .product-approval-container .meta-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.admin-page .product-approval-container .meta-label,
+.admin-container .product-approval-container .meta-label {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-page .product-approval-container .meta-value,
+.admin-container .product-approval-container .meta-value {
+  font-size: 0.95rem;
+  color: #1f2937;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-page .product-approval-container .meta-value.price,
+.admin-container .product-approval-container .meta-value.price {
+  color: #dc3545;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.admin-page .product-approval-container .product-description,
+.admin-container .product-approval-container .product-description {
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 10px;
+  border-left: 3px solid #dc3545;
+}
+
+.admin-page .product-approval-container .product-description p,
+.admin-container .product-approval-container .product-description p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.admin-page .product-approval-container .rejection-reason,
+.admin-container .product-approval-container .rejection-reason {
+  padding: 1rem;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-radius: 10px;
+  border-left: 4px solid #dc2626;
+}
+
+.admin-page .product-approval-container .rejection-reason strong,
+.admin-container .product-approval-container .rejection-reason strong {
+  display: block;
+  color: #991b1b;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.admin-page .product-approval-container .rejection-reason p,
+.admin-container .product-approval-container .rejection-reason p {
+  margin: 0;
+  color: #7f1d1d;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Action Buttons */
+.admin-page .product-approval-container .product-actions,
+.admin-container .product-approval-container .product-actions {
+  padding: 1rem 1.5rem;
+  background: #f9fafb;
+  border-top: 2px solid #e5e7eb;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.admin-page .product-approval-container .action-btn,
+.admin-container .product-approval-container .action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.25rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admin-page .product-approval-container .action-btn:hover,
+.admin-container .product-approval-container .action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.admin-page .product-approval-container .approve-btn,
+.admin-container .product-approval-container .approve-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.admin-page .product-approval-container .approve-btn:hover,
+.admin-container .product-approval-container .approve-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.admin-page .product-approval-container .reject-btn,
+.admin-container .product-approval-container .reject-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.admin-page .product-approval-container .reject-btn:hover,
+.admin-container .product-approval-container .reject-btn:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+}
+
+.admin-page .product-approval-container .view-btn,
+.admin-container .product-approval-container .view-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+}
+
+.admin-page .product-approval-container .view-btn:hover,
+.admin-container .product-approval-container .view-btn:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+.admin-page .product-approval-container .btn-icon,
+.admin-container .product-approval-container .btn-icon {
+  font-size: 1.25rem;
+}
+
+/* ==================== Loading & Empty States ==================== */
+.admin-page .product-approval-container .loading-state,
+.admin-container .product-approval-container .loading-state,
+.admin-page .product-approval-container .empty-state,
+.admin-container .product-approval-container .empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.admin-page .product-approval-container .spinner,
+.admin-container .product-approval-container .spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid #f3f4f6;
+  border-top-color: #dc3545;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 1.5rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.admin-page .product-approval-container .loading-state p,
+.admin-container .product-approval-container .loading-state p {
+  color: #6b7280;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.admin-page .product-approval-container .empty-icon,
+.admin-container .product-approval-container .empty-icon {
+  font-size: 5rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.3;
+}
+
+.admin-page .product-approval-container .empty-state h3,
+.admin-container .product-approval-container .empty-state h3 {
+  font-size: 1.5rem;
+  color: #1f2937;
+  margin: 0 0 0.75rem 0;
+  font-weight: 700;
+}
+
+.admin-page .product-approval-container .empty-state p,
+.admin-container .product-approval-container .empty-state p {
+  color: #6b7280;
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* ==================== Modal ==================== */
+.admin-page .product-approval-container .modal-overlay,
+.admin-container .product-approval-container .modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 2rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.admin-page .product-approval-container .modal-container,
+.admin-container .product-approval-container .modal-container {
+  background: white;
+  border-radius: 20px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideUp 0.4s ease;
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.admin-page .product-approval-container .modal-header,
+.admin-container .product-approval-container .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+}
+
+.admin-page .product-approval-container .modal-title,
+.admin-container .product-approval-container .modal-title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-page .product-approval-container .modal-close,
+.admin-container .product-approval-container .modal-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  font-size: 2rem;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.admin-page .product-approval-container .modal-close:hover,
+.admin-container .product-approval-container .modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.admin-page .product-approval-container .modal-body,
+.admin-container .product-approval-container .modal-body {
+  padding: 2rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.admin-page .product-approval-container .modal-product-details,
+.admin-container .product-approval-container .modal-product-details {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.admin-page .product-approval-container .modal-image,
+.admin-container .product-approval-container .modal-image {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 3px solid #e5e7eb;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+}
+
+.admin-page .product-approval-container .modal-image img,
+.admin-container .product-approval-container .modal-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-page .product-approval-container .modal-no-image,
+.admin-container .product-approval-container .modal-no-image {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+}
+
+.admin-page .product-approval-container .modal-no-image span,
+.admin-container .product-approval-container .modal-no-image span {
+  font-size: 5rem;
+  margin-bottom: 1rem;
+  opacity: 0.4;
+}
+
+.admin-page .product-approval-container .modal-no-image p,
+.admin-container .product-approval-container .modal-no-image p {
+  margin: 0;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.admin-page .product-approval-container .modal-info h3,
+.admin-container .product-approval-container .modal-info h3 {
+  font-size: 1.75rem;
+  color: #1f2937;
+  margin: 0 0 1.5rem 0;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.admin-page .product-approval-container .modal-meta,
+.admin-container .product-approval-container .modal-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-page .product-approval-container .modal-meta-item,
+.admin-container .product-approval-container .modal-meta-item {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 10px;
+  border-left: 3px solid #dc3545;
+}
+
+.admin-page .product-approval-container .modal-meta-item strong,
+.admin-container .product-approval-container .modal-meta-item strong {
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.admin-page .product-approval-container .modal-meta-item span,
+.admin-container .product-approval-container .modal-meta-item span {
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.admin-page .product-approval-container .modal-meta-item span.price,
+.admin-container .product-approval-container .modal-meta-item span.price {
+  color: #dc3545;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.admin-page .product-approval-container .modal-description,
+.admin-container .product-approval-container .modal-description {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+}
+
+.admin-page .product-approval-container .modal-description strong,
+.admin-container .product-approval-container .modal-description strong {
+  display: block;
+  color: #374151;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+.admin-page .product-approval-container .modal-description p,
+.admin-container .product-approval-container .modal-description p {
+  margin: 0;
+  color: #6b7280;
+  line-height: 1.8;
+  font-size: 0.95rem;
+}
+
+.admin-page .product-approval-container .rejection-input,
+.admin-container .product-approval-container .rejection-input {
+  margin-top: 1.5rem;
+}
+
+.admin-page .product-approval-container .input-label,
+.admin-container .product-approval-container .input-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+.admin-page .product-approval-container .label-icon,
+.admin-container .product-approval-container .label-icon {
+  font-size: 1.25rem;
+}
+
+.admin-page .product-approval-container .required,
+.admin-container .product-approval-container .required {
+  color: #dc2626;
+}
+
+.admin-page .product-approval-container .textarea-input,
+.admin-container .product-approval-container .textarea-input {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  transition: all 0.3s ease;
+  background: #f9fafb;
+}
+
+.admin-page .product-approval-container .textarea-input:focus,
+.admin-container .product-approval-container .textarea-input:focus {
+  outline: none;
+  border-color: #dc3545;
+  box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+  background: white;
+}
+
+.admin-page .product-approval-container .approval-notice,
+.admin-container .product-approval-container .approval-notice {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-radius: 12px;
+  border-left: 4px solid #3b82f6;
+  margin-top: 1.5rem;
+}
+
+.admin-page .product-approval-container .notice-icon,
+.admin-container .product-approval-container .notice-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.admin-page .product-approval-container .notice-content strong,
+.admin-container .product-approval-container .notice-content strong {
+  display: block;
+  color: #1e40af;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.admin-page .product-approval-container .notice-content p,
+.admin-container .product-approval-container .notice-content p {
+  margin: 0;
+  color: #1e3a8a;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.admin-page .product-approval-container .modal-footer,
+.admin-container .product-approval-container .modal-footer {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  background: #f9fafb;
+  border-top: 2px solid #e5e7eb;
+}
+
+.admin-page .product-approval-container .modal-btn,
+.admin-container .product-approval-container .modal-btn {
+  flex: 1;
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.admin-page .product-approval-container .modal-btn:hover,
+.admin-container .product-approval-container .modal-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.admin-page .product-approval-container .cancel-btn,
+.admin-container .product-approval-container .cancel-btn {
+  background: white;
+  color: #6b7280;
+  border: 2px solid #e5e7eb;
+}
+
+.admin-page .product-approval-container .cancel-btn:hover,
+.admin-container .product-approval-container .cancel-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.admin-page .product-approval-container .confirm-approve-btn,
+.admin-container .product-approval-container .confirm-approve-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.admin-page .product-approval-container .confirm-approve-btn:hover,
+.admin-container .product-approval-container .confirm-approve-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.admin-page .product-approval-container .confirm-reject-btn,
+.admin-container .product-approval-container .confirm-reject-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.admin-page .product-approval-container .confirm-reject-btn:hover,
+.admin-container .product-approval-container .confirm-reject-btn:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+}
+
+/* ==================== Responsive Design ==================== */
+@media (max-width: 1200px) {
+  .admin-page .product-approval-container .products-grid,
+  .admin-container .product-approval-container .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  }
+}
+
+@media (max-width: 968px) {
+  .admin-page .product-approval-container .approval-header,
+  .admin-container .product-approval-container .approval-header {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .admin-page .product-approval-container .stats-bar,
+  .admin-container .product-approval-container .stats-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .admin-page .product-approval-container .products-grid,
+  .admin-container .product-approval-container .products-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-page .product-approval-container .modal-product-details,
+  .admin-container .product-approval-container .modal-product-details {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-page .product-approval-container .modal-image,
+  .admin-container .product-approval-container .modal-image {
+    height: 250px;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-page .product-approval-container .page-title,
+  .admin-container .product-approval-container .page-title {
+    font-size: 1.5rem;
+  }
+
+  .admin-page .product-approval-container .tabs-container,
+  .admin-container .product-approval-container .tabs-container {
+    gap: 0.5rem;
+  }
+
+  .admin-page .product-approval-container .tab-btn,
+  .admin-container .product-approval-container .tab-btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .admin-page .product-approval-container .product-meta,
+  .admin-container .product-approval-container .product-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-page .product-approval-container .stats-bar,
+  .admin-container .product-approval-container .stats-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-page .product-approval-container .modal-overlay,
+  .admin-container .product-approval-container .modal-overlay {
+    padding: 1rem;
+  }
+
+  .admin-page .product-approval-container .modal-container,
+  .admin-container .product-approval-container .modal-container {
+    max-height: 95vh;
+  }
+
+  .admin-page .product-approval-container .modal-header,
+  .admin-container .product-approval-container .modal-header {
+    padding: 1.5rem;
+  }
+
+  .admin-page .product-approval-container .modal-title,
+  .admin-container .product-approval-container .modal-title {
+    font-size: 1.25rem;
+  }
+
+  .admin-page .product-approval-container .modal-body,
+  .admin-container .product-approval-container .modal-body {
+    padding: 1.5rem;
+  }
+
+  .admin-page .product-approval-container .modal-footer,
+  .admin-container .product-approval-container .modal-footer {
+    flex-direction: column;
+  }
+
+  .admin-page .product-approval-container .modal-btn,
+  .admin-container .product-approval-container .modal-btn {
+    width: 100%;
+  }
+}
+
+/* Dark theme overrides for all white backgrounds – SCOPED TO ADMIN */
+.admin-page .product-approval-container .product-card,
+.admin-container .product-approval-container .product-card,
+.admin-page .product-approval-container .stats-card,
+.admin-container .product-approval-container .stats-card,
+.admin-page .product-approval-container .modal-content,
+.admin-container .product-approval-container .modal-content,
+.admin-page .product-approval-container .section-content,
+.admin-container .product-approval-container .section-content,
+.admin-page .product-approval-container .approval-form,
+.admin-container .product-approval-container .approval-form {
+  background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%) !important;
+  border-color: #2a2a2a !important;
+}
+
+.admin-page .product-approval-container .product-header,
+.admin-container .product-approval-container .product-header,
+.admin-page .product-approval-container .modal-header,
+.admin-container .product-approval-container .modal-header,
+.admin-page .product-approval-container .section-header,
+.admin-container .product-approval-container .section-header {
+  background: #f8f9fa !important;
+  border-color: #dee2e6 !important;
+}
+
+.admin-page .product-approval-container .product-meta,
+.admin-container .product-approval-container .product-meta,
+.admin-page .product-approval-container .info-row,
+.admin-container .product-approval-container .info-row,
+.admin-page .product-approval-container .form-row,
+.admin-container .product-approval-container .form-row {
+  background: #ffffff !important;
+  border-color: #dee2e6 !important;
+}
+
+.admin-page .product-approval-container h1,
+.admin-container .product-approval-container h1,
+.admin-page .product-approval-container h2,
+.admin-container .product-approval-container h2,
+.admin-page .product-approval-container h3,
+.admin-container .product-approval-container h3,
+.admin-page .product-approval-container h4,
+.admin-container .product-approval-container h4,
+.admin-page .product-approval-container .product-name,
+.admin-container .product-approval-container .product-name,
+.admin-page .product-approval-container .stats-value,
+.admin-container .product-approval-container .stats-value,
+.admin-page .product-approval-container label,
+.admin-container .product-approval-container label,
+.admin-page .product-approval-container strong,
+.admin-container .product-approval-container strong {
+  color: #212529 !important;
+}
+
+.admin-page .product-approval-container p,
+.admin-container .product-approval-container p,
+.admin-page .product-approval-container span,
+.admin-container .product-approval-container span,
+.admin-page .product-approval-container .product-description,
+.admin-container .product-approval-container .product-description,
+.admin-page .product-approval-container .info-value,
+.admin-container .product-approval-container .info-value {
+  color: #212529 !important;
+}
+
+.admin-page .product-approval-container .info-label,
+.admin-container .product-approval-container .info-label,
+.admin-page .product-approval-container .meta-label,
+.admin-container .product-approval-container .meta-label,
+.admin-page .product-approval-container small,
+.admin-container .product-approval-container small {
+  color: #6c757d !important;
+}
+
+.admin-page .product-approval-container input,
+.admin-container .product-approval-container input,
+.admin-page .product-approval-container textarea,
+.admin-container .product-approval-container textarea,
+.admin-page .product-approval-container select,
+.admin-container .product-approval-container select {
+  background: #ffffff !important;
+  color: #212529 !important;
+  border-color: #dee2e6 !important;
+}
+
+.admin-page .product-approval-container .empty-state,
+.admin-container .product-approval-container .empty-state,
+.admin-page .product-approval-container .loading-message,
+.admin-container .product-approval-container .loading-message {
+  color: #6c757d !important;
+}
