@@ -1,30 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './CustomerProfile.css';
 import { isAuthenticated, authAPI } from '../../api/auth';
 import { useAuth } from '../../hooks/useAuth';
 import AvatarUpload from '../AvatarUpload/AvatarUpload';
 import ChangePasswordModal from '../ChangePasswordModal/ChangePasswordModal';
-import { fetchServerFavorites, removeServerFavorite, loadFavoritesForUser, saveFavoritesForUser } from '../../utils/favorites';
-import FavoriteItems from './FavoriteItems';
-import { productAPI } from '../../api/product';
-import { addressAPI } from '../../api/address';
+import { getFavorites, removeFavorite } from '../../api/favorite';
+import { useCart } from '../../contexts/CartContext';
+import axios from 'axios';
 
-// Utility function to convert MM/DD/YYYY to ISO date string
-const formatDateToISO = (dateString) => {
-  if (!dateString) return '';
-  const [month, day, year] = dateString.split('/');
-  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-};
-
-// Utility function to convert ISO date to MM/DD/YYYY
-const formatISOToDisplay = (isoString) => {
-  if (!isoString) return '';
-  const date = new Date(isoString);
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  const year = date.getFullYear();
-  return `${month}/${day}/${year}`;
-};
+const API_BASE = 'http://localhost:8080/api';
 
 const CustomerProfile = () => {
   const { changePassword } = useAuth();
@@ -33,7 +17,9 @@ const CustomerProfile = () => {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
   const [showAvatarUpload, setShowAvatarUpload] = useState(false);
+  const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [applicationType, setApplicationType] = useState(null);
   const [form, setForm] = useState({
     fullName: '',
     email: '',
@@ -44,152 +30,152 @@ const CustomerProfile = () => {
     idNumber: '',
     role: 'buyer'
   });
-  // Application form state
-  const [applicationStatus, setApplicationStatus] = useState({
-    seller: 'not-applied',
-    shipper: 'not-applied'
+  const [applicationForm, setApplicationForm] = useState({
+    // Personal Info
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
+    dateOfBirth: '',
+    idNumber: '',
+    
+    // Documents
+    idCardFront: null,
+    idCardBack: null,
+    drivingLicense: null,
+    vehicleRegistration: null,
+    insurance: null,
+    householdBook: null,
+    productSafetyCertificate: null,
+    
+    // Additional Info
+    bankAccount: '',
+    bankName: '',
+    vehicleType: '',
+    vehicleNumber: '',
+    experience: '',
+    reason: ''
   });
   const [errors, setErrors] = useState({});
-
-  // Application handlers
-  const handleApplicationSubmit = async (type) => {
-    try {
-      // Here you would typically make an API call to submit the application
-      // For now, we'll just update the status
-      setApplicationStatus(prev => ({
-        ...prev,
-        [type]: 'pending'
-      }));
-      // Example API call (commented out for now):
-      // await authAPI.submitApplication({ type });
-    } catch (error) {
-      console.error(`Error submitting ${type} application:`, error);
-    }
-  };
-
-  // State for addresses
-  const [addresses, setAddresses] = useState([]);
-
-  // Fetch addresses and orders
-  const fetchAddresses = async () => {
-    try {
-      const data = await addressAPI.getAddresses();
-      setAddresses(data);
-    } catch (error) {
-      console.error('Error fetching addresses:', error);
-    }
-  };
-
-
-
-  // Address management functions
-  const handleAddAddress = async (addressData) => {
-    try {
-      await addressAPI.addAddress(addressData);
-      fetchAddresses(); // Refresh addresses after adding
-    } catch (error) {
-      console.error('Error adding address:', error);
-    }
-  };
-
-  const handleUpdateAddress = async (addressId, addressData) => {
-    try {
-      await addressAPI.updateAddress(addressId, addressData);
-      fetchAddresses(); // Refresh addresses after updating
-    } catch (error) {
-      console.error('Error updating address:', error);
-    }
-  };
-
-  const handleDeleteAddress = async (addressId) => {
-    try {
-      await addressAPI.deleteAddress(addressId);
-      fetchAddresses(); // Refresh addresses after deleting
-    } catch (error) {
-      console.error('Error deleting address:', error);
-    }
-  };
-
-  const handleSetDefaultAddress = async (addressId) => {
-    try {
-      await addressAPI.setDefaultAddress(addressId);
-      fetchAddresses(); // Refresh addresses after setting default
-    } catch (error) {
-      console.error('Error setting default address:', error);
-    }
-  };
-
-
-
-  // Fetch data when component mounts
-  useEffect(() => {
-    fetchAddresses();
-  }, []);
-
-  // Favorites state (loaded from server if authenticated, otherwise from localStorage)
+  const [applicationErrors, setApplicationErrors] = useState({});
+  const [myApplications, setMyApplications] = useState([]);
+  const [applicationsLoading, setApplicationsLoading] = useState(false);
   const [favorites, setFavorites] = useState([]);
-  const [favoriteDetails, setFavoriteDetails] = useState([]);
-  const [loadingFavorites, setLoadingFavorites] = useState(false);
+  const [favoritesLoading, setFavoritesLoading] = useState(false);
+  const { addToCart } = useCart();
 
-  // Load favorites when user is loaded (try server first, fallback to localStorage)
-  useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      try {
-        setLoadingFavorites(true);
-        if (user && (user.id || user._id)) {
-          const serverFavs = await fetchServerFavorites();
-          if (!mounted) return;
-          if (serverFavs && Array.isArray(serverFavs)) {
-            const mapped = serverFavs.map(p => (typeof p === 'number' ? { id: p } : p));
-            setFavorites(mapped);
-            // Save ids locally for offline use
-            try { saveFavoritesForUser(user, mapped.map(m => m.id)); } catch (e) { /* ignore */ }
-            
-            // Fetch details for each favorite item
-            const details = await Promise.all(
-              mapped.map(async (item) => {
-                try {
-                  const { data } = await productAPI.getProductById(item.id);
-                  return {
-                    ...data,
-                    id: item.id
-                  };
-                } catch (e) {
-                  console.warn(`Failed to fetch details for product ${item.id}`, e);
-                  return item;
-                }
-              })
-            );
-            if (mounted) setFavoriteDetails(details.filter(Boolean));
-            return;
-          }
-        }
+  // Mock data - replace with actual API calls
+  const mockUser = useMemo(() => ({
+    id: 1,
+    fullName: 'John Doe',
+    email: 'john.doe@example.com',
+    phone: '+1 234 567 8900',
+    address: '123 Main Street, City, State 12345',
+    dateOfBirth: '1990-05-15',
+    gender: 'male',
+    idNumber: '123456789',
+    avatar: '',
+    joinDate: '2023-01-15',
+    role: 'buyer',
+    isVerified: true,
+    profileImage: null
+  }), []);
 
-        const local = loadFavoritesForUser(user);
-        if (!mounted) return;
-        const mappedLocal = (Array.isArray(local) ? local : []).map(id => (typeof id === 'number' ? { id } : id));
-        setFavorites(mappedLocal);
-      } catch (e) {
-        console.warn('Failed to load favorites', e);
-      } finally {
-        if (mounted) setLoadingFavorites(false);
+  const mockAddresses = [
+    {
+      id: 1,
+      label: 'Home',
+      address: '123 Main Street, City, State 12345',
+      isDefault: true
+    },
+    {
+      id: 2,
+      label: 'Office',
+      address: '456 Business Ave, City, State 12345',
+      isDefault: false
+    }
+  ];
+
+  const mockOrders = [
+    {
+      id: 1,
+      date: '2024-01-15',
+      status: 'delivered',
+      total: 45.99,
+      items: 3
+    },
+    {
+      id: 2,
+      date: '2024-01-10',
+      status: 'shipping',
+      total: 32.50,
+      items: 2
+    }
+  ];
+
+  // Load favorites from API
+  const loadFavorites = useCallback(async () => {
+    try {
+      setFavoritesLoading(true);
+      const response = await getFavorites();
+      console.log('📥 Favorites response:', response);
+      console.log('Response type:', typeof response, 'Is array:', Array.isArray(response));
+      
+      if (response && response.success && response.data) {
+        console.log('✅ Setting favorites from response.data:', response.data);
+        setFavorites(response.data);
+      } else if (Array.isArray(response)) {
+        console.log('✅ Setting favorites from array response:', response);
+        setFavorites(response);
+      } else {
+        console.log('⚠️ Unexpected response format');
+        setFavorites([]);
       }
-    };
-
-    load();
-    return () => { mounted = false; };
-  }, [user]);
-
-  useEffect(() => {
-    const handler = (e) => {
-      const arr = e && e.detail ? e.detail : [];
-      const mapped = (Array.isArray(arr) ? arr : []).map(id => (typeof id === 'number' ? { id } : id));
-      setFavorites(mapped);
-    };
-    window.addEventListener('favoritesUpdated', handler);
-    return () => window.removeEventListener('favoritesUpdated', handler);
+    } catch (error) {
+      console.error('❌ Error loading favorites:', error);
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response data:', error.response.data);
+      }
+      setFavorites([]);
+    } finally {
+      setFavoritesLoading(false);
+    }
   }, []);
+
+  // Remove from favorites
+  const handleRemoveFavorite = async (productId) => {
+    try {
+      const response = await removeFavorite(productId);
+      if (response.success) {
+        // Reload favorites after successful removal
+        await loadFavorites();
+        alert('Đã xóa khỏi danh sách yêu thích!');
+      }
+    } catch (error) {
+      console.error('Error removing favorite:', error);
+      alert('Không thể xóa sản phẩm khỏi danh sách yêu thích!');
+    }
+  };
+
+  // Add to cart from favorites
+  const handleAddToCartFromFavorites = (item) => {
+    try {
+      addToCart({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        image: item.imageUrl,
+        shop: item.shopName || 'Unknown Shop',
+        shopId: item.shopId,
+        quantity: 1
+      });
+      alert('Đã thêm vào giỏ hàng!');
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      alert('Không thể thêm vào giỏ hàng!');
+    }
+  };
 
   const loadUserData = useCallback(async () => {
     try {
@@ -204,27 +190,45 @@ const CustomerProfile = () => {
         email: userData.email || '',
         phone: userData.phone || '',
         address: userData.address || '',
-        dateOfBirth: formatISOToDisplay(userData.dateOfBirth) || '',
+        dateOfBirth: userData.dateOfBirth || '',
         gender: userData.gender || '',
         idNumber: userData.idNumber || '',
         role: userData.role || 'buyer'
       });
     } catch (error) {
       console.error('Error loading user data:', error);
-      // Show error message and reset form
-      setUser(null);
+      // Fallback to mock data if API fails
+      setUser(mockUser);
       setForm({
-        fullName: '',
-        email: '',
-        phone: '',
-        address: '',
-        dateOfBirth: '',
-        gender: '',
-        idNumber: '',
-        role: 'buyer'
+        fullName: mockUser.fullName,
+        email: mockUser.email,
+        phone: mockUser.phone,
+        address: mockUser.address,
+        dateOfBirth: mockUser.dateOfBirth,
+        gender: mockUser.gender,
+        idNumber: mockUser.idNumber,
+        role: mockUser.role
       });
     }
-  }, []); // No dependencies needed since we're just setting initial state
+  }, [mockUser]);
+
+  // Load user's role applications
+  const loadApplications = useCallback(async () => {
+    setApplicationsLoading(true);
+    try {
+      const token = localStorage.getItem('authToken'); // FIX: use 'authToken' not 'token'
+      const res = await axios.get(`${API_BASE}/role-applications/my-applications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const appList = res.data.applications || res.data || [];
+      setMyApplications(Array.isArray(appList) ? appList : []);
+    } catch (error) {
+      console.error('Error loading applications:', error);
+      setMyApplications([]);
+    } finally {
+      setApplicationsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -233,34 +237,17 @@ const CustomerProfile = () => {
       return;
     }
 
-    // Load user data
+    // Load user data and applications
     loadUserData();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    loadApplications();
+  }, [loadUserData, loadApplications]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
-    if (name === 'dateOfBirth') {
-      // Format input as user types
-      const numbersOnly = value.replace(/[^\d]/g, '');
-      let formattedDate = numbersOnly;
-      
-      if (numbersOnly.length > 4) {
-        formattedDate = numbersOnly.slice(0,2) + '/' + numbersOnly.slice(2,4) + '/' + numbersOnly.slice(4,8);
-      } else if (numbersOnly.length > 2) {
-        formattedDate = numbersOnly.slice(0,2) + '/' + numbersOnly.slice(2);
-      }
-      
-      setForm(prev => ({
-        ...prev,
-        [name]: formattedDate
-      }));
-    } else {
-      setForm(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
+    setForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
     
     // Clear error when user starts typing
     if (errors[name]) {
@@ -285,40 +272,11 @@ const CustomerProfile = () => {
     }
 
     if (!form.phone.trim()) {
-      newErrors.phone = 'Số điện thoại không được để trống';
-    } else if (!/^[0-9]{10}$/.test(form.phone.trim())) {
-      newErrors.phone = 'Số điện thoại phải có 10 chữ số';
+      newErrors.phone = 'Phone is required';
     }
 
     if (!form.address.trim()) {
-      newErrors.address = 'Địa chỉ không được để trống';
-    } else if (form.address.trim().length < 10) {
-      newErrors.address = 'Địa chỉ phải có ít nhất 10 ký tự';
-    }
-
-    if (form.dateOfBirth) {
-      const datePattern = /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/(\d{4})$/;
-      if (!datePattern.test(form.dateOfBirth)) {
-        newErrors.dateOfBirth = 'Ngày sinh không hợp lệ (MM/DD/YYYY)';
-      } else {
-        const [month, day, year] = form.dateOfBirth.split('/').map(Number);
-        const birthDate = new Date(year, month - 1, day);
-        const today = new Date();
-        const age = today.getFullYear() - birthDate.getFullYear();
-        
-        // Check if date is valid
-        if (birthDate.getMonth() !== month - 1 || birthDate.getDate() !== day) {
-          newErrors.dateOfBirth = 'Ngày không hợp lệ';
-        } else if (age < 16) {
-          newErrors.dateOfBirth = 'Bạn phải từ 16 tuổi trở lên';
-        } else if (birthDate > today) {
-          newErrors.dateOfBirth = 'Ngày sinh không thể ở tương lai';
-        }
-      }
-    }
-
-    if (form.idNumber && !/^[0-9]{9,12}$/.test(form.idNumber.trim())) {
-      newErrors.idNumber = 'CMND/CCCD phải có 9-12 chữ số';
+      newErrors.address = 'Address is required';
     }
 
     setErrors(newErrors);
@@ -334,36 +292,25 @@ const CustomerProfile = () => {
 
     setLoading(true);
     try {
-      // Format date to ISO string if exists
-      const formData = {
-        ...form,
-        dateOfBirth: form.dateOfBirth ? formatDateToISO(form.dateOfBirth) : form.dateOfBirth
-      };
-
-      console.log('Sending profile update:', formData);
-      const response = await authAPI.updateProfile(formData);
-      const updatedUser = response.data || response.user;
+      // Only send non-empty fields to avoid overwriting existing data
+      const updateData = {};
+      Object.keys(form).forEach(key => {
+        if (form[key] !== null && form[key] !== undefined && form[key] !== '') {
+          updateData[key] = form[key];
+        }
+      });
       
-      if (response.errors || (response.data && response.data.errors)) {
-        const serverErrors = response.errors || response.data.errors;
-        setErrors(prev => ({
-          ...prev,
-          ...Object.keys(serverErrors).reduce((acc, key) => {
-            acc[key] = serverErrors[key].join(', ');
-            return acc;
-          }, {})
-        }));
-        throw new Error('Validation failed');
-      }
+      console.log('📤 Sending profile update:', updateData);
+      
+      const response = await authAPI.updateProfile(updateData);
+      const updatedUser = response.data || response.user;
       
       setUser(updatedUser);
       setIsEditing(false);
-      alert('Cập nhật thông tin thành công!');
+      alert('Profile updated successfully!');
     } catch (error) {
       console.error('Error saving profile:', error);
-      if (!Object.keys(errors).length) { // Only show alert if no field errors
-        alert(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin: ' + error.message);
-      }
+      alert('Error updating profile: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -371,67 +318,32 @@ const CustomerProfile = () => {
 
   const handleCancel = () => {
     setForm({
-      fullName: user.fullName,
-      email: user.email,
-      phone: user.phone,
-      address: user.address
+      fullName: user.fullName || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      address: user.address || '',
+      dateOfBirth: user.dateOfBirth || '',
+      gender: user.gender || '',
+      idNumber: user.idNumber || '',
+      role: user.role || 'buyer'
     });
     setErrors({});
     setIsEditing(false);
   };
 
   const handleChangePassword = async (currentPassword, newPassword) => {
-    try {
-      // Check if user is authenticated before proceeding
-      if (!isAuthenticated()) {
-        alert('Bạn cần đăng nhập để đổi mật khẩu!');
-        return;
-      }
-
-      // Show loading state
-      setLoading(true);
-      
-      // Call the API to change password
-      const response = await authAPI.changePassword(currentPassword, newPassword);
-      
-      if (response.success) {
-        alert('Mật khẩu đã được thay đổi thành công!');
-        setShowChangePasswordModal(false);
-      } else {
-        alert(response.message || 'Có lỗi xảy ra khi đổi mật khẩu.');
-      }
-    } catch (error) {
-      console.error('Error changing password:', error);
-      alert('Có lỗi xảy ra khi đổi mật khẩu. Vui lòng thử lại sau.');
-    } finally {
-      setLoading(false);
-    }
-    if (!currentPassword) {
-      throw new Error('Vui lòng nhập mật khẩu hiện tại');
-    }
-
-    if (!newPassword || newPassword.length < 6) {
-      throw new Error('Mật khẩu mới phải có ít nhất 6 ký tự');
-    }
-
-    if (currentPassword === newPassword) {
-      throw new Error('Mật khẩu mới phải khác mật khẩu hiện tại');
+    // Check if user is authenticated before proceeding
+    if (!isAuthenticated()) {
+      alert('Bạn cần đăng nhập để đổi mật khẩu!');
+      return;
     }
     
     try {
       await changePassword(currentPassword, newPassword);
       alert('Đổi mật khẩu thành công!');
-      setShowChangePasswordModal(false);
     } catch (error) {
-      // Handle specific error cases
-      const errorMessage = error.response?.data?.message || error.message;
-      if (errorMessage.includes('current password')) {
-        throw new Error('Mật khẩu hiện tại không chính xác');
-      } else if (errorMessage.includes('validation')) {
-        throw new Error('Mật khẩu mới không hợp lệ. ' + errorMessage);
-      } else {
-        throw new Error('Có lỗi xảy ra khi đổi mật khẩu: ' + errorMessage);
-      }
+      alert('Lỗi: ' + error.message);
+      throw error; // Re-throw để modal có thể handle
     }
   };
 
@@ -486,79 +398,6 @@ const CustomerProfile = () => {
     console.log('✅ Filename detected, creating full URL with cache busting:', url);
     return url;
   };
-
-  const renderApplicationsTab = () => (
-    <div className="applications-tab">
-      <h3>Become a Partner</h3>
-      <div className="applications-container">
-        {/* Seller Application */}
-        <div className="application-card seller-card">
-          <div className="card-header">
-            <h4>🏪 Become a Seller</h4>
-            <span className="card-badge">Business</span>
-          </div>
-          <div className="card-content">
-            <p>Start selling your products and reach thousands of customers.</p>
-            <ul className="benefits-list">
-              <li>✅ Create and manage your shop</li>
-              <li>✅ List your products</li>
-              <li>✅ Set your own prices</li>
-              <li>✅ Track sales and analytics</li>
-              <li>✅ Get paid directly</li>
-            </ul>
-            <button 
-              className="apply-btn seller-btn"
-              onClick={() => handleApplicationSubmit('seller')}
-            >
-              Apply as Seller
-            </button>
-          </div>
-        </div>
-
-        {/* Shipper Application */}
-        <div className="application-card shipper-card">
-          <div className="card-header">
-            <h4>🚚 Become a Shipper</h4>
-            <span className="card-badge">Flexible Work</span>
-          </div>
-          <div className="card-content">
-            <p>Deliver orders and earn money on your own schedule.</p>
-            <ul className="benefits-list">
-              <li>✅ Flexible working hours</li>
-              <li>✅ Choose your delivery area</li>
-              <li>✅ Earn per delivery</li>
-              <li>✅ Real-time order tracking</li>
-            </ul>
-            <button 
-              className="apply-btn shipper-btn"
-              onClick={() => handleApplicationSubmit('shipper')}
-            >
-              Apply as Shipper
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Application Status */}
-      <div className="application-status">
-        <h4>Application Status</h4>
-        <div className="status-list">
-          <div className="status-item">
-            <span className="status-label">Seller Application:</span>
-            <span className={`status-value ${applicationStatus.seller}`}>
-              {applicationStatus.seller.replace('-', ' ')}
-            </span>
-          </div>
-          <div className="status-item">
-            <span className="status-label">Shipper Application:</span>
-            <span className={`status-value ${applicationStatus.shipper}`}>
-              {applicationStatus.shipper.replace('-', ' ')}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   const renderInfoTab = () => (
     <div className="info-form">
@@ -624,13 +463,11 @@ const CustomerProfile = () => {
           <div className="form-group">
             <label>Date of Birth</label>
             <input
-              type="text"
+              type="date"
               name="dateOfBirth"
               value={form.dateOfBirth}
               onChange={handleInputChange}
-              placeholder="MM/DD/YYYY"
               className={errors.dateOfBirth ? 'error' : ''}
-              maxLength="10"
             />
             {errors.dateOfBirth && <div className="error-message">{errors.dateOfBirth}</div>}
           </div>
@@ -751,20 +588,11 @@ const CustomerProfile = () => {
     <div>
       <div className="tab-header">
         <h3>Addresses</h3>
-        <button 
-          className="add-btn" 
-          onClick={() => handleAddAddress({
-            label: 'New Address',
-            address: '',
-            isDefault: addresses.length === 0
-          })}
-        >
-          Add New Address
-        </button>
+        <button className="add-btn">Add New Address</button>
       </div>
       
       <div className="addresses-list">
-        {addresses.map(address => (
+        {mockAddresses.map(address => (
           <div key={address.id} className="address-card">
             <div className="address-header">
               <span className="address-label">{address.label}</span>
@@ -772,25 +600,10 @@ const CustomerProfile = () => {
             </div>
             <div className="address-text">{address.address}</div>
             <div className="address-actions">
-              <button 
-                className="edit-address-btn" 
-                onClick={() => handleUpdateAddress(address.id, address)}
-              >
-                Edit
-              </button>
-              <button 
-                className="delete-address-btn"
-                onClick={() => handleDeleteAddress(address.id)}
-              >
-                Delete
-              </button>
+              <button className="edit-address-btn">Edit</button>
+              <button className="delete-address-btn">Delete</button>
               {!address.isDefault && (
-                <button 
-                  className="set-default-btn"
-                  onClick={() => handleSetDefaultAddress(address.id)}
-                >
-                  Set as Default
-                </button>
+                <button className="set-default-btn">Set as Default</button>
               )}
             </div>
           </div>
@@ -799,65 +612,471 @@ const CustomerProfile = () => {
     </div>
   );
 
-  // Orders tab removed as it's now handled by separate component
-
-  // Remove favorite handler (optimistic)
-    const handleAddToCart = (item) => {
-    // Dispatch event to cart context
-    const event = new CustomEvent('addToCart', { 
-      detail: { 
-        productId: item.id,
-        quantity: 1
-      }
-    });
-    window.dispatchEvent(event);
-  };
-
-  const handleRemoveFavorite = async (productId) => {
-    try {
-      // update local state
-      const updated = favorites.filter(f => f.id !== productId);
-      const updatedDetails = favoriteDetails.filter(f => f.id !== productId);
-      setFavorites(updated);
-      setFavoriteDetails(updatedDetails);
+  const renderOrdersTab = () => (
+    <div>
+      <div className="tab-header">
+        <h3>Order History</h3>
+      </div>
       
-      // update localStorage
-      try {
-        saveFavoritesForUser(user, updated.map(f => f.id));
-      } catch (e) {
-        console.warn('Failed to update localStorage', e);
-      }
-      
-      // request server removal if logged in
-      if (user && (user.id || user._id)) {
-        await removeServerFavorite(productId);
-      }
-    } catch (e) {
-      console.warn('Failed to remove favorite', e);
-    }
-  };
+      <div className="orders-list">
+        {mockOrders.map(order => (
+          <div key={order.id} className="order-card">
+            <div className="order-header">
+              <div>
+                <h4>Order #{order.id}</h4>
+                <p className="order-date">{new Date(order.date).toLocaleDateString()}</p>
+              </div>
+              <span className={`order-status status-${order.status}`}>
+                {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+              </span>
+            </div>
+            <div className="order-body">
+              <p>{order.items} items</p>
+              <p className="order-total">Total: ${order.total}</p>
+            </div>
+            <div className="order-actions">
+              <button className="view-detail-btn">View Details</button>
+              <button className="reorder-btn">Reorder</button>
+              {order.status === 'delivered' && (
+                <button className="review-btn">Write Review</button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   const renderFavoritesTab = () => (
     <div>
       <div className="tab-header">
-        <h3>Món ăn yêu thích</h3>
+        <h3>Favorite Items</h3>
       </div>
       
-      <div className="favorites-container">
-        {loadingFavorites ? (
-          <div className="loading-favorites">
-            <span>Đang tải danh sách món ăn yêu thích...</span>
-          </div>
-        ) : (
-          <FavoriteItems 
-            items={favoriteDetails}
-            onRemove={handleRemoveFavorite}
-            onAddToCart={handleAddToCart}
-          />
-        )}
-      </div>
+      {favoritesLoading ? (
+        <div className="loading">Đang tải...</div>
+      ) : favorites.length === 0 ? (
+        <div className="empty-state">
+          <p>Chưa có sản phẩm yêu thích nào</p>
+        </div>
+      ) : (
+        <div className="favorites-grid">
+          {favorites.map(item => (
+            <div key={item.id} className="favorite-card">
+              <img 
+                src={item.imageUrl || 'https://via.placeholder.com/300x200'} 
+                alt={item.name} 
+                className="favorite-image" 
+              />
+              <div className="favorite-info">
+                <h4>{item.name}</h4>
+                <p className="favorite-shop">{item.shopName || 'Unknown Shop'}</p>
+                <div className="favorite-footer">
+                  <span className="favorite-price">{item.price?.toLocaleString()}₫</span>
+                  <span className="favorite-rating">★ {item.rating || 'N/A'}</span>
+                </div>
+                <div className="favorite-actions">
+                  <button 
+                    className="add-to-cart-btn"
+                    onClick={() => handleAddToCartFromFavorites(item)}
+                  >
+                    Thêm vào giỏ
+                  </button>
+                  <button 
+                    className="remove-favorite-btn"
+                    onClick={() => handleRemoveFavorite(item.id)}
+                  >
+                    ♡
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
+
+  const handleApplicationSubmit = (role) => {
+    // Check if user has complete profile
+    if (!user.fullName || !user.phone || !user.address) {
+      alert('Vui lòng cập nhật đầy đủ thông tin cá nhân trước khi đăng ký!');
+      setActiveTab('info');
+      setIsEditing(true);
+      return;
+    }
+    
+    // Open application modal
+    setApplicationType(role);
+    setShowApplicationModal(true);
+    
+    // Prefill application form with existing user data so user only fills missing fields
+    setApplicationForm({
+      fullName: user.fullName || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      address: user.address || '',
+      // Ensure date string is YYYY-MM-DD for <input type="date">
+      dateOfBirth: user.dateOfBirth ? String(user.dateOfBirth).split('T')[0] : '',
+      idNumber: user.idNumber || '',
+      // Documents default to null (user must upload if missing)
+      idCardFront: null,
+      idCardBack: null,
+      drivingLicense: null,
+      vehicleRegistration: null,
+      insurance: null,
+      householdBook: null,
+      productSafetyCertificate: null,
+      bankAccount: '',
+      bankName: '',
+      vehicleType: '',
+      vehicleNumber: '',
+      experience: '',
+      reason: ''
+    });
+  };
+
+  const handleApplicationFormSubmit = async (e) => {
+    e.preventDefault();
+    
+    console.log('🚀 Form submit triggered!');
+    console.log('🚀 Submitting application:', applicationType);
+    console.log('📝 Form data:', applicationForm);
+    
+    // Validate form
+    const newErrors = {};
+    
+    // Reason is required for all applications
+    if (!applicationForm.reason || !applicationForm.reason.trim()) {
+      newErrors.reason = 'Lý do đăng ký là bắt buộc';
+    }
+    
+    // Phone validation - 10 digits starting with 0
+    if (applicationForm.phone) {
+      const phoneRegex = /^0\d{9}$/;
+      if (!phoneRegex.test(applicationForm.phone)) {
+        newErrors.phone = 'Số điện thoại phải có 10 số và bắt đầu bằng số 0';
+      }
+    }
+    
+    // ID Number validation - 9 or 12 digits
+    if (applicationForm.idNumber) {
+      const idRegex = /^\d{9}$|^\d{12}$/;
+      if (!idRegex.test(applicationForm.idNumber)) {
+        newErrors.idNumber = 'CMND/CCCD phải có 9 hoặc 12 chữ số';
+      }
+    }
+    
+    // Bank name validation
+    if (applicationForm.bankName === 'other' && (!applicationForm.customBankName || !applicationForm.customBankName.trim())) {
+      newErrors.customBankName = 'Vui lòng nhập tên ngân hàng';
+    }
+    
+    // Vehicle validation for shipper
+    if (applicationType === 'shipper') {
+      if (!applicationForm.vehicleType) {
+        newErrors.vehicleType = 'Loại xe là bắt buộc';
+      }
+      
+      // Vehicle number required for motorcycle and car, optional for bicycle
+      if (applicationForm.vehicleType !== 'bicycle') {
+        if (!applicationForm.vehicleNumber || !applicationForm.vehicleNumber.trim()) {
+          newErrors.vehicleNumber = 'Biển số xe là bắt buộc';
+        } else {
+          const plateValue = applicationForm.vehicleNumber.toUpperCase();
+          let plateRegex;
+          let errorMessage;
+          
+          if (applicationForm.vehicleType === 'motorcycle') {
+            // Xe máy: XXYX-XXXXX hoặc XXYY-XXXXX
+            plateRegex = /^\d{2}[A-Z]\d{1}-\d{5}$|^\d{2}[A-Z]{2}-\d{5}$/;
+            errorMessage = 'Biển số xe máy phải có dạng XXYX-XXXXX hoặc XXYY-XXXXX (X: chữ số, Y: chữ cái)';
+          } else if (applicationForm.vehicleType === 'car') {
+            // Ô tô: XXY-XXXXX
+            plateRegex = /^\d{2}[A-Z]-\d{5}$/;
+            errorMessage = 'Biển số ô tô phải có dạng XXY-XXXXX (X: chữ số, Y: chữ cái)';
+          }
+          
+          if (plateRegex && !plateRegex.test(plateValue)) {
+            newErrors.vehicleNumber = errorMessage;
+          }
+        }
+      }
+    }
+    
+    // For seller, require shop info (using fullName for shop name, address for shop address)
+    if (applicationType === 'seller') {
+      if (!applicationForm.fullName || !applicationForm.fullName.trim()) {
+        newErrors.fullName = 'Tên shop là bắt buộc';
+      }
+      if (!applicationForm.address || !applicationForm.address.trim()) {
+        newErrors.address = 'Địa chỉ shop là bắt buộc';
+      }
+    }
+    
+    console.log('🔍 Validation errors:', newErrors);
+    setApplicationErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      console.log('❌ Validation failed! Errors:', newErrors);
+      alert('Vui lòng điền đầy đủ các thông tin bắt buộc:\n' + Object.values(newErrors).join('\n'));
+      return;
+    }
+    
+    console.log('✅ Validation passed! Proceeding to submit...');
+    
+    // Submit application to backend
+    try {
+      const token = localStorage.getItem('authToken'); // FIX: use 'authToken' not 'token'
+      console.log('🔑 Token:', token ? 'exists' : 'missing');
+      console.log('🔑 Token value (first 50 chars):', token ? token.substring(0, 50) + '...' : 'N/A');
+      
+      if (!token) {
+        alert('Bạn chưa đăng nhập. Vui lòng đăng nhập lại.');
+        window.location.href = '/';
+        return;
+      }
+      
+      if (!token) {
+        alert('Bạn chưa đăng nhập. Vui lòng đăng nhập lại!');
+        window.location.href = '/';
+        return;
+      }
+      
+      // Build payload with text fields only (files will be handled separately if needed)
+      const payload = {
+        requestedRole: applicationType,
+        reason: applicationForm.reason || '',
+        shopName: applicationType === 'seller' ? (applicationForm.fullName || '') : null,
+        shopAddress: applicationType === 'seller' ? (applicationForm.address || '') : null,
+        shopDescription: applicationType === 'seller' ? (applicationForm.experience || '') : null
+      };
+      
+      console.log('📤 Sending payload:', payload);
+      console.log('📤 API URL:', `${API_BASE}/role-applications/apply`);
+      
+      const response = await axios.post(`${API_BASE}/role-applications/apply`, payload, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('✅ Response:', response.data);
+      
+      if (response.data.success) {
+        alert(`✅ THÀNH CÔNG!\n\nĐơn đăng ký ${applicationType === 'seller' ? 'bán hàng' : 'giao hàng'} đã được gửi thành công!\n\nAdmin sẽ xem xét và phản hồi trong vòng 3-5 ngày làm việc.`);
+      } else {
+        alert(`❌ LỖI: ${response.data.message || 'Không thể gửi đơn đăng ký'}`);
+      }
+      
+      // Reload applications
+      await loadApplications();
+      
+      // Close modal and reset form
+      setShowApplicationModal(false);
+      setApplicationType(null);
+      setApplicationForm({
+        fullName: '',
+        email: '',
+        phone: '',
+        address: '',
+        dateOfBirth: '',
+        idNumber: '',
+        idCardFront: null,
+        idCardBack: null,
+        drivingLicense: null,
+        vehicleRegistration: null,
+        insurance: null,
+        householdBook: null,
+        productSafetyCertificate: null,
+        bankAccount: '',
+        bankName: '',
+        vehicleType: '',
+        vehicleNumber: '',
+        experience: '',
+        reason: ''
+      });
+    } catch (error) {
+      console.error('❌ Error submitting application:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error message:', error.message);
+      
+      let errorMsg = '❌ LỖI: Không thể gửi đơn đăng ký!\n\n';
+      
+      if (error.response) {
+        // Server responded with error
+        if (error.response.status === 401) {
+          errorMsg += 'Bạn chưa đăng nhập. Vui lòng đăng nhập lại.';
+          // Optionally redirect to login
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 2000);
+        } else if (error.response.status === 403) {
+          errorMsg += 'Bạn không có quyền thực hiện thao tác này.';
+        } else if (error.response.data?.message) {
+          errorMsg += error.response.data.message;
+        } else {
+          errorMsg += `Lỗi server (${error.response.status})`;
+        }
+      } else if (error.request) {
+        // Request made but no response
+        errorMsg += 'Không thể kết nối đến server!\n\nVui lòng kiểm tra:\n• Backend có đang chạy không?\n• Kết nối mạng có ổn định không?';
+      } else {
+        errorMsg += error.message;
+      }
+      
+      alert(errorMsg);
+    }
+  };
+
+  const renderApplicationsTab = () => {
+    // Get latest application for each role
+    const sellerApp = myApplications
+      .filter(app => app.requestedRole === 'seller')
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+    
+    const shipperApp = myApplications
+      .filter(app => app.requestedRole === 'shipper')
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+    
+    const getStatusBadge = (app) => {
+      if (!app) return <span className="status-value not-applied">Chưa nộp đơn</span>;
+      
+      const statusMap = {
+        'pending': <span className="status-value pending">Đang chờ duyệt</span>,
+        'approved': <span className="status-value approved">Đã duyệt</span>,
+        'rejected': <span className="status-value rejected">Bị từ chối</span>
+      };
+      
+      return statusMap[app.status] || <span className="status-value">{app.status}</span>;
+    };
+    
+    const canApply = (role) => {
+      const app = role === 'seller' ? sellerApp : shipperApp;
+      // Can apply if no application or last application was rejected
+      return !app || app.status === 'rejected';
+    };
+    
+    return (
+      <div className="applications-tab">
+        <div className="tab-header">
+          <h3>Role Applications</h3>
+          <p className="applications-description">
+            Apply to become a seller or shipper to expand your opportunities on our platform.
+          </p>
+        </div>
+        
+        {applicationsLoading ? (
+          <div className="loading-spinner">Đang tải...</div>
+        ) : (
+          <>
+            <div className="application-cards">
+              {/* Seller Application */}
+              <div className="application-card seller-card">
+                <div className="card-header">
+                  <h4>🏪 Become a Seller</h4>
+                  <span className="card-badge">Earn Money</span>
+                </div>
+                <div className="card-content">
+                  <p>Start selling your products and reach thousands of customers.</p>
+                  <ul className="benefits-list">
+                    <li>✅ Create and manage your shop</li>
+                    <li>✅ Upload unlimited products</li>
+                    <li>✅ Track sales and analytics</li>
+                    <li>✅ Get paid directly</li>
+                  </ul>
+                  {sellerApp && (
+                    <div className="app-info">
+                      <p><strong>Trạng thái:</strong> {getStatusBadge(sellerApp)}</p>
+                      {sellerApp.adminNote && (
+                        <p><strong>Ghi chú:</strong> {sellerApp.adminNote}</p>
+                      )}
+                      <p><small>Nộp đơn: {new Date(sellerApp.createdAt).toLocaleDateString('vi-VN')}</small></p>
+                    </div>
+                  )}
+                  <button 
+                    className="apply-btn seller-btn"
+                    onClick={() => handleApplicationSubmit('seller')}
+                    disabled={!canApply('seller')}
+                  >
+                    {sellerApp && sellerApp.status === 'pending' 
+                      ? 'Đang chờ duyệt...' 
+                      : sellerApp && sellerApp.status === 'approved'
+                      ? 'Đã được duyệt'
+                      : 'Apply as Seller'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Shipper Application */}
+              <div className="application-card shipper-card">
+                <div className="card-header">
+                  <h4>🚚 Become a Shipper</h4>
+                  <span className="card-badge">Flexible Work</span>
+                </div>
+                <div className="card-content">
+                  <p>Deliver orders and earn money on your own schedule.</p>
+                  <ul className="benefits-list">
+                    <li>✅ Flexible working hours</li>
+                    <li>✅ Choose your delivery area</li>
+                    <li>✅ Earn per delivery</li>
+                    <li>✅ Real-time order tracking</li>
+                  </ul>
+                  {shipperApp && (
+                    <div className="app-info">
+                      <p><strong>Trạng thái:</strong> {getStatusBadge(shipperApp)}</p>
+                      {shipperApp.adminNote && (
+                        <p><strong>Ghi chú:</strong> {shipperApp.adminNote}</p>
+                      )}
+                      <p><small>Nộp đơn: {new Date(shipperApp.createdAt).toLocaleDateString('vi-VN')}</small></p>
+                    </div>
+                  )}
+                  <button 
+                    className="apply-btn shipper-btn"
+                    onClick={() => handleApplicationSubmit('shipper')}
+                    disabled={!canApply('shipper')}
+                  >
+                    {shipperApp && shipperApp.status === 'pending' 
+                      ? 'Đang chờ duyệt...' 
+                      : shipperApp && shipperApp.status === 'approved'
+                      ? 'Đã được duyệt'
+                      : 'Apply as Shipper'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Application History */}
+            {myApplications.length > 0 && (
+              <div className="application-status">
+                <h4>Lịch sử đơn xin vai trò</h4>
+                <div className="status-list">
+                  {myApplications.map(app => (
+                    <div key={app.id} className="status-item">
+                      <span className="status-label">
+                        {app.requestedRole === 'seller' ? '🏪 Seller' : '🚚 Shipper'}:
+                      </span>
+                      {getStatusBadge(app)}
+                      <span className="status-date">
+                        {new Date(app.createdAt).toLocaleDateString('vi-VN')}
+                      </span>
+                      {app.adminNote && (
+                        <div className="admin-note">
+                          <em>"{app.adminNote}"</em>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    );
+  };
 
   if (!user) {
     return <div className="loading">Loading...</div>;
@@ -920,18 +1139,18 @@ const CustomerProfile = () => {
           >
             Addresses
           </button>
-          <button
-            className={`tab-btn ${activeTab === 'favorites' ? 'active' : ''}`}
-            onClick={() => setActiveTab('favorites')}
-          >
-            Favorites
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'applications' ? 'active' : ''}`}
-            onClick={() => setActiveTab('applications')}
-          >
-            Applications
-          </button>
+            <button
+              className={`tab-btn ${activeTab === 'favorites' ? 'active' : ''}`}
+              onClick={() => setActiveTab('favorites')}
+            >
+              Favorites
+            </button>
+            <button
+              className={`tab-btn ${activeTab === 'applications' ? 'active' : ''}`}
+              onClick={() => setActiveTab('applications')}
+            >
+              Applications
+            </button>
         </div>
 
         {/* Tab Content */}
@@ -952,6 +1171,425 @@ const CustomerProfile = () => {
         />
       )}
 
+      {/* Application Modal */}
+      {showApplicationModal && (
+        <div className="application-modal-overlay" onClick={() => setShowApplicationModal(false)}>
+          <div className="application-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>
+                {applicationType === 'seller' ? '🏪 Đăng ký trở thành Người bán hàng' : '🚚 Đăng ký trở thành Shipper'}
+              </h2>
+              <button className="close-btn" onClick={() => setShowApplicationModal(false)}>×</button>
+            </div>
+
+            <form onSubmit={handleApplicationFormSubmit} className="application-form">
+              {/* Personal Information */}
+              <div className="form-section">
+                <h3>📋 Thông tin cá nhân</h3>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Họ và tên *</label>
+                    <input
+                      type="text"
+                      value={applicationForm.fullName}
+                      onChange={(e) => setApplicationForm(prev => ({...prev, fullName: e.target.value}))}
+                      className={applicationErrors.fullName ? 'error' : ''}
+                    />
+                    {applicationErrors.fullName && <span className="error-text">{applicationErrors.fullName}</span>}
+                  </div>
+                  <div className="form-group">
+                    <label>Email</label>
+                    <input
+                      type="email"
+                      value={applicationForm.email}
+                      onChange={(e) => setApplicationForm(prev => ({...prev, email: e.target.value}))}
+                      disabled
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Số điện thoại *</label>
+                    <input
+                      type="tel"
+                      value={applicationForm.phone}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setApplicationForm(prev => ({...prev, phone: value}));
+                        
+                        // Real-time validation
+                        const phoneRegex = /^0\d{9}$/;
+                        if (value && !phoneRegex.test(value)) {
+                          setApplicationErrors(prev => ({...prev, phone: 'Số điện thoại phải có 10 số và bắt đầu bằng số 0'}));
+                        } else {
+                          setApplicationErrors(prev => {
+                            const newErrors = {...prev};
+                            delete newErrors.phone;
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      className={applicationErrors.phone ? 'error' : ''}
+                      placeholder="0xxxxxxxxx (10 số)"
+                      maxLength="10"
+                    />
+                    {applicationErrors.phone && <span className="error-text">{applicationErrors.phone}</span>}
+                  </div>
+                  <div className="form-group">
+                    <label>Ngày sinh *</label>
+                    <input
+                      type="date"
+                      value={applicationForm.dateOfBirth}
+                      onChange={(e) => setApplicationForm(prev => ({...prev, dateOfBirth: e.target.value}))}
+                      className={applicationErrors.dateOfBirth ? 'error' : ''}
+                    />
+                    {applicationErrors.dateOfBirth && <span className="error-text">{applicationErrors.dateOfBirth}</span>}
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Số CMND/CCCD *</label>
+                    <input
+                      type="text"
+                      value={applicationForm.idNumber}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setApplicationForm(prev => ({...prev, idNumber: value}));
+                        
+                        // Real-time validation
+                        const idRegex = /^\d{9}$|^\d{12}$/;
+                        if (value && !idRegex.test(value)) {
+                          setApplicationErrors(prev => ({...prev, idNumber: 'CMND/CCCD phải có 9 hoặc 12 chữ số'}));
+                        } else {
+                          setApplicationErrors(prev => {
+                            const newErrors = {...prev};
+                            delete newErrors.idNumber;
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      className={applicationErrors.idNumber ? 'error' : ''}
+                      placeholder="9 hoặc 12 chữ số"
+                      maxLength="12"
+                    />
+                    {applicationErrors.idNumber && <span className="error-text">{applicationErrors.idNumber}</span>}
+                  </div>
+                  <div className="form-group">
+                    <label>Địa chỉ *</label>
+                    <input
+                      type="text"
+                      value={applicationForm.address}
+                      onChange={(e) => setApplicationForm(prev => ({...prev, address: e.target.value}))}
+                      className={applicationErrors.address ? 'error' : ''}
+                    />
+                    {applicationErrors.address && <span className="error-text">{applicationErrors.address}</span>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Documents Section */}
+              <div className="form-section">
+                <h3>🧾 Giấy tờ cần thiết</h3>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>CMND/CCCD mặt trước *</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setApplicationForm(prev => ({...prev, idCardFront: e.target.files[0]}))}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>CMND/CCCD mặt sau *</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setApplicationForm(prev => ({...prev, idCardBack: e.target.files[0]}))}
+                    />
+                  </div>
+                </div>
+
+                {applicationType === 'shipper' && (
+                  <>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Giấy phép lái xe A1/A2 *</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => setApplicationForm(prev => ({...prev, drivingLicense: e.target.files[0]}))}
+                          className={applicationErrors.drivingLicense ? 'error' : ''}
+                        />
+                        {applicationErrors.drivingLicense && <span className="error-text">{applicationErrors.drivingLicense}</span>}
+                      </div>
+                      <div className="form-group">
+                        <label>Giấy đăng ký xe *</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => setApplicationForm(prev => ({...prev, vehicleRegistration: e.target.files[0]}))}
+                          className={applicationErrors.vehicleRegistration ? 'error' : ''}
+                        />
+                        {applicationErrors.vehicleRegistration && <span className="error-text">{applicationErrors.vehicleRegistration}</span>}
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Bảo hiểm xe máy</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => setApplicationForm(prev => ({...prev, insurance: e.target.files[0]}))}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Sổ hộ khẩu/Giấy tạm trú</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => setApplicationForm(prev => ({...prev, householdBook: e.target.files[0]}))}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Bank Information */}
+              <div className="form-section">
+                <h3>🏦 Thông tin ngân hàng</h3>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Số tài khoản ngân hàng *</label>
+                    <input
+                      type="text"
+                      value={applicationForm.bankAccount}
+                      onChange={(e) => setApplicationForm(prev => ({...prev, bankAccount: e.target.value}))}
+                      className={applicationErrors.bankAccount ? 'error' : ''}
+                      placeholder="Nhập số tài khoản"
+                    />
+                    {applicationErrors.bankAccount && <span className="error-text">{applicationErrors.bankAccount}</span>}
+                  </div>
+                  <div className="form-group">
+                    <label>Tên ngân hàng *</label>
+                    <select
+                      value={applicationForm.bankName}
+                      onChange={(e) => setApplicationForm(prev => ({...prev, bankName: e.target.value}))}
+                      className={applicationErrors.bankName ? 'error' : ''}
+                    >
+                      <option value="">-- Chọn ngân hàng --</option>
+                      <optgroup label="🏦 Ngân hàng Thương mại Cổ phần lớn (Big 4)">
+                        <option value="Vietcombank">Vietcombank - Ngân hàng TMCP Ngoại Thương Việt Nam</option>
+                        <option value="BIDV">BIDV - Ngân hàng TMCP Đầu tư và Phát triển Việt Nam</option>
+                        <option value="VietinBank">VietinBank - Ngân hàng TMCP Công thương Việt Nam</option>
+                        <option value="Agribank">Agribank - Ngân hàng Nông nghiệp và Phát triển Nông thôn Việt Nam</option>
+                      </optgroup>
+                      <optgroup label="🏦 Ngân hàng Thương mại Cổ phần khác">
+                        <option value="VPBank">VPBank - Ngân hàng TMCP Việt Nam Thịnh Vượng</option>
+                        <option value="Techcombank">Techcombank - Ngân hàng TMCP Kỹ Thương</option>
+                        <option value="ACB">ACB - Ngân hàng TMCP Á Châu</option>
+                        <option value="SHB">SHB - Ngân hàng TMCP Sài Gòn – Hà Nội</option>
+                        <option value="MB">MB - Ngân hàng TMCP Quân Đội</option>
+                        <option value="Sacombank">Sacombank - Ngân hàng TMCP Sài Gòn Thương Tín</option>
+                        <option value="HDBank">HDBank - Ngân hàng TMCP Phát triển TP.HCM</option>
+                        <option value="MSB">MSB - Ngân hàng TMCP Hàng Hải</option>
+                        <option value="OCB">OCB - Ngân hàng TMCP Phương Đông</option>
+                        <option value="TPBank">TPBank - Ngân hàng TMCP Tiên Phong</option>
+                      </optgroup>
+                      <option value="other">🔹 Ngân hàng khác (nhập thủ công)</option>
+                    </select>
+                    {applicationErrors.bankName && <span className="error-text">{applicationErrors.bankName}</span>}
+                  </div>
+                </div>
+                
+                {/* Show custom input if "other" is selected */}
+                {applicationForm.bankName === 'other' && (
+                  <div className="form-group">
+                    <label>Nhập tên ngân hàng *</label>
+                    <input
+                      type="text"
+                      value={applicationForm.customBankName || ''}
+                      onChange={(e) => setApplicationForm(prev => ({...prev, customBankName: e.target.value}))}
+                      placeholder="Nhập tên ngân hàng của bạn"
+                      className={applicationErrors.customBankName ? 'error' : ''}
+                    />
+                    {applicationErrors.customBankName && <span className="error-text">{applicationErrors.customBankName}</span>}
+                  </div>
+                )}
+              </div>
+
+              {/* Additional Information */}
+              {applicationType === 'shipper' && (
+                <div className="form-section">
+                  <h3>🛵 Thông tin phương tiện</h3>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Loại xe *</label>
+                      <select
+                        value={applicationForm.vehicleType}
+                        onChange={(e) => setApplicationForm(prev => ({...prev, vehicleType: e.target.value}))}
+                        className={applicationErrors.vehicleType ? 'error' : ''}
+                      >
+                        <option value="">Chọn loại xe</option>
+                        <option value="motorcycle">Xe máy</option>
+                        <option value="bicycle">Xe đạp</option>
+                        <option value="car">Ô tô</option>
+                      </select>
+                      {applicationErrors.vehicleType && <span className="error-text">{applicationErrors.vehicleType}</span>}
+                    </div>
+                    <div className="form-group">
+                      <label>
+                        Biển số xe {applicationForm.vehicleType !== 'bicycle' && '*'}
+                        {applicationForm.vehicleType === 'bicycle' && ' (Không bắt buộc)'}
+                      </label>
+                      <input
+                        type="text"
+                        value={applicationForm.vehicleNumber}
+                        onChange={(e) => {
+                          const value = e.target.value.toUpperCase();
+                          setApplicationForm(prev => ({...prev, vehicleNumber: value}));
+                          
+                          // Only validate if not bicycle or if value is provided
+                          if (applicationForm.vehicleType !== 'bicycle' && value) {
+                            let plateRegex;
+                            let errorMessage;
+                            
+                            if (applicationForm.vehicleType === 'motorcycle') {
+                              // Xe máy: XXYX-XXXXX hoặc XXYY-XXXXX (X: chữ số, Y: chữ)
+                              plateRegex = /^\d{2}[A-Z]\d{1}-\d{5}$|^\d{2}[A-Z]{2}-\d{5}$/;
+                              errorMessage = 'Biển số xe máy phải có dạng XXYX-XXXXX hoặc XXYY-XXXXX (X: chữ số, Y: chữ cái)';
+                            } else if (applicationForm.vehicleType === 'car') {
+                              // Ô tô: XXY-XXXXX (X: chữ số, Y: chữ)
+                              plateRegex = /^\d{2}[A-Z]-\d{5}$/;
+                              errorMessage = 'Biển số ô tô phải có dạng XXY-XXXXX (X: chữ số, Y: chữ cái)';
+                            }
+                            
+                            if (plateRegex && !plateRegex.test(value)) {
+                              setApplicationErrors(prev => ({...prev, vehicleNumber: errorMessage}));
+                            } else {
+                              setApplicationErrors(prev => {
+                                const newErrors = {...prev};
+                                delete newErrors.vehicleNumber;
+                                return newErrors;
+                              });
+                            }
+                          } else {
+                            // Clear error if bicycle or empty value
+                            setApplicationErrors(prev => {
+                              const newErrors = {...prev};
+                              delete newErrors.vehicleNumber;
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        placeholder={
+                          applicationForm.vehicleType === 'motorcycle' ? 'Ví dụ: 51A1-12345 hoặc 29AB-12345' :
+                          applicationForm.vehicleType === 'car' ? 'Ví dụ: 51A-12345' :
+                          'Nhập biển số xe (nếu có)'
+                        }
+                        className={applicationErrors.vehicleNumber ? 'error' : ''}
+                        disabled={!applicationForm.vehicleType}
+                      />
+                      {applicationErrors.vehicleNumber && <span className="error-text">{applicationErrors.vehicleNumber}</span>}
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Lý do muốn trở thành shipper *</label>
+                    <textarea
+                      value={applicationForm.reason}
+                      onChange={(e) => setApplicationForm(prev => ({...prev, reason: e.target.value}))}
+                      className={applicationErrors.reason ? 'error' : ''}
+                      rows={4}
+                      placeholder="Hãy chia sẻ lý do bạn muốn trở thành shipper trên nền tảng của chúng tôi..."
+                    />
+                    {applicationErrors.reason && <span className="error-text">{applicationErrors.reason}</span>}
+                  </div>
+                </div>
+              )}
+
+              {applicationType === 'seller' && (
+                <div className="form-section">
+                  <h3>🏪 Thông tin bổ sung</h3>
+                  
+                  <div className="form-group">
+                    <label>Giấy chứng nhận sản phẩm an toàn *</label>
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={(e) => setApplicationForm(prev => ({...prev, productSafetyCertificate: e.target.files[0]}))}
+                      className={applicationErrors.productSafetyCertificate ? 'error' : ''}
+                    />
+                    <small className="field-note">Upload giấy chứng nhận sản phẩm an toàn (JPG, PNG, PDF)</small>
+                    {applicationErrors.productSafetyCertificate && <span className="error-text">{applicationErrors.productSafetyCertificate}</span>}
+                  </div>
+
+                  <div className="form-group">
+                    <label>Lý do muốn trở thành người bán hàng *</label>
+                    <textarea
+                      value={applicationForm.reason}
+                      onChange={(e) => setApplicationForm(prev => ({...prev, reason: e.target.value}))}
+                      className={applicationErrors.reason ? 'error' : ''}
+                      rows={4}
+                      placeholder="Hãy chia sẻ lý do bạn muốn trở thành người bán hàng trên nền tảng của chúng tôi..."
+                    />
+                    {applicationErrors.reason && <span className="error-text">{applicationErrors.reason}</span>}
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Kinh nghiệm bán hàng</label>
+                    <textarea
+                      value={applicationForm.experience}
+                      onChange={(e) => setApplicationForm(prev => ({...prev, experience: e.target.value}))}
+                      rows={3}
+                      placeholder="Chia sẻ kinh nghiệm bán hàng của bạn (nếu có)..."
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Requirements Info */}
+              <div className="requirements-info">
+                <h4>📋 Yêu cầu cơ bản:</h4>
+                <ul>
+                  <li>✅ Tuổi từ 18-60 tuổi</li>
+                  <li>✅ Không có tiền án, tiền sự</li>
+                  <li>✅ Có giấy tờ tùy thân hợp lệ</li>
+                  <li>✅ Có tài khoản ngân hàng</li>
+                  {applicationType === 'shipper' && (
+                    <>
+                      <li>✅ Có giấy phép lái xe phù hợp</li>
+                      <li>✅ Có phương tiện hợp pháp</li>
+                      <li>✅ Có điện thoại smartphone hỗ trợ GPS</li>
+                    </>
+                  )}
+                  {applicationType === 'seller' && (
+                    <>
+                      <li>✅ Hàng hóa hợp pháp, không thuộc danh mục cấm</li>
+                      <li>✅ Có giấy chứng nhận sản phẩm an toàn</li>
+                      <li>✅ Cam kết tuân thủ quy định của nền tảng</li>
+                    </>
+                  )}
+                </ul>
+              </div>
+
+              <div className="form-actions">
+                <button type="button" className="cancel-btn" onClick={() => setShowApplicationModal(false)}>
+                  Hủy
+                </button>
+                <button type="submit" className="submit-btn">
+                  Gửi đơn đăng ký
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      
       {/* Change Password Modal */}
       <ChangePasswordModal
         isOpen={showChangePasswordModal}

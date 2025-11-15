@@ -45,6 +45,12 @@ public class VoucherController {
         return voucherService.getUserUnusedVouchers(userId);
     }
 
+    // GET: Get user's available vouchers (unused và valid)
+    @GetMapping("/user/{userId}/available")
+    public List<UserVoucher> getUserAvailableVouchers(@PathVariable Integer userId) {
+        return voucherService.getUserAvailableVouchers(userId);
+    }
+
     // POST: Apply voucher to order
     @PostMapping("/apply")
     public BigDecimal applyVoucher(@RequestParam Integer userId, 

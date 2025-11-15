@@ -16,11 +16,7 @@ const ShopManagement = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  
-  // Get tab from URL query params
-  const urlParams = new URLSearchParams(window.location.search);
-  const tabFromUrl = urlParams.get('tab');
-  const [activeTab, setActiveTab] = useState(tabFromUrl || 'products');
+  const [activeTab, setActiveTab] = useState('products');
   const [showShopForm, setShowShopForm] = useState(false);
   const [orderStatus, setOrderStatus] = useState('all'); // Filter orders by status
   const [showRatings, setShowRatings] = useState(false);
@@ -66,8 +62,10 @@ const ShopManagement = () => {
   // Fetch products
   const { data: productsData, isLoading: productsLoading, error: productsError } = useQuery({
     queryKey: ['products', shopData?.data?.id],
-    queryFn: () => productAPI.getProductsByShopId(shopData?.data?.id),
-    enabled: !!shopData?.data?.id
+    queryFn: () => productAPI.getProductsByShopId(shopData?.data?.id, true), // includeAllStatuses = true for shop management
+    enabled: !!shopData?.data?.id,
+    refetchOnMount: 'always', // Always refetch when component mounts
+    refetchOnWindowFocus: true // Refetch when window gains focus
   });
   // Reviews: stats + list for this shop (seller view)
   const shopId = shopData?.data?.id;
@@ -161,6 +159,7 @@ const ShopManagement = () => {
             { id: 4, name: 'Nước uống', description: 'Beverages' },
             { id: 5, name: 'Pizza',    description: 'Italian pizza' },
             { id: 6, name: 'Bún',      description: 'Vietnamese vermicelli' }
+
           ]
         };
       }
@@ -365,10 +364,13 @@ const createProductMutation = useMutation({
       });
     }
   }, [shopData]);
+  // =================================================================
+  // === BẮT ĐẦU HÀM ĐÃ SỬA LỖI RACE CONDITION ===
+  // =================================================================
   const handleProductSubmit = async (e) => {
     e.preventDefault();
     
-    // Validation
+    // ... (Phần validation của bạn giữ nguyên)
     if (!productForm.name.trim()) {
       alert('Vui lòng nhập tên món ăn');
       return;
@@ -391,31 +393,68 @@ const createProductMutation = useMutation({
       is_available: productForm.is_available,
       status: productForm.status
     };
-    // Validate data before sending
+
+    // ... (Phần validation dữ liệu của bạn giữ nguyên)
     if (!productData.name || !productData.price || !productData.categoryId || !productData.shopId) {
       alert('Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các trường bắt buộc.');
       return;
     }
+    
     console.log('Sending product data:', productData);
+    
     try {
       let productResult;
-      
+
+      // Bước 1: Tạo hoặc cập nhật sản phẩm (chưa có ảnh)
       if (editingProduct) {
-        // Update existing product
         productResult = await productAPI.updateProduct(editingProduct.id, productData);
       } else {
-        // Create new product
         productResult = await productAPI.createProduct(productData);
       }
-      
-      // Upload image if provided
-      if (productForm.image && productResult?.data?.id) {
-        console.log('Uploading image for product:', productResult.data.id);
+
+      // Lấy sản phẩm cơ bản vừa tạo/cập nhật
+      // QUAN TRỌNG: 'finalProduct' là sản phẩm GỐC (CHƯA CÓ ẢNH)
+      let finalProduct = productResult?.data ?? productResult ?? {};
+      const createdProductId = finalProduct?.id ?? finalProduct?.productId ?? null;
+
+      // Bước 2: Nếu có ảnh, tải ảnh lên VÀ CẬP NHẬT 'finalProduct'
+      if (productForm.image && createdProductId) {
+        console.log('Uploading image for product:', createdProductId);
         setIsUploadingImage(true);
         try {
-          const uploadResult = await productAPI.uploadProductImage(productResult.data.id, productForm.image);
-          console.log('Image uploaded successfully:', uploadResult);
-          setProductImageUrl(uploadResult.data?.imageUrl);
+          // GỌI API UPLOAD
+          const uploadResult = await productAPI.uploadProductImage(createdProductId, productForm.image);
+          
+          // ==============================================================
+          // === BẮT ĐẦU PHẦN SỬA LỖI MỚI (Lần 2) ===
+          // ==============================================================
+
+          // `uploadResult` có thể là { data: ... } hoặc chỉ là { ... }
+          const resultData = uploadResult?.data ?? uploadResult ?? {};
+
+          // In ra để xem server trả về GÌ (QUAN TRỌNG):
+          console.log('>>> DEBUG: API uploadProductImage returned:', resultData);
+
+          // Lấy đường dẫn ảnh mới từ BẤT KỲ trường nào mà server trả về
+          const newImageUrl = resultData.imageUrl || resultData.image_url || resultData.url;
+
+          if (newImageUrl) {
+            console.log('Image URL found in API response:', newImageUrl);
+            
+            // CẬP NHẬT 'finalProduct' (sản phẩm gốc) với imageUrl MỚI
+            finalProduct.imageUrl = newImageUrl;
+            finalProduct.image_url = newImageUrl; // Đảm bảo tất cả các trường đều có
+            finalProduct.image = newImageUrl;     // Đảm bảo tất cả các trường đều có
+          } else {
+            // Nếu không tìm thấy, log cảnh báo. Vấn đề này là ở Backend.
+            console.warn('API uploadProductImage did NOT return an "imageUrl", "image_url", or "url".');
+          }
+          // ==============================================================
+          // === KẾT THÚC PHẦN SỬA LỖI MỚI (Lần 2) ===
+          // ==============================================================
+
+          setProductImageUrl(finalProduct?.imageUrl ?? null);
+
         } catch (imageError) {
           console.error('Image upload failed:', imageError);
           alert('Sản phẩm đã được tạo/cập nhật nhưng không thể tải ảnh lên. Vui lòng thử lại sau.');
@@ -424,21 +463,46 @@ const createProductMutation = useMutation({
         }
       }
       
-      // Success
-      queryClient.invalidateQueries(['products']);
+      // Bước 3: Cập nhật cache React Query
+      // 'finalProduct' bây giờ đã được cập nhật 'imageUrl' (nếu API trả về)
+      queryClient.setQueryData(['products', shopData?.data?.id], (oldData) => {
+        if (!oldData || !oldData.data) {
+          return { data: [finalProduct] };
+        }
+        const newData = { ...oldData };
+        if (editingProduct) {
+          newData.data = newData.data.map(p =>
+            p.id === finalProduct.id ? finalProduct : p
+          );
+        } else {
+          const existingIndex = newData.data.findIndex(p => p.id === finalProduct.id);
+          if (existingIndex > -1) {
+            newData.data[existingIndex] = finalProduct;
+          } else {
+            newData.data = [finalProduct, ...newData.data];
+          }
+        }
+        return newData;
+      });
+
+      // Vẫn invalidate để đảm bảo dữ liệu luôn mới nhất
+      queryClient.invalidateQueries(['products', shopData?.data?.id]);
+      
+      // Bước 4: Dọn dẹp form
       setShowProductForm(false);
       setEditingProduct(null);
       setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, is_available: true, status: 'active' });
       setProductImageUrl(null);
-      setIsUploadingImage(false);
-      alert('Ă¢Å“â€¦ ' + (editingProduct ? 'Cập nhật' : 'Thêm') + ' món ăn thành công!');
+      alert('✅ ' + (editingProduct ? 'Cập nhật' : 'Thêm') + ' món ăn thành công!');
       
     } catch (error) {
       console.error('Product operation failed:', error);
       alert('Lỗi khi' + (editingProduct ? 'cập nhật' : 'thêm') + ' món ăn: ' + error.message);
     }
   };
-
+  // =================================================================
+  // === KẾT THÚC HÀM ĐÃ SỬA LỖI ===
+  // =================================================================
 
   const handleShopSubmit = async (e) => {
     e.preventDefault();
@@ -536,6 +600,12 @@ const createProductMutation = useMutation({
         >
           Quản lý món ăn
         </button>
+        <button 
+          className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
+          onClick={() => setActiveTab('orders')}
+        >
+          📦 Quản lý đơn hàng
+        </button>
         <button
           className={`tab-btn ${activeTab === 'shop' ? 'active' : ''}`}
           onClick={() => setActiveTab('shop')}
@@ -548,12 +618,6 @@ const createProductMutation = useMutation({
         >
           Đánh giá khách hàng
         </button>
-        <button 
-          className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
-          onClick={() => setActiveTab('orders')}
-        >
-          📦 Quản lý đơn hàng
-        </button>
       </div>
       {activeTab === 'products' && (
         <div className="products-section">
@@ -563,7 +627,7 @@ const createProductMutation = useMutation({
               className="btn btn-primary"
               onClick={() => navigate('/shop-management/products/new')}
             >
-              + Thêm món
+              Thêm món ăn
             </button>
           </div>
 
@@ -581,51 +645,112 @@ const createProductMutation = useMutation({
               productsData.data.map(product => (
                 <div 
                   key={product.id} 
-                  className="product-card-new"
+                  className="product-card"
+                  onClick={() => handleEditProduct(product)}
                 >
-                  <div className="product-image-container">
-                    {product.imageUrl || product.image_url || product.image ? (
-                      <img 
-                        className="product-image-new"
-                        src={product.imageUrl || product.image_url || product.image} 
-                        alt={product.name}
-                        onError={(e) => {
-                          console.log('Image load error in shop management:', product.name);
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                      />
-                    ) : null}
+                  <div className="product-image">
+                    {(() => {
+                      const imageUrl = product.imageUrl || product.image_url || product.image;
+                      console.log('🖼️ Displaying product image:', product.name, 'URL:', imageUrl);
+                      return imageUrl ? (
+                        <img 
+                          src={imageUrl} 
+                          alt={product.name}
+                          onError={(e) => {
+                            console.log('❌ Image load error in shop management:', product.name, 'URL:', imageUrl);
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null;
+                    })()}
                     <div 
-                      className="no-image-new"
-                      style={{ display: product.imageUrl || product.image_url || product.image ? 'none' : 'flex' }}
+                      className="no-image"
+                      style={{ display: (product.imageUrl || product.image_url || product.image) ? 'none' : 'flex' }}
                     >
-                      <span>🖼️</span>
+                      <div className="no-image-content">
+                        <div className="no-image-icon">🖼️</div>
+                        <span>Không có ảnh</span>
+                      </div>
                     </div>
-                    {product.status === 'active' && (
-                      <div className="stock-badge">CÒN HÀNG</div>
-                    )}
                   </div>
-                  <div className="product-content-new">
-                    <h3 className="product-name-new">{product.name}</h3>
-                    <p className="product-description-new">{product.description || 'Chưa có mô tả'}</p>
-                    <div className="product-price-new">
-                      <span className="price-amount">{product.price.toLocaleString()}</span>
-                      <span className="price-currency"> VND</span>
+                  <div className="product-info">
+                    <h3>{product.name}</h3>
+                    <p>{product.description}</p>
+                    <div className="product-details">
+                      <span className="price">{product.price.toLocaleString()} VND</span>
+                      <span className="category">{product.category?.name}</span>
                     </div>
-                    <div className="product-actions-new">
-                      <button 
-                        className="btn-edit-new"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditProduct(product);
-                        }}
-                        title="Sửa món ăn"
-                      >
-                        <span className="btn-icon">✏️</span>
-                        <span className="btn-text">Sửa</span>
-                      </button>
+                    <div className="product-status">
+                      <span className={`status ${product.status === 'active' ? 'available' : 'unavailable'}`}>
+                        {product.status === 'active' ? '✅ Còn hàng' : 
+                         product.status === 'inactive' ? '⏸️ Tạm ngừng' : 
+                         product.status === 'out_of_stock' ? '🚫 Hết nguyên liệu' : '❌ Không xác định'}
+                      </span>
                     </div>
+                  </div>
+                  
+                  {/* Approval Status - Top Left Corner */}
+                  <div className="approval-status-badge">
+                    {(() => {
+                      const approvalStatus = product.approvalStatus || product.approval_status || 'pending';
+                      const rejectionReason = product.rejectionReason || product.rejection_reason;
+                      
+                      if (approvalStatus === 'pending') {
+                        return (
+                          <span className="status-badge pending" title="Món ăn đang chờ admin duyệt">
+                            ⏳ Chưa duyệt
+                          </span>
+                        );
+                      } else if (approvalStatus === 'approved') {
+                        return (
+                          <span className="status-badge approved" title="Món ăn đã được admin duyệt">
+                            ✅ Đã duyệt
+                          </span>
+                        );
+                      } else if (approvalStatus === 'rejected') {
+                        return (
+                          <span 
+                            className="status-badge rejected" 
+                            title={rejectionReason ? `Lý do: ${rejectionReason}` : 'Món ăn bị admin từ chối'}
+                          >
+                            ❌ Từ chối
+                            {rejectionReason && (
+                              <small className="rejection-reason">
+                                {rejectionReason}
+                              </small>
+                            )}
+                          </span>
+                        );
+                      } else {
+                        return (
+                          <span className="status-badge pending" title="Món ăn đang chờ admin duyệt">
+                            ⏳ Chưa duyệt
+                          </span>
+                        );
+                      }
+                    })()}
+                  </div>
+                  
+                  <div className="product-actions">
+                    <button 
+                      className="btn btn-edit"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditProduct(product);
+                      }}
+                    >
+                      Sửa
+                    </button>
+                    <button 
+                      className="btn btn-delete"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteProduct(product.id);
+                      }}
+                    >
+                      Xóa
+                    </button>
                   </div>
                 </div>
               ))
