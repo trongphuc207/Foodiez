@@ -33,12 +33,23 @@ public class Notification {
     public Notification() {}
     
     public Notification(Integer userId, String type, String title, String message) {
+        // Normalize type ngay trong constructor để đảm bảo consistency
+        // Database CHECK constraint cho phép: ORDER, PROMOTION, MESSAGE, DELIVERY, SYSTEM
+        String normalizedType = (type != null) ? type.toUpperCase().trim() : "SYSTEM";
+        java.util.Set<String> validTypes = java.util.Set.of("ORDER", "PROMOTION", "MESSAGE", "DELIVERY", "SYSTEM");
+        if (!validTypes.contains(normalizedType)) {
+            System.out.println("⚠️ Notification constructor: Invalid type '" + type + "' mapped to SYSTEM");
+            normalizedType = "SYSTEM";
+        }
+        
         this.userId = userId;
-        this.type = type;
+        this.type = normalizedType; // Sử dụng normalized type
         this.title = title;
         this.message = message;
         this.isRead = false;
         this.createdAt = LocalDateTime.now();
+        
+        System.out.println("📢 Notification created with type: " + this.type + " (original: " + type + ")");
     }
     
     // Getters and Setters

@@ -13,10 +13,27 @@ const NotificationPage = () => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Kiểm tra token trước khi gọi API
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setError('Bạn cần đăng nhập để xem thông báo');
+        setNotifications([]);
+        setLoading(false);
+        return;
+      }
+      
       const response = await notificationAPI.getMyNotifications();
       
       if (response.success) {
         let filtered = response.data || [];
+        
+        // Sort by created date (newest first)
+        filtered.sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0);
+          const dateB = new Date(b.createdAt || 0);
+          return dateB - dateA;
+        });
         
         // Filter by type
         if (filterType) {
@@ -35,8 +52,14 @@ const NotificationPage = () => {
         throw new Error(response.message || 'Không thể tải notifications');
       }
     } catch (err) {
-      setError(err.message);
+      const errorMessage = err.message || 'Không thể tải notifications';
+      setError(errorMessage);
       console.error('Error loading notifications:', err);
+      
+      // Nếu lỗi do authentication, clear notifications
+      if (errorMessage.includes('đăng nhập') || errorMessage.includes('hết hạn')) {
+        setNotifications([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -44,6 +67,20 @@ const NotificationPage = () => {
 
   useEffect(() => {
     loadNotifications();
+    
+    // Lắng nghe event khi có đơn hàng mới được tạo để refresh
+    const handleOrderCreated = () => {
+      // Đợi một chút để backend tạo notification
+      setTimeout(() => {
+        loadNotifications();
+      }, 2000);
+    };
+    
+    window.addEventListener('orderCreated', handleOrderCreated);
+    
+    return () => {
+      window.removeEventListener('orderCreated', handleOrderCreated);
+    };
   }, [loadNotifications]);
 
   const markAsRead = async (id) => {
@@ -51,7 +88,7 @@ const NotificationPage = () => {
       await notificationAPI.markAsRead(id);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
     } catch (err) {
-      alert('Lỗi: ' + err.message);
+      console.error('Error marking as read:', err);
     }
   };
 
@@ -59,9 +96,9 @@ const NotificationPage = () => {
     try {
       await notificationAPI.markAllAsRead();
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-      alert('Đã đánh dấu tất cả đã đọc!');
+      // Không hiển thị alert, chỉ cập nhật UI
     } catch (err) {
-      alert('Lỗi: ' + err.message);
+      console.error('Error marking all as read:', err);
     }
   };
 
@@ -99,7 +136,7 @@ const NotificationPage = () => {
         <h1>🔔 Thông báo của tôi</h1>
         {unreadCount > 0 && (
           <button 
-            className="btn btn-primary"
+            className="mark-all-read-button"
             onClick={markAllAsRead}
           >
             Đánh dấu tất cả đã đọc ({unreadCount} chưa đọc)
@@ -158,10 +195,20 @@ const NotificationPage = () => {
       {/* Notifications List */}
       <div className="notifications-list">
         {loading ? (
-          <div className="text-center p-4">Đang tải...</div>
+          <div className="text-center p-4">
+            <div style={{ fontSize: '3.5rem', marginBottom: '1.5rem', animation: 'pulse 2s infinite' }}>⏳</div>
+            <p>Đang tải thông báo...</p>
+            <p style={{ fontSize: '0.95rem', color: '#718096', marginTop: '0.75rem', fontWeight: '500' }}>
+              Vui lòng đợi trong giây lát
+            </p>
+          </div>
         ) : notifications.length === 0 ? (
           <div className="text-center p-4">
+            <div style={{ fontSize: '5rem', marginBottom: '1.5rem', opacity: 0.7 }}>📭</div>
             <p>Không có thông báo nào</p>
+            <p style={{ fontSize: '1rem', color: '#718096', marginTop: '0.75rem', fontWeight: '500' }}>
+              Các thông báo mới sẽ xuất hiện ở đây
+            </p>
           </div>
         ) : (
           notifications.map((notification) => (

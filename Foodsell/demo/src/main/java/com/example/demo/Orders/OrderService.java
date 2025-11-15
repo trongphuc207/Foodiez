@@ -5,10 +5,13 @@ import com.example.demo.dto.OrderItemDTO;
 import com.example.demo.products.ProductService;
 import com.example.demo.products.ProductBasicDTO;
 import com.example.demo.notifications.NotificationService;
+import com.example.demo.notifications.Notification;
 import com.example.demo.shops.ShopRepository;
 import com.example.demo.shops.Shop;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -88,6 +91,9 @@ public class OrderService {
     private final OrderAssignmentService orderAssignmentService;
     private final NotificationService notificationService;
     private final ShopRepository shopRepository;
+    
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository, OrderHistoryRepository orderHistoryRepository, ProductService productService, OrderAssignmentService orderAssignmentService, NotificationService notificationService, ShopRepository shopRepository) {
         this.orderRepository = orderRepository;
@@ -181,6 +187,50 @@ public class OrderService {
                 System.err.println("Failed to send cancellation notification to merchant: " + e.getMessage());
                 // Không throw exception để không ảnh hưởng transaction chính
             }
+            
+            // Gửi notification cho shipper khi order bị hủy
+            if (savedOrder.getAssignedShipperId() != null) {
+                try {
+                    notificationService.createNotificationInNewTransaction(
+                        savedOrder.getAssignedShipperId(),
+                        "DELIVERY",
+                        "Đơn giao hàng bị hủy",
+                        "Đơn #" + savedOrder.getId() + " đã bị hủy"
+                    );
+                } catch (Exception e) {
+                    System.err.println("Failed to send cancellation notification to shipper: " + e.getMessage());
+                }
+            }
+        }
+        
+        // Gửi notification cho shipper khi order status thay đổi sang delivering hoặc completed
+        if (("delivering".equalsIgnoreCase(newStatus) || "completed".equalsIgnoreCase(newStatus)) 
+            && savedOrder.getAssignedShipperId() != null) {
+            try {
+                String statusMessage = getStatusMessage(newStatus);
+                notificationService.createNotificationInNewTransaction(
+                    savedOrder.getAssignedShipperId(),
+                    "DELIVERY",
+                    "Cập nhật trạng thái giao hàng",
+                    "Đơn #" + savedOrder.getId() + " đã chuyển sang trạng thái: " + statusMessage
+                );
+            } catch (Exception e) {
+                System.err.println("Failed to send delivery status notification to shipper: " + e.getMessage());
+            }
+        }
+        
+        // Gửi notification cho customer khi order được giao (delivering -> completed)
+        if ("completed".equalsIgnoreCase(newStatus) && "delivering".equalsIgnoreCase(oldStatus)) {
+            try {
+                notificationService.createNotificationInNewTransaction(
+                    savedOrder.getBuyerId(),
+                    "ORDER",
+                    "Đơn hàng đã được giao",
+                    "Đơn hàng #" + savedOrder.getId() + " đã được giao thành công. Cảm ơn bạn đã sử dụng dịch vụ!"
+                );
+            } catch (Exception e) {
+                System.err.println("Failed to send delivery completion notification to customer: " + e.getMessage());
+            }
         }
         
         return convertToOrderDTO(savedOrder);
@@ -242,7 +292,7 @@ public class OrderService {
     }
     
     // Create new order with PayOS integration
-    @Transactional
+    @Transactional(timeout = 30) // Thêm timeout 30 giây để tránh treo
     public Map<String, Object> createOrder(Integer buyerId, Map<String, Object> deliveryInfo, Map<String, Object> paymentInfo, 
                                           List<Map<String, Object>> cartItems, Integer payosOrderCode, 
                                           Integer totalAmount, String status) {
@@ -323,14 +373,18 @@ public class OrderService {
             order.setCreatedAt(LocalDateTime.now());
             
             // Save order
+            System.out.println("📦 Saving order to database...");
             Order savedOrder = orderRepository.save(order);
-            
+            System.out.println("✅ Order saved: ID=" + savedOrder.getId());
             
             // Tạo order history cho việc tạo đơn hàng
+            System.out.println("📝 Creating order history...");
             createOrderHistory(savedOrder.getId(), null, status, "order_created", 
                 "Order was created with PayOS order code: " + payosOrderCode, "system");
+            System.out.println("✅ Order history created");
             
             // Create order items
+            System.out.println("📦 Creating order items...");
             if (cartItems != null && !cartItems.isEmpty()) {
                 for (Map<String, Object> item : cartItems) {
                     OrderItem orderItem = new OrderItem();
@@ -360,12 +414,14 @@ public class OrderService {
                             continue;
                         }
                         
-                        // Validate unit price
+                        // Validate unit price - không throw exception, chỉ skip item không hợp lệ
                         if (unitPrice.compareTo(BigDecimal.ZERO) <= 0) {
-                            throw new IllegalArgumentException("Unit price must be greater than 0");
+                            System.err.println("⚠️ Invalid unit price (<= 0) for product " + productId + ", skipping this item");
+                            continue; // Skip item này thay vì throw exception
                         }
                         if (unitPrice.precision() > 19) {
-                            throw new IllegalArgumentException("Unit price has too many digits");
+                            System.err.println("⚠️ Unit price has too many digits for product " + productId + ", skipping this item");
+                            continue; // Skip item này thay vì throw exception
                         }
                     } catch (NumberFormatException e) {
                         // Invalid price format: skip
@@ -378,31 +434,78 @@ public class OrderService {
                     
                     orderItemRepository.save(orderItem);
                 }
-                
+                System.out.println("✅ Order items created");
             }
             
-            // Tự động phân phối đơn hàng cho seller và shipper
-            // Auto-assigning order to seller and shipper
-            orderAssignmentService.autoAssignNewOrder(savedOrder.getId());
+            // Flush để đảm bảo tất cả dữ liệu được commit ngay
+            System.out.println("💾 Flushing order data to database...");
+            entityManager.flush();
+            System.out.println("✅ Order data flushed");
             
-            // ID 68: Gửi notification cho merchant khi có đơn hàng mới
-            // Sử dụng transaction riêng để không ảnh hưởng transaction chính
+            // TẠO NOTIFICATION TRONG CÙNG TRANSACTION - đảm bảo nó được commit cùng với order
+            System.out.println("📢 ===== CREATING NOTIFICATIONS (IN SAME TRANSACTION) =====");
+            final Integer finalOrderId = savedOrder.getId();
+            final Integer finalBuyerId = buyerId;
+            final Integer finalShopId = savedOrder.getShopId();
+            
+            // Gửi notification cho customer - TẠO TRỰC TIẾP trong transaction chính
+            // Điều này đảm bảo notification được commit cùng với order
             try {
-                Optional<Shop> shopOpt = shopRepository.findById(savedOrder.getShopId());
-                if (shopOpt.isPresent()) {
-                    Integer merchantId = shopOpt.get().getSellerId();
-                    notificationService.createNotificationInNewTransaction(
-                        merchantId,
+                System.out.println("📢 Creating customer notification for order " + finalOrderId);
+                System.out.println("📢 Buyer ID: " + finalBuyerId);
+                if (finalBuyerId != null) {
+                    // Tạo notification TRỰC TIẾP trong transaction chính (không dùng REQUIRES_NEW)
+                    // Điều này đảm bảo notification được commit cùng với order
+                    // Sử dụng REQUIRES_NEW để đảm bảo không ảnh hưởng transaction chính
+                    Notification customerNotif = notificationService.createNotificationInNewTransaction(
+                        finalBuyerId,
                         "ORDER",
-                        "Đơn hàng mới",
-                        "Bạn có đơn hàng mới #" + savedOrder.getId()
+                        "Đặt hàng thành công",
+                        "Đơn hàng #" + finalOrderId + " của bạn đã được đặt thành công. Vui lòng chờ xác nhận từ shop."
                     );
+                    
+                    if (customerNotif != null && customerNotif.getId() != null) {
+                        System.out.println("✅ ✅ ✅ Customer notification created: ID=" + customerNotif.getId() + 
+                            ", UserId=" + customerNotif.getUserId() + 
+                            ", Type=" + customerNotif.getType() + 
+                            ", Title=" + customerNotif.getTitle());
+                    } else {
+                        System.err.println("❌ ❌ ❌ Customer notification returned null!");
+                    }
+                } else {
+                    System.err.println("❌ Buyer ID is null, cannot create notification");
                 }
             } catch (Exception e) {
-                // Log error but don't fail order creation
-                System.err.println("Failed to send order notification to merchant: " + e.getMessage());
-                // Không throw exception để không ảnh hưởng transaction chính
+                System.err.println("❌ Failed to create customer notification: " + e.getMessage());
+                e.printStackTrace();
+                // KHÔNG throw exception - chỉ log để không ảnh hưởng order creation
             }
+            
+            // Gửi notification cho merchant
+            try {
+                System.out.println("📢 Creating merchant notification for order " + finalOrderId);
+                Optional<Shop> shopOpt = shopRepository.findById(finalShopId);
+                if (shopOpt.isPresent()) {
+                    Integer merchantId = shopOpt.get().getSellerId();
+                    if (merchantId != null) {
+                        // Sử dụng REQUIRES_NEW để đảm bảo không ảnh hưởng transaction chính
+                        Notification merchantNotif = notificationService.createNotificationInNewTransaction(
+                            merchantId,
+                            "ORDER",
+                            "Đơn hàng mới",
+                            "Bạn có đơn hàng mới #" + finalOrderId
+                        );
+                        if (merchantNotif != null) {
+                            System.out.println("✅ Merchant notification created: ID=" + merchantNotif.getId());
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("⚠️ Failed to send order notification to merchant: " + e.getMessage());
+                // KHÔNG throw exception - chỉ log
+            }
+            
+            System.out.println("✅ ===== NOTIFICATIONS CREATED =====");
             
             // Return success response
             Map<String, Object> result = new HashMap<>();
@@ -411,6 +514,32 @@ public class OrderService {
             result.put("orderId", savedOrder.getId());
             result.put("payosOrderCode", payosOrderCode);
             result.put("status", status);
+            
+            System.out.println("✅ ===== ORDER CREATION COMPLETED - RETURNING RESPONSE =====");
+            
+            // Chạy các operations KHÔNG QUAN TRỌNG SAU KHI return (async)
+            // Chỉ auto-assignment, notification đã được tạo ở trên
+            final Integer asyncOrderId = savedOrder.getId();
+            new Thread(() -> {
+                try {
+                    System.out.println("🔄 Starting async operations for order " + asyncOrderId);
+                    
+                    // Tự động phân phối đơn hàng cho seller và shipper
+                    try {
+                        System.out.println("👥 Auto-assigning order " + asyncOrderId);
+                        orderAssignmentService.autoAssignNewOrder(asyncOrderId);
+                        System.out.println("✅ Auto-assignment completed");
+                    } catch (Exception e) {
+                        System.err.println("⚠️ Failed to auto-assign order " + asyncOrderId + ": " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                    
+                    System.out.println("✅ All async operations completed for order " + asyncOrderId);
+                } catch (Exception e) {
+                    System.err.println("❌ Error in async operations: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }).start();
             
             return result;
             

@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -63,6 +64,20 @@ public class OrderAssignmentService {
             // Tạo lịch sử
             createOrderHistory(orderId, null, "assigned", "order_assigned_to_seller", 
                 "Đơn hàng được phân phối cho seller ID: " + sellerId, "system");
+
+            // Gửi notification cho seller khi được phân công đơn hàng
+            // Sử dụng transaction riêng để không ảnh hưởng transaction chính
+            try {
+                notificationService.createNotificationInNewTransaction(
+                    sellerId,
+                    "ORDER",
+                    "Đơn hàng được phân công",
+                    "Bạn được phân công xử lý đơn hàng #" + orderId
+                );
+            } catch (Exception e) {
+                System.err.println("Failed to send order assignment notification to seller: " + e.getMessage());
+                // Không throw exception để không ảnh hưởng transaction chính
+            }
 
             System.out.println("✅ Order " + orderId + " assigned to seller " + sellerId);
             return true;
@@ -348,31 +363,49 @@ public class OrderAssignmentService {
 
     /**
      * Tự động phân phối đơn hàng mới
+     * Sử dụng REQUIRES_NEW để đảm bảo không ảnh hưởng transaction chính
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void autoAssignNewOrder(Integer orderId) {
         try {
             Order order = orderRepository.findById(orderId).orElse(null);
-            if (order == null) return;
+            if (order == null) {
+                System.err.println("⚠️ Order not found for auto-assignment: " + orderId);
+                return;
+            }
 
             // Tìm seller phù hợp (có thể dựa trên shop_id, location, workload, etc.)
-            List<User> availableSellers = userRepository.findByRoleAndIsVerified("seller", true);
-            if (!availableSellers.isEmpty()) {
-                // Logic đơn giản: chọn seller đầu tiên
-                // Trong thực tế có thể dựa trên workload, location, rating, etc.
-                User selectedSeller = availableSellers.get(0);
-                assignOrderToSeller(orderId, selectedSeller.getId());
+            try {
+                List<User> availableSellers = userRepository.findByRoleAndIsVerified("seller", true);
+                if (!availableSellers.isEmpty()) {
+                    // Logic đơn giản: chọn seller đầu tiên
+                    // Trong thực tế có thể dựa trên workload, location, rating, etc.
+                    User selectedSeller = availableSellers.get(0);
+                    assignOrderToSeller(orderId, selectedSeller.getId());
+                }
+            } catch (Exception e) {
+                System.err.println("⚠️ Error assigning seller for order " + orderId + ": " + e.getMessage());
+                e.printStackTrace();
+                // Không throw - tiếp tục với shipper
             }
 
             // Tìm shipper phù hợp
-            List<User> availableShippers = userRepository.findByRoleAndIsVerified("shipper", true);
-            if (!availableShippers.isEmpty()) {
-                User selectedShipper = availableShippers.get(0);
-                assignOrderToShipper(orderId, selectedShipper.getId());
+            try {
+                List<User> availableShippers = userRepository.findByRoleAndIsVerified("shipper", true);
+                if (!availableShippers.isEmpty()) {
+                    User selectedShipper = availableShippers.get(0);
+                    assignOrderToShipper(orderId, selectedShipper.getId());
+                }
+            } catch (Exception e) {
+                System.err.println("⚠️ Error assigning shipper for order " + orderId + ": " + e.getMessage());
+                e.printStackTrace();
+                // Không throw - assignment vẫn thành công một phần
             }
 
         } catch (Exception e) {
             System.err.println("❌ Error in auto assignment: " + e.getMessage());
+            e.printStackTrace();
+            // Không throw exception để không ảnh hưởng transaction chính
         }
     }
 

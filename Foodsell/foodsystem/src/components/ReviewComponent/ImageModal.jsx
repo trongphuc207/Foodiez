@@ -47,3 +47,4 @@ const ImageModal = ({ imageUrl, onClose }) => {
 
 export default ImageModal;
 
+

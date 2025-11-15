@@ -313,14 +313,29 @@ const CheckoutPage = () => {
               throw new Error('Bạn cần đăng nhập để đặt hàng. Vui lòng đăng nhập và thử lại.');
             }
 
-            const orderResponse = await fetch('http://localhost:8080/api/orders', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-              },
-              body: JSON.stringify(orderData)
-            });
+            // Thêm timeout để tránh treo
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 giây timeout
+            
+            let orderResponse;
+            try {
+              orderResponse = await fetch('http://localhost:8080/api/orders', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify(orderData),
+                signal: controller.signal
+              });
+              clearTimeout(timeoutId);
+            } catch (fetchError) {
+              clearTimeout(timeoutId);
+              if (fetchError.name === 'AbortError') {
+                throw new Error('Yêu cầu tạo đơn hàng quá lâu. Vui lòng thử lại.');
+              }
+              throw fetchError;
+            }
             
             console.log('Order API response status:', orderResponse.status);
             console.log('Order API response ok:', orderResponse.ok);
@@ -461,14 +476,29 @@ const CheckoutPage = () => {
 
           // Tạo đơn hàng cho shop hiện tại
           try {
-            const orderResponse = await fetch('http://localhost:8080/api/orders', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-              },
-              body: JSON.stringify(orderData)
-            });
+            // Thêm timeout để tránh treo
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 giây timeout
+            
+            let orderResponse;
+            try {
+              orderResponse = await fetch('http://localhost:8080/api/orders', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify(orderData),
+                signal: controller.signal
+              });
+              clearTimeout(timeoutId);
+            } catch (fetchError) {
+              clearTimeout(timeoutId);
+              if (fetchError.name === 'AbortError') {
+                throw new Error('Yêu cầu tạo đơn hàng quá lâu. Vui lòng thử lại.');
+              }
+              throw fetchError;
+            }
 
             console.log(`Order API response for shop ${shopId} status:`, orderResponse.status);
             console.log(`Order API response for shop ${shopId} ok:`, orderResponse.ok);
@@ -501,6 +531,14 @@ const CheckoutPage = () => {
 
             const orderResult = await orderResponse.json();
             console.log(`Order created successfully for shop ${shopId}:`, orderResult);
+            
+            // Lưu order ID để hiển thị trong thông báo
+            if (orderResult.orderId && !window.createdOrderIds) {
+              window.createdOrderIds = [];
+            }
+            if (orderResult.orderId) {
+              window.createdOrderIds.push(orderResult.orderId);
+            }
           } catch (error) {
             console.error(`Error creating order for shop ${shopId}:`, error);
             throw error;
@@ -513,13 +551,26 @@ const CheckoutPage = () => {
         // Xóa pendingOrder nếu có
         localStorage.removeItem('pendingOrder');
 
-        // Hiển thị thông báo thành công
-        alert('Đơn hàng COD đã được đặt thành công! Bạn sẽ thanh toán khi nhận hàng.');
+        // Clear order IDs
+        const orderIds = window.createdOrderIds || [];
+        delete window.createdOrderIds;
         
-        // Chuyển về trang chủ sau 1 giây
+        // Đợi một chút để đảm bảo backend đã tạo notification xong
+        // Sau đó trigger event để NotificationBell refresh và hiển thị notification
+        console.log('📢 Dispatching orderCreated event with orderIds:', orderIds);
         setTimeout(() => {
-          navigate('/');
-        }, 1000);
+          console.log('📢 Dispatching orderCreated event now...');
+          window.dispatchEvent(new CustomEvent('orderCreated', { 
+            detail: { orderIds } 
+          }));
+          console.log('📢 orderCreated event dispatched');
+        }, 500); // Giảm delay xuống 500ms để tăng tốc
+        
+        // Chuyển về trang đơn hàng sau 2 giây để user có thể xem đơn hàng
+        // Đủ thời gian để notification được load và hiển thị
+        setTimeout(() => {
+          navigate('/orders');
+        }, 2000);
       }
     } catch (error) {
       console.error('=== ORDER COMPLETION ERROR ===');

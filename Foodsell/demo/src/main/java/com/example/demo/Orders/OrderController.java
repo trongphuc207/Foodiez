@@ -96,13 +96,20 @@ public class OrderController {
             // Get current user ID from authentication
             var currentUser = roleChecker.getCurrentUser();
             if (currentUser == null) {
+                System.err.println("❌ OrderController.createOrder: User not authenticated");
                 return ResponseEntity.status(401).body(Map.of("success", false, "message", "User not authenticated"));
             }
             
+            Integer buyerId = currentUser.getId();
+            System.out.println("📢 ===== CREATING ORDER =====");
+            System.out.println("📢 Buyer ID: " + buyerId);
+            System.out.println("📢 Buyer Email: " + currentUser.getEmail());
+            System.out.println("📢 Total Amount: " + totalAmount);
+            System.out.println("📢 Status: " + status);
             
             // Create order using service
             Map<String, Object> result = orderService.createOrder(
-                currentUser.getId(), // Pass the actual buyer ID
+                buyerId, // Pass the actual buyer ID
                 deliveryInfo, 
                 paymentInfo, 
                 cartItems, 
@@ -110,6 +117,12 @@ public class OrderController {
                 totalAmount, 
                 status
             );
+            
+            System.out.println("📢 Order creation result: " + result.get("success"));
+            if (result.get("orderId") != null) {
+                System.out.println("📢 Created Order ID: " + result.get("orderId"));
+            }
+            System.out.println("📢 ===== END CREATING ORDER =====");
             
             if ((Boolean) result.get("success")) {
                 return ResponseEntity.ok(result);

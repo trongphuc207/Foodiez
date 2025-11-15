@@ -93,20 +93,58 @@ const NotificationManagement = () => {
           if (!Array.isArray(users)) {
             throw new Error('Response không phải là array');
           }
+          console.log(`📋 Loaded ${users.length} users from API`);
         } catch (err) {
           console.error('Error loading users:', err);
           throw new Error('Không thể tải danh sách người dùng. Vui lòng kiểm tra quyền truy cập hoặc thử lại sau.');
         }
         
+        // Map role từ form sang các giá trị có thể có trong database
         const roleMap = {
-          'customer': ['customer', 'buyer'],
-          'seller': ['seller', 'merchant'],
-          'shipper': ['shipper']
+          'customer': ['customer', 'buyer', 'CUSTOMER', 'BUYER', 'Customer', 'Buyer'],
+          'seller': ['seller', 'merchant', 'SELLER', 'MERCHANT', 'Seller', 'Merchant'],
+          'shipper': ['shipper', 'SHIPPER', 'Shipper']
         };
-        const targetRoles = roleMap[formData.role] || [formData.role];
-        userIds = users
-          .filter(u => u && u.id && targetRoles.includes((u.role || '').toLowerCase()))
-          .map(u => u.id);
+        const targetRoles = roleMap[formData.role] || [formData.role, formData.role.toUpperCase(), formData.role.toLowerCase()];
+        
+        console.log(`🔍 Filtering users by role: ${formData.role}`);
+        console.log(`🔍 Target roles to match:`, targetRoles);
+        
+        // Filter users theo role (case-insensitive)
+        const filteredUsers = users.filter(u => {
+          if (!u || !u.id) {
+            return false;
+          }
+          const userRole = (u.role || '').trim();
+          const matches = targetRoles.some(targetRole => 
+            userRole.toLowerCase() === targetRole.toLowerCase()
+          );
+          if (matches) {
+            console.log(`✅ User ${u.id} (${u.email}) has role "${userRole}" - matches!`);
+          }
+          return matches;
+        });
+        
+        console.log(`📊 Found ${filteredUsers.length} users with role ${formData.role}`);
+        
+        userIds = filteredUsers
+          .map(u => {
+            const id = u.id;
+            // Đảm bảo id là số nguyên
+            if (typeof id === 'number') {
+              return id;
+            } else if (typeof id === 'string') {
+              const parsed = parseInt(id);
+              if (!isNaN(parsed)) {
+                return parsed;
+              }
+            }
+            console.warn(`⚠️ Invalid user ID format:`, id, 'for user:', u);
+            return null;
+          })
+          .filter(id => id !== null && !isNaN(id));
+        
+        console.log(`📋 Extracted ${userIds.length} valid user IDs:`, userIds);
         
         if (userIds.length === 0) {
           throw new Error(`Không tìm thấy user nào có role: ${formData.role}`);
@@ -119,6 +157,7 @@ const NotificationManagement = () => {
           if (!Array.isArray(users)) {
             throw new Error('Response không phải là array');
           }
+          console.log(`📋 Loaded ${users.length} users from API`);
         } catch (err) {
           console.error('Error loading users:', err);
           throw new Error('Không thể tải danh sách người dùng. Vui lòng kiểm tra quyền truy cập hoặc thử lại sau.');
@@ -126,7 +165,22 @@ const NotificationManagement = () => {
         
         userIds = users
           .filter(u => u && u.id)
-          .map(u => u.id);
+          .map(u => {
+            const id = u.id;
+            if (typeof id === 'number') {
+              return id;
+            } else if (typeof id === 'string') {
+              const parsed = parseInt(id);
+              if (!isNaN(parsed)) {
+                return parsed;
+              }
+            }
+            console.warn(`⚠️ Invalid user ID format:`, id, 'for user:', u);
+            return null;
+          })
+          .filter(id => id !== null && !isNaN(id));
+        
+        console.log(`📋 Extracted ${userIds.length} valid user IDs for all users`);
         
         if (userIds.length === 0) {
           throw new Error('Không tìm thấy user nào');
@@ -139,21 +193,34 @@ const NotificationManagement = () => {
       
       for (const userId of userIds) {
         try {
+          // Đảm bảo userId là số nguyên
+          const validUserId = typeof userId === 'number' ? userId : parseInt(userId);
+          if (isNaN(validUserId)) {
+            console.error(`Invalid userId: ${userId}`);
+            failCount++;
+            continue;
+          }
+          
           const notificationData = {
-            userId: userId,
+            userId: validUserId,
             type: formData.type,
             title: formData.title,
             message: formData.message
           };
           
+          console.log(`Sending notification to user ${validUserId}:`, notificationData);
+          
           const result = await notificationAPI.createNotification(notificationData);
-          if (result.success) {
+          if (result && result.success) {
             successCount++;
+            console.log(`✅ Successfully sent notification to user ${validUserId}`);
           } else {
             failCount++;
+            console.error(`❌ Failed to send notification to user ${validUserId}:`, result);
           }
         } catch (err) {
-          console.error(`Failed to send notification to user ${userId}:`, err);
+          console.error(`❌ Error sending notification to user ${userId}:`, err);
+          console.error(`Error details:`, err.message, err.stack);
           failCount++;
         }
       }
@@ -276,10 +343,8 @@ const NotificationManagement = () => {
             className="form-select"
           >
             <option value="">Tất cả</option>
-            <option value="ORDER">Đơn hàng</option>
             <option value="PROMOTION">Khuyến mãi</option>
             <option value="MESSAGE">Tin nhắn</option>
-            <option value="DELIVERY">Giao hàng</option>
             <option value="SYSTEM">Hệ thống</option>
           </select>
         </div>
@@ -443,10 +508,8 @@ const NotificationManagement = () => {
                   required
                 >
                   <option value="SYSTEM">Hệ thống</option>
-                  <option value="ORDER">Đơn hàng</option>
                   <option value="PROMOTION">Khuyến mãi</option>
                   <option value="MESSAGE">Tin nhắn</option>
-                  <option value="DELIVERY">Giao hàng</option>
                 </select>
               </div>
               <div className="form-group">
@@ -509,10 +572,8 @@ const NotificationManagement = () => {
                   required
                 >
                   <option value="SYSTEM">Hệ thống</option>
-                  <option value="ORDER">Đơn hàng</option>
                   <option value="PROMOTION">Khuyến mãi</option>
                   <option value="MESSAGE">Tin nhắn</option>
-                  <option value="DELIVERY">Giao hàng</option>
                 </select>
               </div>
               <div className="form-group">
