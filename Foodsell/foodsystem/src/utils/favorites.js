@@ -4,6 +4,11 @@ import { getAuthToken } from '../api/auth';
 
 const API_BASE = 'http://localhost:8080/api';
 
+// Helper to get auth token
+const getToken = () => {
+  return localStorage.getItem('authToken');
+};
+
 const getKey = (user) => {
   if (user && (user.id || user._id)) return `favorites_${user.id || user._id}`;
   return 'favorites_guest';
@@ -32,16 +37,19 @@ export const saveFavoritesForUser = (user, arr) => {
 // Server API helpers (async)
 export const fetchServerFavorites = async () => {
   try {
-    const token = getAuthToken();
+    const token = getToken();
+    console.log('🔑 fetchServerFavorites - Token:', token ? 'exists' : 'missing');
     if (!token) throw new Error('No auth token');
     const res = await fetch(`${API_BASE}/favorites`, {
       headers: { 'Authorization': `Bearer ${token}` },
     });
+    console.log('📦 fetchServerFavorites - Response status:', res.status);
     if (!res.ok) {
       console.warn('favorites: server fetch failed', res.status);
       return null;
     }
     const data = await res.json();
+    console.log('📦 fetchServerFavorites - Data:', data);
     // Expecting array of productIds or objects; normalize
     if (Array.isArray(data)) return data;
     if (data && Array.isArray(data.data)) return data.data;
@@ -54,7 +62,8 @@ export const fetchServerFavorites = async () => {
 
 export const addServerFavorite = async (productId) => {
   try {
-    const token = getAuthToken();
+    const token = getToken();
+    console.log('➕ addServerFavorite - ProductId:', productId, 'Token:', token ? 'exists' : 'missing');
     if (!token) throw new Error('No auth token');
     const res = await fetch(`${API_BASE}/favorites`, {
       method: 'POST',
@@ -64,6 +73,7 @@ export const addServerFavorite = async (productId) => {
       },
       body: JSON.stringify({ productId }),
     });
+    console.log('➕ addServerFavorite - Response:', res.status, res.ok);
     return res.ok;
   } catch (e) {
     console.warn('favorites: addServerFavorite error', e);
@@ -73,12 +83,14 @@ export const addServerFavorite = async (productId) => {
 
 export const removeServerFavorite = async (productId) => {
   try {
-    const token = getAuthToken();
+    const token = getToken();
+    console.log('➖ removeServerFavorite - ProductId:', productId, 'Token:', token ? 'exists' : 'missing');
     if (!token) throw new Error('No auth token');
     const res = await fetch(`${API_BASE}/favorites/${productId}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` },
     });
+    console.log('➖ removeServerFavorite - Response:', res.status, res.ok);
     return res.ok;
   } catch (e) {
     console.warn('favorites: removeServerFavorite error', e);
@@ -111,8 +123,12 @@ export const toggleFavoriteForUser = (user, productId) => {
   // Fire-and-forget server sync
   (async () => {
     try {
-      const token = getAuthToken();
-      if (!token) return;
+      const token = getToken();
+      console.log('🔄 toggleFavoriteForUser - Syncing to server, action:', action, 'productId:', productId);
+      if (!token) {
+        console.log('⚠️ No token, skipping server sync');
+        return;
+      }
       if (action === 'add') {
         await addServerFavorite(productId);
       } else {
