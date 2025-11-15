@@ -1,6 +1,7 @@
 package com.example.demo.products;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -135,6 +136,7 @@ public class ProductController {
                 Product updatedProduct = service.updateProduct(product);
                 
                 System.out.println("✅ Product image updated for product ID: " + id + ", Full URL: " + fullImageUrl);
+                System.out.println("✅ Updated product imageUrl: " + updatedProduct.getImageUrl());
                 return ResponseEntity.ok(ApiResponse.success(updatedProduct, "Product image updated successfully"));
             } else {
                 return ResponseEntity.notFound().build();
@@ -173,6 +175,53 @@ public class ProductController {
             System.err.println("❌ Product image removal error: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(500).body(ApiResponse.error("Failed to remove product image: " + e.getMessage()));
+        }
+    }
+
+    // DELETE: Xóa sản phẩm (hard delete; fallback to logical delete nếu đang được tham chiếu bởi đơn hàng)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable int id) {
+        try {
+            Optional<Product> productOpt = service.getProductById(id);
+            if (productOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Xóa file ảnh nếu có
+            try {
+                Product product = productOpt.get();
+                if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+                    String imagePath = product.getImageUrl().replace("http://localhost:8080/", "");
+                    fileUploadService.deleteProductImage(imagePath);
+                }
+            } catch (Exception ignore) { /* không chặn xóa vì lỗi xóa file */ }
+
+            try {
+                service.deleteProductById(id);
+                return ResponseEntity.ok(ApiResponse.success(null, "Xóa sản phẩm thành công"));
+            } catch (Exception ex) {
+                // Nếu có bất kỳ lỗi xóa nào (thường là lỗi ràng buộc FK), fallback sang logical delete
+                boolean likelyConstraint = (ex instanceof DataIntegrityViolationException)
+                        || (ex.getCause() != null && ex.getCause().getClass().getName().toLowerCase().contains("constraint"))
+                        || (ex.getMessage() != null && ex.getMessage().toLowerCase().contains("constraint"))
+                        || (ex.getMessage() != null && ex.getMessage().toLowerCase().contains("referential"));
+                if (!likelyConstraint) {
+                    // Không phải lỗi ràng buộc, trả về thông báo gốc
+                    return ResponseEntity.status(500).body(ApiResponse.error("Lỗi khi xóa sản phẩm: " + ex.getMessage()));
+                }
+                try {
+                    Product p = productOpt.get();
+                    p.setAvailable(false);
+                    p.setStatus("deleted");
+                    p.setImageUrl(null); // giải phóng liên kết ảnh để tránh rác
+                    service.updateProduct(p);
+                    return ResponseEntity.ok(ApiResponse.success(null, "Sản phẩm đã được đánh dấu là 'deleted' do đang được tham chiếu"));
+                } catch (Exception ex2) {
+                    return ResponseEntity.status(500).body(ApiResponse.error("Không thể đánh dấu xóa sản phẩm: " + ex2.getMessage()));
+                }
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ApiResponse.error("Lỗi khi xóa sản phẩm: " + e.getMessage()));
         }
     }
 }

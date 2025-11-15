@@ -20,6 +20,14 @@ const SidebarComponent = ({ isOpen, onClose }) => {
   }, [user?.role])
 
   const handleNavigate = (path) => {
+    // Xử lý đặc biệt cho giỏ hàng - mở modal thay vì navigate
+    if (path === '/cart') {
+      onClose && onClose()
+      // Dispatch custom event để Header mở Cart modal
+      window.dispatchEvent(new CustomEvent('openCart'))
+      return
+    }
+    
     navigate(path)
     onClose && onClose()
   }

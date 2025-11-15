@@ -26,6 +26,7 @@ import ShipperOrdersPage from '../Page/ShipperOrdersPage/ShipperOrdersPage';
 import OrderPage from '../Page/OrderPage/OrderPage';
 import NotificationPage from '../Page/NotificationPage/NotificationPage';
 
+
 export const routes = [
     {
         path: '/',
@@ -55,6 +56,13 @@ export const routes = [
     {
         path: '/notifications',
         component: NotificationPage,
+        path: '/orders',
+        component: OrderPage,
+        isShowHeader: true
+    },
+    {
+        path: '/orders/:orderId',
+        component: OrderDetailPage,
         isShowHeader: true
     },
     {
@@ -118,6 +126,16 @@ export const routes = [
     },
     {
         path: '/information',
+        component: InformationPage,
+        isShowHeader: true
+    },
+    {
+        path: '/information',
+        component: InformationPage,
+        isShowHeader: true
+    },
+    {
+        path: '/about',
         component: InformationPage,
         isShowHeader: true
     },
