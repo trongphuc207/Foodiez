@@ -54,6 +54,8 @@ public class User {
     @Column(name = "otp_expiry")
     private LocalDateTime otpExpiry;
 
+    @Column(name = "is_banned")
+    private Boolean isBanned = false;
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
@@ -104,6 +106,9 @@ public class User {
     public void setOtpCode(String otpCode) { this.otpCode = otpCode; }
     public LocalDateTime getOtpExpiry() { return otpExpiry; }
     public void setOtpExpiry(LocalDateTime otpExpiry) { this.otpExpiry = otpExpiry; }
+    public Boolean getIsBanned() { return isBanned; }
+    public void setIsBanned(Boolean isBanned) { this.isBanned = isBanned; }
+}
     public LocalDate getDateOfBirth() { return dateOfBirth; }
     public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
     public String getGender() { return gender; }

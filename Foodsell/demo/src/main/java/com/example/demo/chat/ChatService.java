@@ -8,10 +8,16 @@ import com.example.demo.shops.ShopRepository;
 import com.example.demo.shops.Shop;
 import com.example.demo.chat.dto.ChatMessageResponse;
 import com.example.demo.chat.dto.ConversationSummaryDTO;
+import com.example.demo.notifications.NotificationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class ChatService {
@@ -21,19 +27,22 @@ public class ChatService {
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
     private final ShopRepository shopRepository;
+    private final NotificationService notificationService;
 
     public ChatService(ConversationRepository conversationRepository,
                        MessageRepository messageRepository,
                        MessageReportRepository reportRepository,
                        UserRepository userRepository,
                        OrderRepository orderRepository,
-                       ShopRepository shopRepository) {
+                       ShopRepository shopRepository,
+                       NotificationService notificationService) {
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
         this.reportRepository = reportRepository;
         this.userRepository = userRepository;
         this.orderRepository = orderRepository;
         this.shopRepository = shopRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -65,6 +74,33 @@ public class ChatService {
         Message saved = messageRepository.save(m);
         c.setUpdatedAt(saved.getCreatedAt());
         conversationRepository.save(c);
+        
+        // ID 69: Gửi notification cho merchant khi customer gửi tin nhắn
+        // Sử dụng transaction riêng để không ảnh hưởng transaction chính
+        try {
+            User user1 = c.getUser1();
+            User user2 = c.getUser2();
+            User receiver = (user1 != null && user1.getId().equals(senderId)) ? user2 : user1;
+            
+            // Chỉ gửi notification nếu sender là customer và receiver là merchant/seller
+            if (receiver != null && 
+                (sender.getRole().equals("customer") || sender.getRole().equals("buyer")) &&
+                (receiver.getRole().equals("seller") || receiver.getRole().equals("merchant"))) {
+                String messagePreview = content != null && content.length() > 50 
+                    ? content.substring(0, 50) + "..." 
+                    : (content != null ? content : "Bạn có tin nhắn mới");
+                notificationService.createNotificationInNewTransaction(
+                    receiver.getId(),
+                    "MESSAGE",
+                    "Tin nhắn từ khách hàng",
+                    "Khách #" + senderId + ": " + messagePreview
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send customer message notification: " + e.getMessage());
+            // Không throw exception để không ảnh hưởng transaction chính
+        }
+        
         return saved;
     }
 
@@ -80,6 +116,30 @@ public class ChatService {
         Message saved = messageRepository.save(m);
         c.setUpdatedAt(saved.getCreatedAt());
         conversationRepository.save(c);
+        
+        // ID 69: Gửi notification cho merchant khi customer gửi hình ảnh
+        // Sử dụng transaction riêng để không ảnh hưởng transaction chính
+        try {
+            User user1 = c.getUser1();
+            User user2 = c.getUser2();
+            User receiver = (user1 != null && user1.getId().equals(senderId)) ? user2 : user1;
+            
+            // Chỉ gửi notification nếu sender là customer và receiver là merchant/seller
+            if (receiver != null && 
+                (sender.getRole().equals("customer") || sender.getRole().equals("buyer")) &&
+                (receiver.getRole().equals("seller") || receiver.getRole().equals("merchant"))) {
+                notificationService.createNotificationInNewTransaction(
+                    receiver.getId(),
+                    "MESSAGE",
+                    "Tin nhắn từ khách hàng",
+                    "Khách #" + senderId + ": Đã gửi hình ảnh"
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send customer image message notification: " + e.getMessage());
+            // Không throw exception để không ảnh hưởng transaction chính
+        }
+        
         return saved;
     }
 
@@ -194,10 +254,66 @@ public class ChatService {
         );
     }
 
-    public List<Message> adminSearchMessages(String q) { return messageRepository.searchAll(q); }
+    @Transactional(readOnly = true)
+    public List<com.example.demo.chat.dto.AdminMessageLogDTO> adminSearchMessages(String q) {
+        String query = (q == null || q.trim().isEmpty()) ? null : q.trim();
+        List<Message> messages = messageRepository.searchAll(query);
+
+        Map<Long, MessageReport> latestReports = Collections.emptyMap();
+        List<Long> reportedIds = messages.stream()
+                .filter(Message::isReported)
+                .map(Message::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (!reportedIds.isEmpty()) {
+            var reports = reportRepository.findLatestByMessageIds(reportedIds);
+            Map<Long, MessageReport> map = new HashMap<>();
+            for (MessageReport report : reports) {
+                Long messageId = report.getMessage() != null ? report.getMessage().getId() : null;
+                if (messageId == null) continue;
+                if (!map.containsKey(messageId)) {
+                    map.put(messageId, report);
+                }
+            }
+            latestReports = map;
+        }
+
+        Map<Long, MessageReport> reportsFinal = latestReports;
+
+        return messages.stream().map(m -> {
+            Long convId = m.getConversation() != null ? m.getConversation().getId() : null;
+            Integer senderId = m.getSender() != null ? m.getSender().getId() : null;
+            String senderName = m.getSender() != null ? m.getSender().getFullName() : null;
+            String senderEmail = m.getSender() != null ? m.getSender().getEmail() : null;
+            MessageReport report = reportsFinal.get(m.getId());
+            String reason = report != null ? report.getReason() : null;
+            LocalDateTime reportCreatedAt = report != null ? report.getCreatedAt() : null;
+            return new com.example.demo.chat.dto.AdminMessageLogDTO(
+                    m.getId(),
+                    convId,
+                    senderId,
+                    senderName,
+                    senderEmail,
+                    m.getContent(),
+                    m.getImageUrl(),
+                    m.getCreatedAt(),
+                    m.isReported(),
+                    reason,
+                    reportCreatedAt
+            );
+        }).toList();
+    }
 
     @Transactional
-    public void deleteConversation(Long conversationId) { conversationRepository.deleteById(conversationId); }
+    public void deleteConversation(Long conversationId) {
+        // First, delete all message reports associated with messages in this conversation
+        reportRepository.deleteByConversationId(conversationId);
+        // Then, delete all messages in this conversation
+        messageRepository.deleteByConversationId(conversationId);
+        // Finally, delete the conversation itself
+        conversationRepository.deleteById(conversationId);
+    }
 
     @Transactional
     public int markConversationRead(Long conversationId, Integer userId) {
