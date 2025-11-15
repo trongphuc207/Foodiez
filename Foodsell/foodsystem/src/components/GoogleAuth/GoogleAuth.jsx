@@ -56,7 +56,7 @@ const GoogleAuth = ({ onSuccess, onError }) => {
   };
 
   return (
-    <GoogleOAuthProvider clientId="451867714279-dd3jppk8776pear0coenn1it0kd6seg7.apps.googleusercontent.com">
+    <GoogleOAuthProvider clientId="415128695987-74n36p1u0borb4974me4lthvpvcdsqdh.apps.googleusercontent.com">
       <GoogleLogin
         onSuccess={handleSuccess}
         onError={handleError}
