@@ -159,7 +159,7 @@ const ShopManagement = () => {
             { id: 4, name: 'Nước uống', description: 'Beverages' },
             { id: 5, name: 'Pizza',    description: 'Italian pizza' },
             { id: 6, name: 'Bún',      description: 'Vietnamese vermicelli' }
-            
+
           ]
         };
       }
@@ -364,10 +364,13 @@ const createProductMutation = useMutation({
       });
     }
   }, [shopData]);
+  // =================================================================
+  // === BẮT ĐẦU HÀM ĐÃ SỬA LỖI RACE CONDITION ===
+  // =================================================================
   const handleProductSubmit = async (e) => {
     e.preventDefault();
     
-    // Validation
+    // ... (Phần validation của bạn giữ nguyên)
     if (!productForm.name.trim()) {
       alert('Vui lòng nhập tên món ăn');
       return;
@@ -390,37 +393,68 @@ const createProductMutation = useMutation({
       is_available: productForm.is_available,
       status: productForm.status
     };
-    // Validate data before sending
+
+    // ... (Phần validation dữ liệu của bạn giữ nguyên)
     if (!productData.name || !productData.price || !productData.categoryId || !productData.shopId) {
       alert('Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các trường bắt buộc.');
       return;
     }
+    
     console.log('Sending product data:', productData);
+    
     try {
       let productResult;
 
+      // Bước 1: Tạo hoặc cập nhật sản phẩm (chưa có ảnh)
       if (editingProduct) {
-        // Update existing product
         productResult = await productAPI.updateProduct(editingProduct.id, productData);
       } else {
-        // Create new product
         productResult = await productAPI.createProduct(productData);
       }
 
-      // Normalize response: backend may return Product directly or wrapped in { data: Product }
-      const createdProduct = productResult?.data ?? productResult ?? {};
-      const createdProductId = createdProduct?.id ?? createdProduct?.productId ?? null;
+      // Lấy sản phẩm cơ bản vừa tạo/cập nhật
+      // QUAN TRỌNG: 'finalProduct' là sản phẩm GỐC (CHƯA CÓ ẢNH)
+      let finalProduct = productResult?.data ?? productResult ?? {};
+      const createdProductId = finalProduct?.id ?? finalProduct?.productId ?? null;
 
-      // Upload image if provided and we have a valid product id
+      // Bước 2: Nếu có ảnh, tải ảnh lên VÀ CẬP NHẬT 'finalProduct'
       if (productForm.image && createdProductId) {
         console.log('Uploading image for product:', createdProductId);
         setIsUploadingImage(true);
         try {
+          // GỌI API UPLOAD
           const uploadResult = await productAPI.uploadProductImage(createdProductId, productForm.image);
-          console.log('Image uploaded successfully:', uploadResult);
-          // uploadResult may be { data: Product } or Product
-          const updated = uploadResult?.data ?? uploadResult ?? {};
-          setProductImageUrl(updated?.imageUrl ?? updated?.image_url ?? null);
+          
+          // ==============================================================
+          // === BẮT ĐẦU PHẦN SỬA LỖI MỚI (Lần 2) ===
+          // ==============================================================
+
+          // `uploadResult` có thể là { data: ... } hoặc chỉ là { ... }
+          const resultData = uploadResult?.data ?? uploadResult ?? {};
+
+          // In ra để xem server trả về GÌ (QUAN TRỌNG):
+          console.log('>>> DEBUG: API uploadProductImage returned:', resultData);
+
+          // Lấy đường dẫn ảnh mới từ BẤT KỲ trường nào mà server trả về
+          const newImageUrl = resultData.imageUrl || resultData.image_url || resultData.url;
+
+          if (newImageUrl) {
+            console.log('Image URL found in API response:', newImageUrl);
+            
+            // CẬP NHẬT 'finalProduct' (sản phẩm gốc) với imageUrl MỚI
+            finalProduct.imageUrl = newImageUrl;
+            finalProduct.image_url = newImageUrl; // Đảm bảo tất cả các trường đều có
+            finalProduct.image = newImageUrl;     // Đảm bảo tất cả các trường đều có
+          } else {
+            // Nếu không tìm thấy, log cảnh báo. Vấn đề này là ở Backend.
+            console.warn('API uploadProductImage did NOT return an "imageUrl", "image_url", or "url".');
+          }
+          // ==============================================================
+          // === KẾT THÚC PHẦN SỬA LỖI MỚI (Lần 2) ===
+          // ==============================================================
+
+          setProductImageUrl(finalProduct?.imageUrl ?? null);
+
         } catch (imageError) {
           console.error('Image upload failed:', imageError);
           alert('Sản phẩm đã được tạo/cập nhật nhưng không thể tải ảnh lên. Vui lòng thử lại sau.');
@@ -429,21 +463,46 @@ const createProductMutation = useMutation({
         }
       }
       
-      // Success
-      queryClient.invalidateQueries(['products']);
+      // Bước 3: Cập nhật cache React Query
+      // 'finalProduct' bây giờ đã được cập nhật 'imageUrl' (nếu API trả về)
+      queryClient.setQueryData(['products', shopData?.data?.id], (oldData) => {
+        if (!oldData || !oldData.data) {
+          return { data: [finalProduct] };
+        }
+        const newData = { ...oldData };
+        if (editingProduct) {
+          newData.data = newData.data.map(p =>
+            p.id === finalProduct.id ? finalProduct : p
+          );
+        } else {
+          const existingIndex = newData.data.findIndex(p => p.id === finalProduct.id);
+          if (existingIndex > -1) {
+            newData.data[existingIndex] = finalProduct;
+          } else {
+            newData.data = [finalProduct, ...newData.data];
+          }
+        }
+        return newData;
+      });
+
+      // Vẫn invalidate để đảm bảo dữ liệu luôn mới nhất
+      queryClient.invalidateQueries(['products', shopData?.data?.id]);
+      
+      // Bước 4: Dọn dẹp form
       setShowProductForm(false);
       setEditingProduct(null);
       setProductForm({ name: '', description: '', price: '', categoryId: '', image: null, is_available: true, status: 'active' });
       setProductImageUrl(null);
-      setIsUploadingImage(false);
-      alert('Ă¢Å“â€¦ ' + (editingProduct ? 'Cập nhật' : 'Thêm') + ' món ăn thành công!');
+      alert('✅ ' + (editingProduct ? 'Cập nhật' : 'Thêm') + ' món ăn thành công!');
       
     } catch (error) {
       console.error('Product operation failed:', error);
       alert('Lỗi khi' + (editingProduct ? 'cập nhật' : 'thêm') + ' món ăn: ' + error.message);
     }
   };
-
+  // =================================================================
+  // === KẾT THÚC HÀM ĐÃ SỬA LỖI ===
+  // =================================================================
 
   const handleShopSubmit = async (e) => {
     e.preventDefault();

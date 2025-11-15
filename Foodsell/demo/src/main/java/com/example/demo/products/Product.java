@@ -37,21 +37,6 @@ public class Product {
     @Column(name = "status")
     private String status;
 
-    @Column(name = "approval_status")
-    private String approvalStatus = "pending"; // 'pending', 'approved', 'rejected'
-
-    @Column(name = "admin_note")
-    private String adminNote; // Lý do từ chối từ admin
-
-    @Column(name = "reviewed_by")
-    private Integer reviewedBy; // Admin ID who reviewed
-
-    @Column(name = "reviewed_at")
-    private LocalDateTime reviewedAt; // When was reviewed
-
-    @Column(name = "rejection_reason")
-    private String rejectionReason;
-
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
