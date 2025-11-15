@@ -185,29 +185,6 @@ const Header = ({ toggleSidebar }) => {
             <span className="action-text">Voucher</span>
           </button>
 
-          {/* {user ? (
-            <button 
-              className="order-btn"
-              onClick={() => navigate('/orders')}
-            >
-              Đơn hàng
-            </button>
-          ) : (
-            <button className="order-btn" onClick={() => navigate('/products')}>
-              Đặt hàng ngay
-            </button>
-          )}
-
-          <button 
-            className="cart-btn"
-            onClick={() => setShowCart(true)}
-          >
-            <span className="cart-icon">🛒</span>
-            {getTotalItems() > 0 && (
-              <span className="cart-badge">{getTotalItems()}</span>
-            )}
-          </button>
-
           <div className="user-dropdown">
             <button
               className="user-btn"
