@@ -112,14 +112,27 @@ function OrderDetailPage() {
         });
 
         if (!response.ok) {
-          throw new Error('Không thể hủy đơn hàng');
+          // Try to parse backend error payload to give a friendlier message
+          let errMsg = 'Không thể hủy đơn hàng';
+          try {
+            const errData = await response.json();
+            if (errData && errData.code === 'cancel_window_expired') {
+              alert('Không thể hủy sau 3 phút kể từ khi đặt. Vui lòng liên hệ cửa hàng/shipper để được hỗ trợ.');
+              return;
+            }
+            if (errData && errData.message) errMsg = errData.message;
+          } catch (e) {
+            // ignore parse errors
+          }
+          throw new Error(errMsg);
         }
 
         alert('Đã hủy đơn hàng thành công');
         navigate('/orders');
       } catch (error) {
         console.error('Error cancelling order:', error);
-        alert(error.message);
+        // If the message already shown above (for cancel_window_expired) we returned early.
+        alert(error.message || 'Có lỗi xảy ra khi hủy đơn hàng');
       }
     }
   };

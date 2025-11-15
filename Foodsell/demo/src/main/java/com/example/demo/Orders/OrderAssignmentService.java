@@ -123,6 +123,11 @@ public class OrderAssignmentService {
                 logger.error("Failed to accept order: Order not found with ID: {}", orderId);
                 return false;
             }
+            // Prevent accepting an order that was already cancelled
+            if (order.getIsCancelled() != null && order.getIsCancelled()) {
+                logger.warn("Cannot accept order {} because it was cancelled at {} (reason={})", orderId, order.getCancelledAt(), order.getCancelReason());
+                return false;
+            }
             logger.info("Order found - Current status: {}, Assignment status: {}", order.getStatus(), order.getAssignmentStatus());
 
             User user = userRepository.findById(userId).orElse(null);

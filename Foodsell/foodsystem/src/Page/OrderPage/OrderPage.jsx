@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { customerAPI } from '../../api/customer';
+import { openChatWithMerchantByOrder } from '../../utils/openChat';
+import { calculateShippingFee, inferDistrictFromAddress } from '../../config/shippingConfig';
+import { shopAPI } from '../../api/shop';
 import './OrderPage.css';
 
 function OrderPage() {
@@ -13,6 +16,7 @@ function OrderPage() {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewingOrder, setReviewingOrder] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
+  const [shopDistrictMap, setShopDistrictMap] = useState({}); // cache shopId -> district
 
   const loadOrders = async () => {
     try {
@@ -85,16 +89,95 @@ function OrderPage() {
     loadOrders();
   }, []);
 
+  // When orders load/update, fetch shop info to determine each shop's district
+  useEffect(() => {
+    if (!orders || orders.length === 0) return;
+    const uniqueShopIds = Array.from(new Set(orders.map(o => o.shopId || o.shop_id).filter(Boolean)));
+    if (uniqueShopIds.length === 0) return;
+
+    const missing = uniqueShopIds.filter(id => !(id in shopDistrictMap));
+    if (missing.length === 0) return;
+
+    let mounted = true;
+    const TEST_SHOP_DISTRICT_MAP = {
+      '1': 'Hải Châu',
+      '2': 'Thanh Khê',
+      '3': 'Liên Chiểu',
+      '4': 'Sơn Trà',
+      '5': 'Ngũ Hành Sơn',
+      '6': 'Cẩm Lệ',
+      '7': 'Hòa Vang'
+    };
+
+    (async () => {
+      const updates = {};
+      for (const id of missing) {
+        try {
+          const shop = await shopAPI.getShopById(id);
+          const explicit = shop?.district || shop?.addressDistrict || null;
+          if (explicit) {
+            updates[id] = explicit;
+            continue;
+          }
+          const text = shop?.address || shop?.addressText || '';
+          const inferred = inferDistrictFromAddress(text);
+          if (inferred) {
+            updates[id] = inferred;
+          } else {
+            const fallback = TEST_SHOP_DISTRICT_MAP[String(id)] || 'Hải Châu';
+            updates[id] = fallback;
+          }
+        } catch (e) {
+          const fallback = TEST_SHOP_DISTRICT_MAP[String(id)] || 'Hải Châu';
+          updates[id] = fallback;
+        }
+      }
+      if (mounted && Object.keys(updates).length > 0) {
+        setShopDistrictMap(prev => ({ ...prev, ...updates }));
+      }
+    })();
+
+    return () => { mounted = false };
+  }, [orders, shopDistrictMap]);
+
   const handleCancelOrder = async (orderId) => {
     try {
-      await customerAPI.cancelOrder(orderId, 'Khách hàng hủy đơn hàng');
-      alert('Đơn hàng đã được hủy thành công!');
-      // Reload orders
-      const ordersData = await customerAPI.getOrders();
-      setOrders(ordersData);
+      const res = await customerAPI.cancelOrder(orderId, 'Khách hàng hủy đơn hàng');
+      // If backend forwarded the cancel request to shop chat, open the chat for the order
+      if (res && res.forwardedToChat) {
+        // Optionally navigate to the conversation returned by backend
+        try {
+          if (res.conversationId) {
+            // Direct navigation using conversation id
+            window.location.href = `/chat?cid=${res.conversationId}`;
+            return;
+          }
+        } catch (e) {
+          // fallback to helper which will ensure conversation exists then open
+        }
+        // Fallback: use helper to create/get conversation and navigate
+        await openChatWithMerchantByOrder(orderId);
+        return;
+      }
+
+      if (res && res.success) {
+        alert('Đơn hàng đã được hủy thành công!');
+        // Reload orders
+        const ordersData = await customerAPI.getOrders();
+        setOrders(ordersData);
+      } else {
+        // Unexpected but handled
+        alert('Không thể huỷ đơn hàng: ' + (res && res.message ? res.message : 'Không xác định'));
+      }
     } catch (error) {
       console.error('Error cancelling order:', error);
-      alert('Có lỗi xảy ra khi hủy đơn hàng: ' + error.message);
+      // Map backend error codes to friendly Vietnamese messages
+      const cancelWindowExpiredCodes = ['cancel_window_expired'];
+      if (error && (cancelWindowExpiredCodes.includes(error.code) || (error.message && error.message.toLowerCase().includes('cancel window expired')))) {
+        alert('Không thể hủy sau 3 phút kể từ khi đặt. Vui lòng liên hệ cửa hàng/shipper để được hỗ trợ.');
+      } else {
+        alert('Có lỗi xảy ra khi hủy đơn hàng: ' + (error && error.message ? error.message : 'Lỗi không xác định'));
+      }
     }
   };
 
@@ -125,6 +208,9 @@ function OrderPage() {
 
   // Map assignmentStatus or order.status to a user-facing Vietnamese label
   const getStatusDisplay = (order) => {
+    // If backend sets an explicit cancelled flag, prefer that as display
+    if (order.isCancelled || order.is_cancelled) return 'Đã hủy';
+
     const assign = (order.assignmentStatus || order.assigned_status || order.Assigned_status || '').toString().toLowerCase();
     if (assign) {
       if (assign === 'assigned') return 'Chờ xử lý';
@@ -148,6 +234,55 @@ function OrderPage() {
     if (assign) return assign.replace(/\s+/g, '-');
     const s = (order.status || '').toString().toLowerCase();
     return s.replace(/\s+/g, '-');
+  };
+
+  // Helpers: consistent grand total = items + deliveryFee - voucherDiscount
+  const toNumber = (v) => {
+    if (v === null || v === undefined) return 0;
+    if (typeof v === 'number') return v;
+    const n = Number(v);
+    return Number.isNaN(n) ? 0 : n;
+  };
+  // Final total persisted by backend (preferred)
+  const getServerTotal = (o) => toNumber(o.totalAmount ?? o.total_amount);
+
+  // Compute items subtotal from order items if available
+  const getItemsSubtotal = (o) => {
+    try {
+      if (Array.isArray(o.orderItems) && o.orderItems.length > 0) {
+        return o.orderItems.reduce((sum, it) => {
+          const qty = toNumber(it.quantity);
+          const price = toNumber(it.unitPrice ?? it.unit_price ?? it.price);
+          return sum + qty * price;
+        }, 0);
+      }
+    } catch {}
+    // fallback: if API ever returns items_total or similar
+    return toNumber(o.itemsTotal ?? o.items_total ?? 0);
+  };
+  const getDeliveryFee = (o) => {
+    const persisted = toNumber(o.deliveryFee ?? o.delivery_fee);
+    if (persisted > 0) return persisted;
+    // Reuse checkout logic: estimate from restaurant district -> recipient district
+    const toDistrict = inferDistrictFromAddress(o.addressText || o.address_text || '');
+    if (!toDistrict) return 0;
+    // Use actual shop district if available, else fallback to default
+    const fromDistrict = shopDistrictMap[o.shopId || o.shop_id] || 'Hải Châu';
+    try {
+      const details = calculateShippingFee(fromDistrict, toDistrict);
+      return toNumber(details?.fee);
+    } catch {
+      return 0;
+    }
+  };
+  const getVoucherDiscount = (o) => toNumber(o.voucherDiscount ?? o.voucher_discount ?? o.discount ?? 0);
+  const getGrandTotal = (o) => {
+    // Prefer server persisted final total to avoid double-counting shipping
+    const server = getServerTotal(o);
+    if (server > 0) return server;
+    // Fallback: reconstruct if server total not provided
+    const reconstructed = getItemsSubtotal(o) + getDeliveryFee(o) - getVoucherDiscount(o);
+    return reconstructed < 0 ? 0 : reconstructed;
   };
 
   if (loading) {
@@ -266,7 +401,7 @@ function OrderPage() {
                         <div className="order-card-total">
                           <span className="order-card-total-label">Tổng cộng:</span>
                           <span className="order-card-total-value">
-                            {(order.totalAmount || order.total_amount).toLocaleString('vi-VN')}đ
+                            {getGrandTotal(order).toLocaleString('vi-VN')}đ
                           </span>
                         </div>
 
@@ -296,27 +431,35 @@ function OrderPage() {
         {/* Customer order lists for different statuses */}
         {(activeTab === 'processing' || activeTab === 'completed' || activeTab === 'cancelled') && (
           <div className="filtered-orders-section">
-            {orders.filter(order => 
-              activeTab === 'processing' ? order.status === 'PROCESSING' :
-              activeTab === 'completed' ? order.status === 'COMPLETED' :
-              order.status === 'CANCELLED'
-            ).length === 0 ? (
-              <div className="empty-orders">
-                <div className="empty-icon">📦</div>
-                <h3>Không có đơn hàng</h3>
-                <p>Không có đơn hàng nào trong trạng thái này.</p>
-              </div>
-            ) : (
-              <div className="orders-list">
-                {orders
-                  .filter(order => 
-                    activeTab === 'processing' ? order.status === 'PROCESSING' :
-                    activeTab === 'completed' ? order.status === 'COMPLETED' :
-                    order.status === 'CANCELLED'
-                  )
-                  .map(order => (
+            {/*
+              For the "processing" tab we want to show orders whose assignment status is 'accepted'.
+              We check common field names used across the app: assignmentStatus and assignment_status.
+            */}
+            {(() => {
+              const filtered = orders.filter(order => {
+                if (activeTab === 'processing') {
+                  const assign = (order.assignmentStatus || order.assignment_status || '').toString().toLowerCase();
+                  return assign === 'accepted';
+                }
+                if (activeTab === 'completed') return (order.status || '').toString().toUpperCase() === 'COMPLETED';
+                // Include orders explicitly marked cancelled by flag in addition to status === 'CANCELLED'
+                return (order.status || '').toString().toUpperCase() === 'CANCELLED' || !!(order.isCancelled || order.is_cancelled);
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="empty-orders">
+                    <div className="empty-icon">📦</div>
+                    <h3>Không có đơn hàng</h3>
+                    <p>Không có đơn hàng nào trong trạng thái này.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="orders-list">
+                  {filtered.map(order => (
                     <div className="order-card" key={order.id}>
-                      {/* Reuse the same order card structure as in the "all" tab */}
                       <div className="order-card-header">
                         <div className="order-card-header-left">
                           <div className="order-card-number">
@@ -326,8 +469,8 @@ function OrderPage() {
                           <div className="order-card-separator"></div>
                           <div className="order-card-timestamp">📅 {new Date().toLocaleString('vi-VN')}</div>
                         </div>
-                        <span className={`order-card-status ${order.status.toLowerCase()}`}>
-                          {order.status}
+                        <span className={`order-card-status ${getStatusKey(order)}`}>
+                          {getStatusDisplay(order)}
                         </span>
                       </div>
 
@@ -337,11 +480,11 @@ function OrderPage() {
                           <div className="order-card-products">
                             {order.orderItems && order.orderItems.map((item, index) => (
                               <div key={index} className="order-card-product-item">
-                                  <img 
-                                    src={item.productImage || item.image || item.imageUrl || "/placeholder.svg"} 
-                                    alt={item.productName || item.name}
-                                    className="order-card-product-image"
-                                  />
+                                <img 
+                                  src={item.productImage || item.image || item.imageUrl || "/placeholder.svg"} 
+                                  alt={item.productName || item.name}
+                                  className="order-card-product-image"
+                                />
                                 <p className="order-card-product-name">
                                   {item.productName || item.name}
                                 </p>
@@ -360,7 +503,7 @@ function OrderPage() {
                           <div className="order-card-total">
                             <span className="order-card-total-label">Tổng cộng:</span>
                             <span className="order-card-total-value">
-                              {(order.totalAmount || order.total_amount).toLocaleString('vi-VN')}đ
+                              {getGrandTotal(order).toLocaleString('vi-VN')}đ
                             </span>
                           </div>
 
@@ -371,7 +514,8 @@ function OrderPage() {
                             >
                               Xem chi tiết →
                             </button>
-                            {order.status === 'PROCESSING' && (
+                            {/* Only show cancel button when order status is PROCESSING (server-driven) */}
+                            {((order.status || '').toString().toUpperCase() === 'PROCESSING') && (
                               <button 
                                 className="order-card-button order-card-button-danger"
                                 onClick={() => handleCancelOrder(order.id)}
@@ -384,8 +528,9 @@ function OrderPage() {
                       </div>
                     </div>
                   ))}
-              </div>
-            )}
+                </div>
+              );
+            })()}
           </div>
         )}
 
@@ -465,17 +610,23 @@ function OrderPage() {
                   <h4>Tổng quan:</h4>
                   <div className="summary-item">
                     <span>Tổng tiền hàng:</span>
-                    <span>{(selectedOrder.totalAmount || selectedOrder.total_amount).toLocaleString('vi-VN')}đ</span>
+                    <span>{getItemsSubtotal(selectedOrder).toLocaleString('vi-VN')}đ</span>
                   </div>
-                  {selectedOrder.delivery_fee && (
+                  {(getDeliveryFee(selectedOrder) > 0) && (
                     <div className="summary-item">
                       <span>Phí giao hàng:</span>
-                      <span>{selectedOrder.delivery_fee.toLocaleString('vi-VN')}đ</span>
+                      <span>{getDeliveryFee(selectedOrder).toLocaleString('vi-VN')}đ</span>
+                    </div>
+                  )}
+                  {(getVoucherDiscount(selectedOrder) > 0) && (
+                    <div className="summary-item">
+                      <span>Giảm giá (voucher):</span>
+                      <span>-{getVoucherDiscount(selectedOrder).toLocaleString('vi-VN')}đ</span>
                     </div>
                   )}
                   <div className="summary-item total">
                     <span>Tổng thanh toán:</span>
-                    <span>{(selectedOrder.totalAmount || selectedOrder.total_amount).toLocaleString('vi-VN')}đ</span>
+                    <span>{getGrandTotal(selectedOrder).toLocaleString('vi-VN')}đ</span>
                   </div>
                 </div>
               </div>

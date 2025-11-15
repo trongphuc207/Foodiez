@@ -80,8 +80,17 @@ export const customerAPI = {
     });
     
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to cancel order');
+      // Try to read structured error returned by backend (e.g. { success:false, message, code })
+      let errorData = null;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        // ignore parse errors
+      }
+      const err = new Error((errorData && errorData.message) ? errorData.message : `Failed to cancel order (HTTP ${response.status})`);
+      // attach code if present so callers can react programmatically
+      if (errorData && errorData.code) err.code = errorData.code;
+      throw err;
     }
     
     return response.json();

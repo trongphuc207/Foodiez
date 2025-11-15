@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
+// No deliveries dependency in pre-deliveries rollback
+
 @Service
 public class ShipperServiceImpl implements ShipperService {
 
@@ -28,6 +30,8 @@ public class ShipperServiceImpl implements ShipperService {
 
     @Autowired
     private OrderStatusHistoryRepository orderStatusHistoryRepository;
+
+    // DeliveryRepository no longer used in pre-deliveries flow
 
     @Override
     public List<ShipperOrderDTO> getShipperOrders(String username, String status) {
@@ -105,12 +109,13 @@ public class ShipperServiceImpl implements ShipperService {
         
         ShipperDashboardDTO dashboard = new ShipperDashboardDTO();
         dashboard.setTotalOrders(orders.size());
-        dashboard.setDeliveredOrders((int) orders.stream()
-            .filter(o -> "delivered".equals(o.getStatus()))
-            .count());
-        dashboard.setDeliveringOrders((int) orders.stream()
-            .filter(o -> "delivering".equals(o.getStatus()))
-            .count());
+        int delivered = (int) orders.stream().filter(o -> "delivered".equals(o.getStatus())).count();
+        int delivering = (int) orders.stream().filter(o -> {
+            String s = o.getStatus();
+            return "delivering".equals(s) || "picked_up".equals(s) || "waiting_pickup".equals(s);
+        }).count();
+        dashboard.setDeliveredOrders(delivered);
+        dashboard.setDeliveringOrders(delivering);
         dashboard.setTotalEarnings(formatCurrency(
             orders.stream()
                 .filter(o -> "delivered".equals(o.getStatus()))
@@ -137,8 +142,11 @@ public class ShipperServiceImpl implements ShipperService {
         if (shipper.getId().intValue() != order.getAssignedShipperId()) {
             throw new RuntimeException("Not authorized to update this order");
         }
-
+        // Revert to pre-deliveries behavior: update order.status directly
         order.setStatus(status);
+        if ("delivered".equals(status)) {
+            order.setUpdatedAt(LocalDateTime.now());
+        }
         orderRepository.save(order);
 
         // Save status history
@@ -172,6 +180,8 @@ public class ShipperServiceImpl implements ShipperService {
     order.setAssignedAt(LocalDateTime.now());
         // Optionally set delivery workflow status (e.g. delivering) depending on your flow. Keep existing status unchanged if you prefer.
         orderRepository.save(order);
+
+        // Pre-deliveries behavior: do not create/update deliveries here
 
         // Save status history
         OrderStatusHistory history = new OrderStatusHistory();
@@ -232,6 +242,7 @@ public class ShipperServiceImpl implements ShipperService {
         dto.setCustomer(order.getRecipientName());
         dto.setPhone(order.getRecipientPhone());
         dto.setStatus(order.getStatus());
+        // Pre-deliveries: no deliveryStatus from deliveries table
         dto.setAssignmentStatus(order.getAssignmentStatus());
         dto.setAssignedShipperId(order.getAssignedShipperId());
         dto.setTime(order.getCreatedAt());

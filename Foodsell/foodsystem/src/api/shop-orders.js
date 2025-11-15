@@ -39,19 +39,18 @@ export const shopOrdersAPI = {
 
   // Update basic order details (recipient info, phone, address) from seller side
   updateOrderDetails: async (orderId, data) => {
-    // Map frontend field names to backend expected keys
-    const payload = {
-      recipientName: data.recipientName,
-      recipientPhone: data.recipientPhone,
-      // backend expects `addressText` column name
-      addressText: data.recipientAddress,
-      // allow frontend to request changing assignment status
-      assignmentStatus: data.assignmentStatus
-    };
+    // Map frontend field names to backend expected keys (only include provided values)
+    const payload = {};
+    if (data.recipientName != null && String(data.recipientName).trim() !== '') payload.recipientName = data.recipientName;
+    if (data.recipientPhone != null && String(data.recipientPhone).trim() !== '') payload.recipientPhone = data.recipientPhone;
+    // Backend expects addressText. Make address optional; only send if provided
+    if (data.recipientAddress != null && String(data.recipientAddress).trim() !== '') payload.addressText = data.recipientAddress;
+    if (data.assignmentStatus != null && String(data.assignmentStatus).trim() !== '') payload.assignmentStatus = data.assignmentStatus;
     // Debug log to verify payload
     console.debug('updateOrderDetails - payload:', payload);
 
-  const res = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+  // Seller endpoint accepts PUT /api/seller/orders/{orderId}
+  const res = await fetch(`${API_BASE_URL}/seller/orders/${orderId}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(payload),
@@ -85,6 +84,37 @@ export const shopOrdersAPI = {
     if (!res.ok) {
       const err = await res.json().catch(() => null);
       throw new Error(err?.message || 'Failed to accept order');
+    }
+    return res.json();
+  }
+,
+
+  // Delete an order (seller/admin) - typically only for cancelled orders
+  deleteOrder: async (orderId) => {
+    const res = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      throw new Error(err?.message || 'Failed to delete order');
+    }
+    return res.json();
+  }
+,
+
+  // Cancel an order from seller side: mark is_cancelled and optionally include a reason and timestamp
+  cancelOrder: async (orderId, reason) => {
+    const payload = { reason: reason || 'Cancelled by seller' };
+    // Use seller force-cancel endpoint which expects POST /orders/{id}/cancel-by-seller
+    const res = await fetch(`${API_BASE_URL}/orders/${orderId}/cancel-by-seller`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      throw new Error(err?.message || 'Failed to cancel order');
     }
     return res.json();
   }

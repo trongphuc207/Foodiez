@@ -3,6 +3,10 @@ package com.example.demo.Orders;
 import com.example.demo.dto.OrderDTO;
 import com.example.demo.dto.OrderItemDTO;
 import com.example.demo.products.ProductService;
+import com.example.demo.chat.Conversation;
+import com.example.demo.chat.Message;
+import com.example.demo.shops.ShopService;
+import com.example.demo.shops.Shop;
 import com.example.demo.products.ProductBasicDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,23 +64,25 @@ public class OrderService {
     private final OrderItemRepository orderItemRepository;
     private final OrderHistoryRepository orderHistoryRepository;
     private final ProductService productService;
+    private final ShopService shopService;
     private final OrderAssignmentService orderAssignmentService;
+    private final com.example.demo.chat.ChatService chatService;
 
-    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository, OrderHistoryRepository orderHistoryRepository, ProductService productService, OrderAssignmentService orderAssignmentService) {
+    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository, OrderHistoryRepository orderHistoryRepository, ProductService productService, ShopService shopService, OrderAssignmentService orderAssignmentService, com.example.demo.chat.ChatService chatService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.orderHistoryRepository = orderHistoryRepository;
         this.productService = productService;
+        this.shopService = shopService;
         this.orderAssignmentService = orderAssignmentService;
+        this.chatService = chatService;
     }
 
     public List<OrderDTO> getAllOrders() {
         // Use custom query to fetch orders with order items
         List<Order> orders = orderRepository.findAll();
-        // Manually fetch order items for each order to avoid lazy loading issues
-        for (Order order : orders) {
-            order.setOrderItems(orderItemRepository.findByOrderId(order.getId()));
-        }
+        // Batch-load order items for the orders to avoid N+1 queries
+        loadOrderItemsForOrders(orders);
         return orders.stream()
                 .map(this::convertToOrderDTO)
                 .collect(Collectors.toList());
@@ -89,6 +95,29 @@ public class OrderService {
             return convertToOrderDTO(order);
         }
         return null;
+    }
+
+    // Return Order entity (used by controllers for ownership checks / deletes)
+    public Order getOrderEntityById(Integer id) {
+        return orderRepository.findById(id).orElse(null);
+    }
+
+    @Transactional
+    public boolean deleteOrderById(Integer id) {
+        try {
+            Order order = orderRepository.findById(id).orElse(null);
+            if (order == null) return false;
+            // Only allow deleting cancelled orders
+            if (order.getIsCancelled() == null || !order.getIsCancelled()) return false;
+
+            orderRepository.delete(order);
+
+            // record history
+            createOrderHistory(id, order.getStatus(), order.getStatus(), "order_deleted", "Order deleted by seller/admin", "system");
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Transactional
@@ -127,10 +156,8 @@ public class OrderService {
     
     public List<OrderDTO> getOrdersByBuyerId(Integer buyerId) {
         List<Order> orders = orderRepository.findByBuyerIdOrderByCreatedAtDesc(buyerId);
-        // Load order items for each order
-        for (Order order : orders) {
-            order.setOrderItems(orderItemRepository.findByOrderId(order.getId()));
-        }
+        // Batch-load order items to avoid N+1 selects
+        loadOrderItemsForOrders(orders);
         return orders.stream()
                 .map(this::convertToOrderDTO)
                 .collect(Collectors.toList());
@@ -142,15 +169,195 @@ public class OrderService {
         return orderAssignmentService.acceptOrder(orderId, userId);
     }
 
+    @Transactional
+    public boolean cancelWithinWindow(Integer orderId, Integer userId, String reason) {
+        try {
+            Order order = orderRepository.findById(orderId).orElse(null);
+            if (order == null) return false;
+
+            // Already cancelled?
+            if (order.getIsCancelled() != null && order.getIsCancelled()) return false;
+
+            // Only allow cancel for pending orders
+            if (!"pending".equalsIgnoreCase(order.getStatus())) return false;
+
+            // Seller-wins: if assignment_status == 'accepted' do not allow automatic cancel
+            String assign = order.getAssignmentStatus();
+            if (assign != null && "accepted".equalsIgnoreCase(assign)) return false;
+
+            // Enforce 3-minute window from createdAt
+            LocalDateTime created = order.getCreatedAt();
+            LocalDateTime now = LocalDateTime.now();
+            if (created == null) return false;
+            if (created.isBefore(now.minusMinutes(3))) return false;
+
+            // Perform cancel
+            order.setIsCancelled(true);
+            order.setCancelledAt(now);
+            order.setCancelledBy(userId);
+            order.setCancelReason(reason);
+            order.setUpdatedAt(now);
+            orderRepository.save(order);
+
+            // Save history
+            createOrderHistory(orderId, order.getStatus(), order.getStatus(), "cancelled", "Order cancelled by buyer: " + reason, String.valueOf(userId));
+
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Cancel an order if it's still cancellable within buyer window, or notify merchant via chat when the order is already paid/confirmed.
+     * Returns a map describing the result:
+     *  - success: boolean
+     *  - forwardedToChat: boolean (true when we sent a chat message instead of auto-cancelling)
+     *  - code/message: optional details
+     */
+    @Transactional
+    public Map<String, Object> cancelOrNotifyForPaid(Integer orderId, Integer userId, String reason) {
+        Map<String, Object> resp = new HashMap<>();
+        try {
+            Order order = orderRepository.findById(orderId).orElse(null);
+            if (order == null) {
+                resp.put("success", false);
+                resp.put("code", "not_found");
+                resp.put("message", "Order not found");
+                return resp;
+            }
+
+            if (order.getIsCancelled() != null && order.getIsCancelled()) {
+                resp.put("success", false);
+                resp.put("code", "already_cancelled");
+                resp.put("message", "Order already cancelled");
+                return resp;
+            }
+
+            // Seller wins: if assignment_status == 'accepted' do not allow automatic cancel
+            String assign = order.getAssignmentStatus();
+            if (assign != null && "accepted".equalsIgnoreCase(assign)) {
+                resp.put("success", false);
+                resp.put("code", "cancel_not_allowed");
+                resp.put("message", "Seller already accepted the order");
+                return resp;
+            }
+
+            // Enforce 3-minute window from createdAt
+            LocalDateTime created = order.getCreatedAt();
+            LocalDateTime now = LocalDateTime.now();
+            if (created == null) {
+                resp.put("success", false);
+                resp.put("code", "invalid_order");
+                return resp;
+            }
+            if (created.isBefore(now.minusMinutes(3))) {
+                resp.put("success", false);
+                resp.put("code", "cancel_window_expired");
+                resp.put("message", "Cancel window expired");
+                return resp;
+            }
+
+            // If order is paid/confirmed we DO NOT auto-cancel or auto-create chat message anymore.
+            // Instead we return an instructional response for the client to show to user.
+            String status = order.getStatus() == null ? "" : order.getStatus();
+            if ("confirmed".equalsIgnoreCase(status) || "paid".equalsIgnoreCase(status) || status.toLowerCase().contains("paid")) {
+                String shopName = "shop";
+                try {
+                    var shopOpt = shopService.getShopById(order.getShopId());
+                    if (shopOpt != null && shopOpt.isPresent()) {
+                        Shop shopEntity = shopOpt.get();
+                        if (shopEntity.getName() != null && !shopEntity.getName().isBlank()) {
+                            shopName = shopEntity.getName();
+                        }
+                    }
+                } catch (Exception ignored) {}
+                String displayMessage = String.format(
+                        "Đơn hàng #%d đã được thanh toán / xác nhận. Vui lòng tự nhắn tin với chủ shop (%s) trước khi đơn hàng được chấp nhận hoàn tất.",
+                        orderId, shopName);
+                resp.put("success", false); // cancel not executed
+                resp.put("code", "manual_chat_required");
+                resp.put("forwardedToChat", false);
+                resp.put("message", displayMessage);
+                // Optional history entry to log the attempt without performing cancellation
+                createOrderHistory(orderId, order.getStatus(), order.getStatus(), "cancel_requested", "Buyer requested cancel after payment/confirmation - instructed manual chat", String.valueOf(userId));
+                return resp;
+            }
+
+            // Otherwise perform the existing auto-cancel flow
+            order.setIsCancelled(true);
+            order.setCancelledAt(now);
+            order.setCancelledBy(userId);
+            order.setCancelReason(reason);
+            order.setUpdatedAt(now);
+            orderRepository.save(order);
+
+            createOrderHistory(orderId, order.getStatus(), order.getStatus(), "cancelled", "Order cancelled by buyer: " + reason, String.valueOf(userId));
+
+            resp.put("success", true);
+            resp.put("forwardedToChat", false);
+            return resp;
+        } catch (Exception e) {
+            resp.put("success", false);
+            resp.put("code", "internal_error");
+            resp.put("message", e.getMessage());
+            return resp;
+        }
+    }
+
+    /**
+     * Force-cancel an order by seller. Minimal checks: order must exist and not already cancelled.
+     * This is intended for seller-initiated immediate cancellation and will record an order history entry.
+     */
+    @Transactional
+    public boolean forceCancelBySeller(Integer orderId, Integer sellerUserId, String reason) {
+        try {
+            Order order = orderRepository.findById(orderId).orElse(null);
+            if (order == null) return false;
+
+            // Already cancelled?
+            if (order.getIsCancelled() != null && order.getIsCancelled()) return false;
+
+            LocalDateTime now = LocalDateTime.now();
+            order.setIsCancelled(true);
+            order.setCancelledAt(now);
+            order.setCancelledBy(sellerUserId);
+            order.setCancelReason(reason == null ? "Cancelled by seller" : reason);
+            order.setUpdatedAt(now);
+            orderRepository.save(order);
+
+            // Record history entry
+            createOrderHistory(orderId, order.getStatus(), order.getStatus(), "cancelled_by_seller", "Order cancelled by seller: " + (reason == null ? "" : reason), String.valueOf(sellerUserId));
+
+            return true;
+        } catch (Exception e) {
+            // swallow and return false to avoid throwing internal errors to caller
+            return false;
+        }
+    }
+
     public List<OrderDTO> getOrdersByShopId(Integer shopId) {
         List<Order> orders = orderRepository.findByShopIdOrderByCreatedAtDesc(shopId);
-        // Load order items for each order
-        for (Order order : orders) {
-            order.setOrderItems(orderItemRepository.findByOrderId(order.getId()));
-        }
+        // Batch-load order items to avoid N+1 selects
+        loadOrderItemsForOrders(orders);
         return orders.stream()
                 .map(this::convertToOrderDTO)
                 .collect(Collectors.toList());
+    }
+
+    // Helper: load order items for a list of orders in a single query and attach them
+    private void loadOrderItemsForOrders(List<Order> orders) {
+        if (orders == null || orders.isEmpty()) return;
+        List<Integer> orderIds = orders.stream()
+                .map(Order::getId)
+                .collect(Collectors.toList());
+        List<OrderItem> items = orderItemRepository.findByOrderIdIn(orderIds);
+        Map<Integer, List<OrderItem>> itemsByOrder = items.stream()
+                .collect(Collectors.groupingBy(OrderItem::getOrderId));
+        for (Order o : orders) {
+            List<OrderItem> list = itemsByOrder.get(o.getId());
+            o.setOrderItems(list == null ? List.of() : list);
+        }
     }
     
     public long getOrderCount() {
@@ -203,6 +410,21 @@ public class OrderService {
 
             if (determinedShopId != null) {
                 order.setShopId(determinedShopId);
+                try {
+                    // Prevent buyer from buying products of their own shop
+                    var shopOpt = shopService.getShopById(determinedShopId);
+                    if (shopOpt != null && shopOpt.isPresent()) {
+                        Shop shop = shopOpt.get();
+                        if (shop.getSellerId() == buyerId) {
+                            Map<String, Object> errorResult = new HashMap<>();
+                            errorResult.put("success", false);
+                            errorResult.put("message", "Bạn không thể mua sản phẩm của chính cửa hàng bạn.");
+                            return errorResult;
+                        }
+                    }
+                } catch (Exception ex) {
+                    // If shop lookup fails, continue (do not block order creation based on lookup failure)
+                }
             } else {
                 order.setShopId(1); // Fallback
             }
@@ -342,6 +564,9 @@ public class OrderService {
         dto.setCreatedAt(order.getCreatedAt());
         dto.setUpdatedAt(order.getUpdatedAt());
         dto.setAssignmentStatus(order.getAssignmentStatus());
+    dto.setIsCancelled(order.getIsCancelled());
+    dto.setCancelledAt(order.getCancelledAt());
+    dto.setCancelReason(order.getCancelReason());
         // Convert order items
         if (order.getOrderItems() != null) {
             List<OrderItemDTO> itemDTOs = order.getOrderItems().stream()
