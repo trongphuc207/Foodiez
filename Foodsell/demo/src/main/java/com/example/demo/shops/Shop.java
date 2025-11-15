@@ -37,11 +37,17 @@ public class Shop {
     @Column(name = "opening_hours")
     private String openingHours;
 
-    @Column(name = "rating")
-    private Integer rating;
+    @Column(name = "rating", columnDefinition = "float")
+    private Float rating;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "is_banned")
+    private Boolean isBanned = false;
+
+    @Column(name = "ban_reason")
+    private String banReason;
 
     // Default constructor
     public Shop() {}
