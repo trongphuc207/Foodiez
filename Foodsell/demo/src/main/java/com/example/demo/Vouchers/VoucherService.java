@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -70,22 +71,36 @@ public class VoucherService {
         return savedVoucher;
     }
 
-    // Get all active vouchers
+    // Get all active vouchers (với quantity > 0)
     public List<Voucher> getActiveVouchers() {
-        return voucherRepository.findActiveVouchers(LocalDate.now());
+        List<Voucher> vouchers = voucherRepository.findActiveVouchers(LocalDate.now());
+        // Filter vouchers with available quantity
+        return vouchers.stream()
+                .filter(v -> v.getQuantity() == null || v.getQuantity() > 0)
+                .collect(java.util.stream.Collectors.toList());
     }
 
-    // Claim voucher by user
+    // Claim voucher by user (chỉ được claim 1 lần)
     public UserVoucher claimVoucher(Integer userId, String voucherCode) {
         Voucher voucher = voucherRepository.findByCode(voucherCode)
                 .orElseThrow(() -> new RuntimeException("Voucher not found"));
 
         if (!voucher.isValid()) {
-            throw new RuntimeException("Voucher is not valid");
+            throw new RuntimeException("Voucher is not valid or out of stock");
         }
 
+        // Check if user already claimed this voucher
         if (userVoucherRepository.existsByUserIdAndVoucherId(userId, voucher.getId())) {
             throw new RuntimeException("You have already claimed this voucher");
+        }
+
+        // Decrease quantity
+        if (voucher.getQuantity() != null) {
+            if (voucher.getQuantity() <= 0) {
+                throw new RuntimeException("Voucher is out of stock");
+            }
+            voucher.setQuantity(voucher.getQuantity() - 1);
+            voucherRepository.save(voucher);
         }
 
         UserVoucher userVoucher = new UserVoucher(userId, voucher.getId());
@@ -130,12 +145,29 @@ public class VoucherService {
         UserVoucher userVoucher = userVoucherRepository.findByUserIdAndVoucherId(userId, voucher.getId())
                 .orElseThrow(() -> new RuntimeException("You don't have this voucher"));
 
+        if (userVoucher.getIsUsed()) {
+            throw new RuntimeException("Voucher already used");
+        }
+
         userVoucher.markAsUsed(orderId);
         userVoucherRepository.save(userVoucher);
 
         // Update voucher usage count
         voucher.setUsedCount(voucher.getUsedCount() + 1);
         voucherRepository.save(voucher);
+    }
+
+    // Get user's available vouchers (chưa dùng và còn hợp lệ)
+    public List<UserVoucher> getUserAvailableVouchers(Integer userId) {
+        List<UserVoucher> userVouchers = userVoucherRepository.findByUserIdAndIsUsedFalseOrderByClaimedAtDesc(userId);
+        
+        // Filter out vouchers that are no longer valid
+        return userVouchers.stream()
+                .filter(uv -> {
+                    Optional<Voucher> voucherOpt = voucherRepository.findById(uv.getVoucherId());
+                    return voucherOpt.isPresent() && voucherOpt.get().isValid();
+                })
+                .collect(java.util.stream.Collectors.toList());
     }
 
     // Generate voucher code

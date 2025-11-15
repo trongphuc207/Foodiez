@@ -26,6 +26,7 @@ import ShipperOrdersPage from '../Page/ShipperOrdersPage/ShipperOrdersPage';
 import OrderPage from '../Page/OrderPage/OrderPage';
 import NotificationPage from '../Page/NotificationPage/NotificationPage';
 
+
 export const routes = [
     {
         path: '/',

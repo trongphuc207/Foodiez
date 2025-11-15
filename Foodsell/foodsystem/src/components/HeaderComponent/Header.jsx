@@ -50,6 +50,16 @@ const Header = ({ toggleSidebar }) => {
     return () => window.removeEventListener('authSuccess', handleAuthSuccess);
   }, [navigate]);
 
+  // Handle open cart event from sidebar
+  useEffect(() => {
+    const handleOpenCart = () => {
+      setShowCart(true);
+    };
+
+    window.addEventListener('openCart', handleOpenCart);
+    return () => window.removeEventListener('openCart', handleOpenCart);
+  }, []);
+
   // Đóng modal khi bấm ESC và quản lý scrollbar
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && setShowAuth(false);

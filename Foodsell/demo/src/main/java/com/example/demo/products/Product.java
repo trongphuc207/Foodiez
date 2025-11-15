@@ -37,6 +37,18 @@ public class Product {
     @Column(name = "status")
     private String status;
 
+    @Column(name = "approval_status")
+    private String approvalStatus = "pending"; // pending, approved, rejected
+
+    @Column(name = "reviewed_by")
+    private Integer reviewedBy; // Admin user ID who reviewed
+
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
+
+    @Column(name = "admin_note", columnDefinition = "NVARCHAR(MAX)")
+    private String adminNote; // Admin's note when approving/rejecting
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

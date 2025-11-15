@@ -575,3 +575,219 @@
     gap: 10px;
   }
 }
+
+/* Role Applications Tab */
+.applications-tab {
+  padding: 20px;
+}
+
+.tab-header {
+  margin-bottom: 30px;
+}
+
+.applications-description {
+  color: #666;
+  margin-top: 8px;
+}
+
+.application-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.application-card {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s;
+}
+
+.application-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.seller-card {
+  border-color: #ff6b35;
+}
+
+.shipper-card {
+  border-color: #4CAF50;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.card-header h4 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.card-badge {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.card-content p {
+  color: #666;
+  margin-bottom: 15px;
+}
+
+.benefits-list {
+  list-style: none;
+  padding: 0;
+  margin: 15px 0;
+}
+
+.benefits-list li {
+  padding: 8px 0;
+  color: #555;
+}
+
+.app-info {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 15px 0;
+  font-size: 0.9rem;
+}
+
+.app-info p {
+  margin: 5px 0;
+}
+
+.apply-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 10px;
+}
+
+.seller-btn {
+  background: linear-gradient(135deg, #ff6b35, #ff8c42);
+  color: white;
+}
+
+.seller-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ff5722, #ff6b35);
+  transform: scale(1.02);
+}
+
+.shipper-btn {
+  background: linear-gradient(135deg, #4CAF50, #66BB6A);
+  color: white;
+}
+
+.shipper-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #388E3C, #4CAF50);
+  transform: scale(1.02);
+}
+
+.apply-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.application-status {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.application-status h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.status-label {
+  font-weight: 600;
+  color: #333;
+  min-width: 120px;
+}
+
+.status-value {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.status-value.pending {
+  background: #FFF3CD;
+  color: #856404;
+}
+
+.status-value.approved {
+  background: #D4EDDA;
+  color: #155724;
+}
+
+.status-value.rejected {
+  background: #F8D7DA;
+  color: #721C24;
+}
+
+.status-value.not-applied {
+  background: #E2E3E5;
+  color: #6C757D;
+}
+
+.status-date {
+  color: #666;
+  font-size: 0.85rem;
+  margin-left: auto;
+}
+
+.admin-note {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  background: #fff;
+  border-left: 3px solid #ff6b35;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.loading-spinner {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 1.1rem;
+}

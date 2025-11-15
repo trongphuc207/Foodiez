@@ -5,13 +5,16 @@ const PAYMENT_API_BASE_URL = process.env.REACT_APP_ORDER_URL || 'http://localhos
 // Create payment link
 export const createPaymentLink = async (paymentData) => {
   try {
+    const token = localStorage.getItem('authToken');
     console.log('=== PAYMENT API CALL ===');
     console.log('API URL:', `${PAYMENT_API_BASE_URL}/create-payment`);
+    console.log('Token:', token ? 'exists' : 'missing');
     console.log('Request data:', paymentData);
     
     const response = await axios.post(`${PAYMENT_API_BASE_URL}/create-payment`, paymentData, {
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
     });
     
@@ -38,7 +41,12 @@ export const createPaymentLink = async (paymentData) => {
 // Get payment information
 export const getPaymentInfo = async (orderCode) => {
   try {
-    const response = await axios.get(`${PAYMENT_API_BASE_URL}/payment/${orderCode}`);
+    const token = localStorage.getItem('authToken');
+    const response = await axios.get(`${PAYMENT_API_BASE_URL}/payment/${orderCode}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     return response.data;
   } catch (error) {
     console.error('Get payment info error:', error);
@@ -49,9 +57,14 @@ export const getPaymentInfo = async (orderCode) => {
 // Cancel payment
 export const cancelPayment = async (orderCode, reason = 'User cancelled') => {
   try {
+    const token = localStorage.getItem('authToken');
     const response = await axios.post(`${PAYMENT_API_BASE_URL}/cancel-payment`, {
       orderCode,
       cancellationReason: reason
+    }, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     });
     return response.data;
   } catch (error) {

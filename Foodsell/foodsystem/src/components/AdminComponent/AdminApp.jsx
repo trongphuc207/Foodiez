@@ -43,17 +43,36 @@ const AdminApp = () => {
     }
   };
 
+/**
+ * Lưu ý:
+ * - KHÔNG dùng BrowserRouter ở đây. Router tổng đã bọc ở App chính.
+ * - Dùng route tương đối: "", "users", "orders", ...
+ * - Ở App chính: <Route path="/admin/*" element={<RouteGuard requiredRole="admin"><AdminApp/></RouteGuard>} />
+ */
+export default function AdminApp() {
   return (
-    <div className="admin-app">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <div className="admin-content">
+    <div className="admin-container">
+      <Sidebar />
+      <div className="admin-main">
         <Header />
-        <main className="admin-main">
-          {renderContent()}
-        </main>
+        <div className="admin-content p-4">
+          <Routes>
+            <Route index element={<Dashboard />} />
+            <Route path="users" element={<Users />} />
+            <Route path="orders" element={<Orders />} />
+            <Route path="vouchers" element={<Vouchers />} />
+            <Route path="shops" element={<Shops />} />
+            <Route path="role-applications" element={<RoleApplications />} />
+            <Route path="product-approval" element={<ProductApproval />} />
+            <Route path="complaints" element={<ComplaintManagement />} />
+            <Route path="reports" element={<Reports />} />
+
+            {/* fallback */}
+            <Route path="*" element={<Dashboard />} />
+          </Routes>
+          <Outlet />
+        </div>
       </div>
     </div>
   );
-};
-
-export default AdminApp;
+}
