@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -24,6 +25,9 @@ public class NotificationController {
     @Autowired
     private RoleChecker roleChecker;
     
+    @Autowired
+    private com.example.demo.Users.UserRepository userRepository;
+    
     // ===== USER NOTIFICATIONS =====
     
     // Lấy tất cả notifications của user hiện tại
@@ -33,11 +37,31 @@ public class NotificationController {
         try {
             User currentUser = roleChecker.getCurrentUser();
             if (currentUser == null) {
+                System.err.println("❌ getMyNotifications: User not authenticated");
                 return ResponseEntity.badRequest().body(ApiResponse.error("Vui lòng đăng nhập để xem thông báo"));
             }
-            List<Notification> notifications = notificationService.getNotificationsByUserId(currentUser.getId());
+            
+            Integer userId = currentUser.getId();
+            System.out.println("📢 ===== GET MY NOTIFICATIONS =====");
+            System.out.println("📢 Current User ID: " + userId);
+            System.out.println("📢 Current User Email: " + currentUser.getEmail());
+            
+            List<Notification> notifications = notificationService.getNotificationsByUserId(userId);
+            
+            System.out.println("📢 Found " + notifications.size() + " notifications for user " + userId);
+            if (notifications.size() > 0) {
+                System.out.println("📢 First notification: ID=" + notifications.get(0).getId() + 
+                    ", Type=" + notifications.get(0).getType() + 
+                    ", Title=" + notifications.get(0).getTitle() +
+                    ", UserId=" + notifications.get(0).getUserId() +
+                    ", IsRead=" + notifications.get(0).getIsRead());
+            }
+            System.out.println("📢 ===== END GET MY NOTIFICATIONS =====");
+            
             return ResponseEntity.ok(ApiResponse.success(notifications, "Lấy danh sách thông báo thành công!"));
         } catch (Exception e) {
+            System.err.println("❌ Error in getMyNotifications: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -58,6 +82,43 @@ public class NotificationController {
         }
     }
     
+    // Debug endpoint: Kiểm tra notification có được tạo không
+    @GetMapping("/debug/recent")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getRecentNotificationsDebug() {
+        try {
+            User currentUser = roleChecker.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("User not authenticated"));
+            }
+            
+            Integer userId = currentUser.getId();
+            List<Notification> allNotifications = notificationService.getNotificationsByUserId(userId);
+            List<Notification> orderNotifications = allNotifications.stream()
+                .filter(n -> "ORDER".equals(n.getType()))
+                .collect(java.util.stream.Collectors.toList());
+            
+            Map<String, Object> debugInfo = new HashMap<>();
+            debugInfo.put("userId", userId);
+            debugInfo.put("totalNotifications", allNotifications.size());
+            debugInfo.put("orderNotifications", orderNotifications.size());
+            debugInfo.put("recentOrderNotifications", orderNotifications.stream()
+                .limit(5)
+                .map(n -> Map.of(
+                    "id", n.getId(),
+                    "type", n.getType(),
+                    "title", n.getTitle(),
+                    "message", n.getMessage(),
+                    "createdAt", n.getCreatedAt().toString()
+                ))
+                .collect(java.util.stream.Collectors.toList()));
+            
+            return ResponseEntity.ok(ApiResponse.success(debugInfo, "Debug info retrieved"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+    
     // Đếm số notifications chưa đọc
     @GetMapping("/unread-count")
     @PreAuthorize("isAuthenticated()")
@@ -65,11 +126,16 @@ public class NotificationController {
         try {
             User currentUser = roleChecker.getCurrentUser();
             if (currentUser == null) {
+                System.err.println("❌ getUnreadCount: User not authenticated");
                 return ResponseEntity.badRequest().body(ApiResponse.error("Vui lòng đăng nhập"));
             }
-            long count = notificationService.getUnreadCountByUserId(currentUser.getId());
+            Integer userId = currentUser.getId();
+            long count = notificationService.getUnreadCountByUserId(userId);
+            System.out.println("📢 Unread count for user " + userId + ": " + count);
             return ResponseEntity.ok(ApiResponse.success(count, "Lấy số thông báo chưa đọc thành công!"));
         } catch (Exception e) {
+            System.err.println("❌ Error in getUnreadCount: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -112,16 +178,99 @@ public class NotificationController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'admin')")
     public ResponseEntity<ApiResponse<Notification>> createNotification(@RequestBody Map<String, Object> request) {
+        System.out.println("📢 ===== CREATE NOTIFICATION (ADMIN) =====");
+        System.out.println("📢 Request body: " + request);
+        
         try {
-            Integer userId = (Integer) request.get("userId");
+            // Xử lý userId - có thể là Integer hoặc String từ JSON
+            Integer userId = null;
+            Object userIdObj = request.get("userId");
+            System.out.println("📢 userIdObj type: " + (userIdObj != null ? userIdObj.getClass().getName() : "null") + ", value: " + userIdObj);
+            
+            if (userIdObj != null) {
+                if (userIdObj instanceof Integer) {
+                    userId = (Integer) userIdObj;
+                } else if (userIdObj instanceof String) {
+                    try {
+                        userId = Integer.parseInt((String) userIdObj);
+                    } catch (NumberFormatException e) {
+                        System.err.println("❌ Invalid userId format (String): " + userIdObj);
+                        return ResponseEntity.badRequest().body(ApiResponse.error("User ID không hợp lệ: " + userIdObj));
+                    }
+                } else if (userIdObj instanceof Number) {
+                    userId = ((Number) userIdObj).intValue();
+                } else {
+                    System.err.println("❌ Invalid userId type: " + userIdObj.getClass().getName());
+                    return ResponseEntity.badRequest().body(ApiResponse.error("User ID không hợp lệ: " + userIdObj));
+                }
+            }
+            
+            System.out.println("📢 Parsed userId: " + userId);
+            
+            if (userId == null) {
+                System.err.println("❌ userId is null");
+                return ResponseEntity.badRequest().body(ApiResponse.error("User ID không được để trống"));
+            }
+            
             String type = (String) request.get("type");
             String title = (String) request.get("title");
             String message = (String) request.get("message");
             
-            Notification notification = notificationService.createNotification(userId, type, title, message);
+            System.out.println("📢 Raw Type: " + type + ", Title: " + title + ", Message: " + message);
+            
+            // Validate các trường bắt buộc
+            if (type == null || type.trim().isEmpty()) {
+                System.err.println("❌ Type is null or empty");
+                return ResponseEntity.badRequest().body(ApiResponse.error("Loại thông báo không được để trống"));
+            }
+            if (title == null || title.trim().isEmpty()) {
+                System.err.println("❌ Title is null or empty");
+                return ResponseEntity.badRequest().body(ApiResponse.error("Tiêu đề không được để trống"));
+            }
+            if (message == null || message.trim().isEmpty()) {
+                System.err.println("❌ Message is null or empty");
+                return ResponseEntity.badRequest().body(ApiResponse.error("Nội dung không được để trống"));
+            }
+            
+            // Normalize type để phù hợp với database constraint
+            // Database CHECK constraint cho phép: ORDER, PROMOTION, MESSAGE, DELIVERY, SYSTEM
+            String normalizedType = type.toUpperCase().trim();
+            
+            // Danh sách các type hợp lệ theo database constraint
+            java.util.Set<String> validTypes = java.util.Set.of("ORDER", "PROMOTION", "MESSAGE", "DELIVERY", "SYSTEM");
+            
+            if (!validTypes.contains(normalizedType)) {
+                System.out.println("⚠️ Type '" + type + "' không hợp lệ, chuyển thành SYSTEM");
+                normalizedType = "SYSTEM";
+            }
+            
+            System.out.println("📢 Normalized Type: " + normalizedType + " (from original: " + type + ")");
+            
+            // Kiểm tra user có tồn tại không
+            if (userRepository != null) {
+                System.out.println("📢 Checking if user exists: " + userId);
+                java.util.Optional<com.example.demo.Users.User> userOpt = userRepository.findById(userId);
+                if (userOpt.isEmpty()) {
+                    System.err.println("❌ User not found with ID: " + userId);
+                    return ResponseEntity.badRequest().body(ApiResponse.error("Không tìm thấy user với ID: " + userId));
+                }
+                System.out.println("✅ User found: " + userOpt.get().getEmail());
+            } else {
+                System.out.println("⚠️ userRepository is null, skipping user validation");
+            }
+            
+            System.out.println("📢 Creating notification...");
+            Notification notification = notificationService.createNotification(userId, normalizedType, title, message);
+            System.out.println("✅ Notification created successfully: ID=" + notification.getId() + ", UserId=" + notification.getUserId());
+            System.out.println("📢 ===== CREATE NOTIFICATION SUCCESS =====");
             return ResponseEntity.ok(ApiResponse.success(notification, "Tạo thông báo thành công!"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+            System.err.println("❌ ===== CREATE NOTIFICATION ERROR =====");
+            System.err.println("❌ Error creating notification: " + e.getMessage());
+            System.err.println("❌ Error class: " + e.getClass().getName());
+            e.printStackTrace();
+            System.err.println("❌ ===== END ERROR =====");
+            return ResponseEntity.badRequest().body(ApiResponse.error("Lỗi khi tạo thông báo: " + e.getMessage()));
         }
     }
     

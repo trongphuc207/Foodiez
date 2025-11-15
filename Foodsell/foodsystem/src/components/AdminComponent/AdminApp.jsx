@@ -1,19 +1,47 @@
-import React from "react";
-import { Routes, Route, Outlet } from "react-router-dom";
-import Sidebar from "./Sidebar";
-import Header from "./Header";
-import Dashboard from "./Dashboard";
-import Users from "./Users";
-import Orders from "./Orders";
-import Vouchers from "./Vouchers";
-import Reports from "./Reports";
-import Shops from "./Shops";
-import RoleApplications from "./RoleApplications";
-import ProductApproval from "./ProductApproval";
-import ComplaintManagement from "./ComplaintManagement/ComplaintManagement";
-import "./admin.css";
-import "./admin-white-theme-override.css";
+import React, { useState } from 'react';
+import Sidebar from './Sidebar';
+import Header from './Header';
+import Dashboard from './Dashboard';
+import ProductManagement from './ProductManagement';
+import Orders from './Orders';
+import Users from './Users';
+import Vouchers from './Vouchers';
+import Reports from './Reports';
+import VoucherManager from './VoucherManager';
+import AdminReviewManagement from '../ReviewComponent/AdminReviewManagement';
+import NotificationManagement from './NotificationManagement';
+import ChatManagement from './ChatManagement';
+import './admin.css';
 
+const AdminApp = () => {
+  const [activeTab, setActiveTab] = useState('dashboard');
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return <Dashboard />;
+      case 'products':
+        return <ProductManagement />;
+      case 'orders':
+        return <Orders />;
+      case 'users':
+        return <Users />;
+      case 'vouchers':
+        return <Vouchers />;
+      case 'voucher-manager':
+        return <VoucherManager />;
+      case 'reports':
+        return <Reports />;
+      case 'reviews':
+        return <AdminReviewManagement />;
+      case 'notifications':
+        return <NotificationManagement />;
+      case 'chat':
+        return <ChatManagement />;
+      default:
+        return <Dashboard />;
+    }
+  };
 
 /**
  * Lưu ý:

@@ -171,35 +171,47 @@ export const adminAPI = {
 
   // ===== Users =====
   getUsers: async () => {
-    // Prefer /admin first for environments exposing admin-only endpoints.
-    // Fallback to generic /api/users and finally to auth's users list.
-    const ts = Date.now();
-    const urls = [
-      `${API_BASE_URL}/users?t=${ts}`,
-      `${API_BASE_URL_API}/users?t=${ts}`,
-      `${API_BASE_URL_API}/auth/users?t=${ts}`,
-    ];
-    let lastErr;
-    for (const url of urls) {
-      try {
-  const res = await fetch(url, { headers: { ...getHeaders(), 'Cache-Control': 'no-cache' }, cache: 'no-store' });
-        if (!res.ok) { lastErr = new Error(`GET ${url} -> ${res.status}`); continue; }
-        const data = await res.json();
-        const arr = Array.isArray(data) ? data : data?.data ?? [];
-        return arr.map((u) => ({
-          id: u.id ?? u.userId ?? u.ID,
-          name: u.name ?? u.full_name ?? u.fullName ?? u.username ?? 'N/A',
-          email: u.email ?? 'N/A',
-          role: u.role ?? 'customer',
-          banned: u.banned ?? u.isBanned ?? u.is_banned ?? (u.isVerified === false ? true : false),
-          status: (u.banned || u.isBanned || u.is_banned || u.isVerified === false) ? 'BANNED' : 'ACTIVE',
-          // Expose phone/address if backend provides them in any common shape
-          phone: u.phone ?? u.phoneNumber ?? u.phone_number ?? u.mobile ?? u.contactPhone ?? u?.profile?.phone ?? '',
-          address: u.addressText ?? u.address ?? u.address_line ?? u.addressLine ?? u.street ?? u.fullAddress ?? u?.profile?.address ?? '',
-        }));
-      } catch (e) { lastErr = e; }
+    try {
+      const res = await fetch(`${API_BASE_URL}/users`, { headers: getHeaders() });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        let errorMessage = 'Không thể tải danh sách người dùng';
+        
+        if (res.status === 401 || res.status === 403) {
+          errorMessage = 'Bạn không có quyền truy cập. Vui lòng đăng nhập lại với tài khoản Admin.';
+        } else if (res.status === 404) {
+          errorMessage = 'Endpoint không tồn tại. Vui lòng kiểm tra lại cấu hình.';
+        } else {
+          try {
+            const errorJson = JSON.parse(errorText);
+            errorMessage = errorJson.message || errorMessage;
+          } catch (e) {
+            errorMessage = errorText || errorMessage;
+          }
+        }
+        
+        throw new Error(`${errorMessage} (Status: ${res.status})`);
+      }
+      
+      const data = await res.json();
+      
+      // Kiểm tra nếu response là array
+      if (!Array.isArray(data)) {
+        console.warn('getUsers response is not an array:', data);
+        // Nếu response có data property, thử lấy data
+        if (data.data && Array.isArray(data.data)) {
+          return data.data;
+        }
+        // Nếu không phải array, trả về empty array
+        return [];
+      }
+      
+      return data;
+    } catch (err) {
+      console.error('getUsers error:', err);
+      throw err;
     }
-    throw lastErr || new Error('Không thể tải danh sách người dùng');
   },
 
   addUser: async (user) => {

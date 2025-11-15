@@ -1,28 +1,64 @@
 const API_BASE_URL = 'http://localhost:8080/api';
 
-const getAuthToken = () => localStorage.getItem('authToken');
+const getAuthToken = () => {
+  const token = localStorage.getItem('authToken');
+  // Validate token - không gửi nếu token không hợp lệ
+  if (token && (token.includes('Users.User@') || token.includes('com.example.demo') || token.startsWith('[object'))) {
+    console.warn('🔑 Invalid token detected, removing...');
+    localStorage.removeItem('authToken');
+    return null;
+  }
+  return token;
+};
 
-const getHeaders = () => ({
-  'Content-Type': 'application/json',
-  'Authorization': `Bearer ${getAuthToken()}`
-});
+const getHeaders = () => {
+  const token = getAuthToken();
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  
+  // Chỉ thêm Authorization header nếu có token hợp lệ
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return headers;
+};
 
 export const notificationAPI = {
   // ===== USER NOTIFICATIONS =====
   
   // Lấy tất cả notifications của user hiện tại
   getMyNotifications: async () => {
-    const response = await fetch(`${API_BASE_URL}/notifications/my-notifications`, {
-      method: 'GET',
-      headers: getHeaders()
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Không thể lấy notifications');
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('Bạn cần đăng nhập để xem thông báo');
     }
     
-    return response.json();
+    try {
+      const response = await fetch(`${API_BASE_URL}/notifications/my-notifications`, {
+        method: 'GET',
+        headers: getHeaders()
+      });
+      
+      if (response.status === 401) {
+        // Token không hợp lệ hoặc hết hạn
+        localStorage.removeItem('authToken');
+        throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      }
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Không thể lấy notifications');
+      }
+      
+      return response.json();
+    } catch (error) {
+      if (error.message.includes('Phiên đăng nhập')) {
+        throw error;
+      }
+      throw new Error(error.message || 'Không thể lấy notifications');
+    }
   },
   
   // Lấy notifications chưa đọc
@@ -42,17 +78,34 @@ export const notificationAPI = {
   
   // Đếm số notifications chưa đọc
   getUnreadCount: async () => {
-    const response = await fetch(`${API_BASE_URL}/notifications/unread-count`, {
-      method: 'GET',
-      headers: getHeaders()
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Không thể lấy số notifications chưa đọc');
+    const token = getAuthToken();
+    if (!token) {
+      // Trả về 0 nếu không có token thay vì throw error
+      return { success: true, data: 0 };
     }
     
-    return response.json();
+    try {
+      const response = await fetch(`${API_BASE_URL}/notifications/unread-count`, {
+        method: 'GET',
+        headers: getHeaders()
+      });
+      
+      if (response.status === 401) {
+        localStorage.removeItem('authToken');
+        return { success: true, data: 0 };
+      }
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Không thể lấy số notifications chưa đọc');
+      }
+      
+      return response.json();
+    } catch (error) {
+      // Trả về 0 thay vì throw error để không làm gián đoạn UI
+      console.error('Error getting unread count:', error);
+      return { success: true, data: 0 };
+    }
   },
   
   // Đánh dấu notification là đã đọc
@@ -89,18 +142,56 @@ export const notificationAPI = {
   
   // Tạo notification mới (Admin only)
   createNotification: async (notificationData) => {
-    const response = await fetch(`${API_BASE_URL}/notifications`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(notificationData)
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Không thể tạo notification');
+    try {
+      console.log('📤 Sending notification request:', notificationData);
+      
+      const response = await fetch(`${API_BASE_URL}/notifications`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(notificationData)
+      });
+      
+      console.log('📥 Notification response status:', response.status);
+      
+      const responseData = await response.json().catch(async (e) => {
+        const text = await response.text();
+        console.error('❌ Failed to parse response as JSON:', text);
+        throw new Error(`Server error: ${response.status} - ${text}`);
+      });
+      
+      console.log('📥 Notification response data:', responseData);
+      
+      if (!response.ok) {
+        const errorMessage = responseData.message || responseData.error || 'Không thể tạo notification';
+        console.error('❌ Notification creation failed:', errorMessage);
+        throw new Error(errorMessage);
+      }
+      
+      // Kiểm tra response format
+      if (responseData.success === false) {
+        const errorMessage = responseData.message || 'Không thể tạo notification';
+        console.error('❌ Notification creation failed (success=false):', errorMessage);
+        throw new Error(errorMessage);
+      }
+      
+      // Đảm bảo response có success = true hoặc có data
+      if (responseData.success === true || responseData.data) {
+        console.log('✅ Notification created successfully:', responseData);
+        return responseData;
+      }
+      
+      // Nếu response không có success field, giả sử thành công nếu có data
+      if (responseData.id || responseData.userId) {
+        console.log('✅ Notification created (implicit success):', responseData);
+        return { success: true, data: responseData, ...responseData };
+      }
+      
+      console.warn('⚠️ Unexpected response format:', responseData);
+      return { success: true, data: responseData, ...responseData };
+    } catch (error) {
+      console.error('❌ Error in createNotification API:', error);
+      throw error;
     }
-    
-    return response.json();
   },
   
   // Chỉnh sửa notification (Admin only)

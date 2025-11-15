@@ -1,6 +1,5 @@
-import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
-import "./admin.css";
+import React from 'react';
+import { FaTachometerAlt, FaUsers, FaBoxOpen, FaShoppingCart, FaTicketAlt, FaChartBar, FaStar, FaBell, FaComments } from 'react-icons/fa';
 
 /**
  * Dùng link TƯƠNG ĐỐI (không có dấu / ở đầu) vì AdminApp được mount tại /admin/*
@@ -45,20 +44,32 @@ export default function Sidebar() {
     <aside className="admin-sidebar">
       <div className="admin-logo">🍽️Foodiez Admin</div>
 
-      <ul className="admin-nav">
-        {navs.map((n) => (
-          <li key={n.path}>
-            <NavLink
-              to={n.path}
-              end={n.end}
-              className={({ isActive }) =>
-                `nav-link ${isActive ? "active" : ""}`
-              }
-            >
-              {n.label}
-            </NavLink>
-          </li>
-        ))}
+        <li className="nav-item mb-2">
+          <button
+            onClick={() => setActiveTab('reports')}
+            className={`nav-link d-flex align-items-center text-white w-100 border-0 bg-transparent ${activeTab === 'reports' ? 'fw-bold bg-dark rounded-2 px-2' : ''}`}
+          >
+            <FaChartBar className="me-2" /> Reports
+          </button>
+        </li>
+
+        <li className="nav-item mb-2">
+          <button
+            onClick={() => setActiveTab('notifications')}
+            className={`nav-link d-flex align-items-center text-white w-100 border-0 bg-transparent ${activeTab === 'notifications' ? 'fw-bold bg-dark rounded-2 px-2' : ''}`}
+          >
+            <FaBell className="me-2" /> Notifications
+          </button>
+        </li>
+
+        <li className="nav-item mb-2">
+          <button
+            onClick={() => setActiveTab('chat')}
+            className={`nav-link d-flex align-items-center text-white w-100 border-0 bg-transparent ${activeTab === 'chat' ? 'fw-bold bg-dark rounded-2 px-2' : ''}`}
+          >
+            <FaComments className="me-2" /> Chat
+          </button>
+        </li>
       </ul>
       
       {/* Role Switcher Toggle - Moved to bottom */}
