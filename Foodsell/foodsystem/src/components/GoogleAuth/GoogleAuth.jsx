@@ -61,6 +61,7 @@ const GoogleAuth = ({ onSuccess, onError }) => {
         onSuccess={handleSuccess}
         onError={handleError}
         useOneTap={false}
+        auto_select={false}
         theme="outline"
         size="large"
         width="100%"
