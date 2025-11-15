@@ -135,7 +135,22 @@ export default function Vouchers() {
           <input type="date" className="form-control" value={form.expiryDate} onChange={(e)=>setForm({...form, expiryDate: e.target.value})} />
         </div>
         <div className="col-12 d-flex gap-2">
-          <button type="submit" className="btn btn-primary">{editingId ? 'Lưu sửa' : 'Thêm voucher'}</button>
+          <button 
+            type="submit" 
+            className="btn btn-primary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              padding: '8px 16px',
+              fontSize: '13px',
+              fontWeight: '600',
+              lineHeight: '1.2'
+            }}
+          >
+            {editingId ? 'Lưu sửa' : 'Thêm voucher'}
+          </button>
           {editingId && <button type="button" className="btn btn-outline-secondary" onClick={reset}>Hủy</button>}
         </div>
       </form>
